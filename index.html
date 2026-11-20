@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mathdrian</title>
+<meta name="description" content="Interaktive Lernwerkzeuge für den Mathematikunterricht. Läuft im Browser, ohne Anmeldung.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: ruhige Textseite. Kopf mit Wortmarke, Einstieg mit Suche und Kapitelfilter, danach die Kapitel 1 bis 8 einklappbar.
+   Farben und Schriften stammen aus den Lernwerkzeugen (Blau, Türkis, Violett), damit Seite und Tools zusammengehören. */
+:root{
+  --bg:#f5f6fa; --surface:#ffffff; --surface2:#eceff6; --ink:#161d2c; --muted:#566178; --line:#d9deea; --grid:#e3e7f1;
+  --accent:#2d56e0; --accent-ink:#ffffff; --teal:#0a8a8a; --violet:#7048e8; --curve:#1b2a52;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d121d; --surface:#151c2b; --surface2:#1d2640; --ink:#e8ecf6; --muted:#9aa5bc; --line:#29334d; --grid:#1f2840;
+    --accent:#7f9fff; --accent-ink:#0c1226; --teal:#3cc9c9; --violet:#b39dfc; --curve:#dbe4ff;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d121d; --surface:#151c2b; --surface2:#1d2640; --ink:#e8ecf6; --muted:#9aa5bc; --line:#29334d; --grid:#1f2840;
+  --accent:#7f9fff; --accent-ink:#0c1226; --teal:#3cc9c9; --violet:#b39dfc; --curve:#dbe4ff;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.wrap{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+/* Kopf */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:20px}
+.logo{font-family:var(--font-head);font-weight:700;font-size:24px;letter-spacing:-.02em;text-decoration:none}
+.logo span{color:var(--accent)}
+.nav{display:flex;gap:6px;align-items:center}
+.nav a,.nav button{border:0;background:transparent;border-radius:8px;padding:7px 12px;font-weight:500;font-size:15px;color:var(--muted);text-decoration:none}
+.nav a:hover,.nav button:hover{background:var(--surface2);color:var(--ink)}
+
+/* Einstieg */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:32px;align-items:center;padding-block:28px 36px}
+@media (max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}.hero svg{order:-1;max-height:200px}}
+.eyebrow{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+h1{font-size:clamp(34px,6vw,56px);letter-spacing:-.025em}
+.lead{max-width:50ch;color:var(--muted);margin-top:16px;font-size:18px}
+.hero svg{width:100%;height:auto;display:block}
+.hero svg .g{stroke:var(--grid);stroke-width:1}
+.hero svg .ax{stroke:var(--muted);stroke-width:1.2;opacity:.6}
+.hero svg .cv{fill:none;stroke:var(--curve);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.hero svg .d1{fill:none;stroke:var(--teal);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:7 6}
+.hero svg .gd{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:3 4;opacity:.7}
+.hero svg .dp{fill:var(--teal);stroke:var(--surface);stroke-width:2.5}
+.hero svg text{font:600 13px var(--font-body);fill:var(--teal)}
+.hero svg text.fl{fill:var(--curve)}
+
+/* Suche und Filter */
+.tools{display:grid;gap:14px;padding-block:8px 20px;border-top:1px solid var(--line)}
+.search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.search:focus-within{border-color:var(--accent)}
+.search svg{flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:transparent;padding:13px 0;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 13px;font-size:14px;font-weight:500;color:var(--muted)}
+.chip:hover{border-color:var(--accent);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip .n{font-family:var(--font-mono);margin-right:6px;opacity:.8}
+
+/* Kapitel */
+.chapters{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+details.ch{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+details.ch>summary{list-style:none;min-width:0;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:16px 20px;border-radius:16px}
+details.ch>summary::-webkit-details-marker{display:none}
+details.ch>summary:hover{background:var(--surface2)}
+.num{font-family:var(--font-mono);font-size:26px;font-weight:500;color:var(--accent);min-width:1.2ch}
+.ch h2{font-size:22px;letter-spacing:-.01em}
+.count{font-size:13px;color:var(--muted);white-space:nowrap}
+.chev{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;margin-right:4px}
+details[open]>summary .chev{transform:rotate(-135deg)}
+.empty{padding:0 20px 18px 62px;color:var(--muted);font-size:15px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:12px;padding:4px 16px 18px}
+.card{display:grid;gap:10px;align-content:start;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card h3{font-size:19px;letter-spacing:-.01em}
+.card .meta{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.card p{color:var(--muted);font-size:15px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--surface2);color:var(--muted)}
+.open{font-weight:600;font-size:14px;color:var(--accent);margin-top:2px}
+.kind{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin-right:8px}
+.none{padding:28px 4px;color:var(--muted)}
+
+/* Unterkapitel */
+details.sub{margin:0 16px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+details.sub>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:600}
+details.sub>summary::-webkit-details-marker{display:none}
+details.sub>summary:hover{background:var(--surface2)}
+details.sub .sn{font-family:var(--font-mono);color:var(--teal);font-size:14px}
+details.sub .count{margin-left:auto}
+details.sub .chev{width:8px;height:8px}
+details.sub>.cards{padding:2px 12px 14px}
+details.sub .card{background:var(--surface)}
+
+/* Fuss */
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="./">math<span>drian</span></a>
+    <nav class="nav" aria-label="Hauptnavigation">
+      <a href="#kapitel">Kapitel</a>
+      <button id="themeBtn" type="button" aria-label="Hell oder dunkel umschalten">Hell / Dunkel</button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Mathematik · Lernwerkzeuge</p>
+      <h1>Mathematik zum Ausprobieren</h1>
+      <p class="lead">Interaktive Werkzeuge zum Entdecken, Üben und Nachprüfen. Sie laufen direkt im Browser, ohne Anmeldung und ohne Installation.</p>
+    </div>
+    <svg id="heroSvg" viewBox="0 0 340 230" role="img" aria-label="Skifahrer auf dem Graphen einer Funktion, darunter gestrichelt die Ableitung"></svg>
+  </section>
+
+  <section class="tools" id="kapitel" aria-label="Suche und Filter">
+    <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="search" id="q" placeholder="Werkzeug oder Thema suchen, zum Beispiel «Ableitung»" autocomplete="off" aria-label="Suchen"></label>
+    <div class="chips" id="chips" role="group" aria-label="Kapitel filtern"></div>
+  </section>
+
+  <main class="chapters" id="list"></main>
+  <p class="none" id="none" hidden>Dazu gibt es noch kein Werkzeug. Versuchen Sie einen anderen Suchbegriff.</p>
+  <noscript><p class="none">Die Übersicht braucht JavaScript. Die Werkzeuge selbst liegen in den Ordnern 1 bis 8.</p></noscript>
+
+  <footer>
+    <span>mathdrian · Lernwerkzeuge von Adrian</span>
+    <span>Alle Werkzeuge laufen lokal im Browser. Es werden keine Daten gespeichert.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* =====================================================================
+   NEUES WERKZEUG HINZUFÜGEN: eine Zeile in TOOLS ergänzen, Datei in den Ordner legen. Mehr nicht.
+   k = Kapitel (1 bis 8), u = Unterordner wie im Ordner «Material» (z. B. '43 Polynomfunktionen'),
+   typ = 'tool' (interaktives Werkzeug) oder 'pdf' (Blatt).
+   ===================================================================== */
+const KAPITEL=[
+  {n:1,t:'Algebra'},{n:2,t:'Funktionen'},{n:3,t:'Geometrie'},{n:4,t:'Differentialrechnung'},
+  {n:5,t:'Vektorgeometrie'},{n:6,t:'Integralrechnung'},{n:7,t:'Stochastik'},{n:8,t:'Höhere Mathematik'}
+];
+const TOOLS=[
+  {k:1,u:'14 Gleichungssysteme',typ:'tool',titel:'LGS-Werkstatt',
+   text:'Lineare Gleichungssysteme mit zwei Unbekannten: Methode wählen, Lösungsmenge eingeben und mit dem schnellsten Lösungsweg vergleichen.',
+   tags:['Einsetzen','Addieren','Graphisch','Üben'],href:'1-algebra/14-gleichungssysteme/LGS_Werkstatt.html'},
+  {k:4,u:'43 Polynomfunktionen',typ:'tool',titel:'Ableitungs-Reise',
+   text:'Als Wanderer die Steigung, als Autofahrer die Krümmung erleben. Ableitung und zweite Ableitung entstehen Punkt für Punkt.',
+   tags:['Ableitung','Krümmung','Entdecken'],href:'4-differentialrechnung/43-polynomfunktionen/Ableitungsreise.html'},
+  {k:4,u:'43 Polynomfunktionen',typ:'tool',titel:'Kurvenlabor',
+   text:'Waagrechte Tangenten und Wendepunkte am Graphen markieren, Ableitungen selbst berechnen und die Eingabe prüfen lassen.',
+   tags:['Extrema','Wendepunkte','Üben'],href:'4-differentialrechnung/43-polynomfunktionen/Kurvenlabor.html'},
+  {k:5,u:'51 Geraden',typ:'tool',titel:'Geradenlabor',
+   text:'Geradengleichungen aus zwei Punkten entwickeln, in 2D und 3D. Mit Aufgaben in drei Stufen, die sofort geprüft werden.',
+   tags:['2D und 3D','Vektorform','Grundform','Üben'],href:'5-vektorgeometrie/Geradenlabor.html'}
+  /* Beispiel für ein Blatt:
+  ,{k:5,u:'51 Geraden',typ:'pdf',titel:'Theorieblatt Geraden',text:'Parameterform, Steigung, Lage zweier Geraden.',tags:['Theorie'],href:'5-vektorgeometrie/261120_Geraden_Theorie.pdf'} */
+];
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let kapitel=0,query='';
+
+function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ß/g,'ss');}
+function matches(t){
+  if(kapitel&&t.k!==kapitel) return false;
+  if(!query) return true;
+  const hay=norm([t.titel,t.text,t.u,t.tags.join(' '),KAPITEL[t.k-1].t].join(' '));
+  return query.split(/\s+/).every(w=>hay.includes(w));
+}
+function render(){
+  const list=$('#list'),searching=!!query||kapitel;
+  let shown=0,html='';
+  KAPITEL.forEach(c=>{
+    if(kapitel&&c.n!==kapitel) return;
+    const items=TOOLS.filter(t=>t.k===c.n&&matches(t));
+    const total=TOOLS.filter(t=>t.k===c.n).length;
+    if(query&&!items.length) return;
+    shown+=items.length;
+    const label=total?(items.length===total?total+(total===1?' Eintrag':' Einträge'):items.length+' von '+total):'in Vorbereitung';
+    html+='<details class="ch" '+((total||kapitel)?'open':'')+' id="k'+c.n+'"><summary><span class="num">'+c.n+'</span><h2>'+esc(c.t)+'</h2><span class="count">'+label+'</span><span class="chev" aria-hidden="true"></span></summary>';
+    if(items.length){
+      const subs={};items.forEach(t=>{(subs[t.u]=subs[t.u]||[]).push(t);});
+      Object.keys(subs).sort((a,b)=>a.localeCompare(b,'de',{numeric:true})).forEach(u=>{
+        const m=/^(\d+)\s+(.*)$/.exec(u),num=m?m[1]:'',name=m?m[2]:u,n=subs[u].length;
+        html+='<details class="sub" open><summary>'+(num?'<span class="sn">'+esc(num)+'</span>':'')+'<span>'+esc(name)+'</span><span class="count">'+n+(n===1?' Eintrag':' Einträge')+'</span><span class="chev" aria-hidden="true"></span></summary><div class="cards">'+subs[u].map(t=>'<a class="card" href="'+esc(t.href)+'"><h3>'+(t.typ==='pdf'?'<span class="kind">Blatt</span>':'')+esc(t.titel)+'</h3><p>'+esc(t.text)+'</p><span class="tags">'+t.tags.map(g=>'<span class="tag">'+esc(g)+'</span>').join('')+'</span><span class="open">Öffnen →</span></a>').join('')+'</div></details>';
+      });
+    }else html+='<p class="empty">Hier folgen Werkzeuge und Blätter.</p>';
+    html+='</details>';
+  });
+  list.innerHTML=html;
+  $('#none').hidden=!(query&&shown===0);
+}
+function renderChips(){
+  $('#chips').innerHTML='<button type="button" class="chip" data-k="0" aria-pressed="'+(kapitel===0)+'">Alle</button>'+
+    KAPITEL.map(c=>'<button type="button" class="chip" data-k="'+c.n+'" aria-pressed="'+(kapitel===c.n)+'"><span class="n">'+c.n+'</span>'+esc(c.t)+'</button>').join('');
+}
+
+/* Titelbild: Skifahrer auf f, gestrichelt f′ darunter (wird aus der Funktion berechnet) */
+function hero(){
+  const svg=$('#heroSvg');if(!svg) return;
+  const f=x=>x*x*x-6*x*x+9*x+1,d=x=>3*x*x-12*x+9;
+  const X0=0,X1=4.3,PX=[24,326],X=x=>PX[0]+(x-X0)/(X1-X0)*(PX[1]-PX[0]);
+  const Yf=y=>112-(y-0.5)/8*92,Yd=y=>196-y*5.2+0;
+  const path=(g,Y)=>{let p='';for(let i=0;i<=120;i++){const x=X0+(X1-X0)*i/120;p+=(i?'L':'M')+X(x).toFixed(1)+' '+Y(g(x)).toFixed(1);}return p;};
+  const xs=2.35,px=X(xs),py=Yf(f(xs)),ang=Math.atan2(Yf(f(xs+.01))-Yf(f(xs-.01)),X(xs+.01)-X(xs-.01))*180/Math.PI;
+  const dy=Yd(d(xs));
+  const skier='<g transform="translate('+px.toFixed(1)+' '+py.toFixed(1)+') rotate('+ang.toFixed(1)+') scale(1.15)" fill="none" stroke-linecap="round" stroke-linejoin="round">'+
+   '<g stroke="var(--muted)" stroke-width="1.4" opacity=".55"><path d="M-20 -9H-34M-18 -17H-30M-20 -24H-36"/></g>'+
+   '<path d="M-17 0H14Q19 0 21 -3" stroke="var(--accent)" stroke-width="3.6"/>'+
+   '<g stroke="var(--ink)" stroke-width="2.6"><path d="M-3 -2L4 -9L-3 -16L5 -25"/><path d="M5 -25L12 -18L15 -14" stroke-width="2.2"/><path d="M15 -14L-12 2" stroke-width="1.6"/></g>'+
+   '<rect x="-9" y="-26" width="6" height="11" rx="2" fill="var(--accent)"/>'+
+   '<circle cx="8" cy="-30" r="4.8" fill="var(--ink)"/><rect x="3" y="-36" width="10" height="3" fill="var(--accent)"/></g>';
+  let grid='';for(let i=0;i<=5;i++){const gx=X(i*.86).toFixed(1);grid+='M'+gx+' 12V222';}
+  svg.innerHTML='<path class="g" d="'+grid+'"/>'+
+   '<path class="ax" d="M18 '+Yd(0).toFixed(1)+'H330"/>'+
+   '<path class="cv" d="'+path(f,Yf)+'"/>'+skier+
+   '<path class="d1" d="'+path(d,Yd)+'"/>'+
+   '<path class="gd" d="M'+px.toFixed(1)+' '+(py+6).toFixed(1)+'V'+dy.toFixed(1)+'"/>'+
+   '<circle class="dp" cx="'+px.toFixed(1)+'" cy="'+dy.toFixed(1)+'" r="6"/>'+
+   '<text class="fl" x="'+(X(4.3)-34)+'" y="'+(Yf(f(4.3))+22)+'">f(x)</text>'+
+   '<text x="'+(X(4.3)-34)+'" y="'+(Yd(d(4.3))-10)+'">f′(x)</text>';
+}
+function init(){
+  hero();
+  try{const th=localStorage.getItem('md-theme');if(th) document.documentElement.setAttribute('data-theme',th);}catch(e){}
+  $('#themeBtn').addEventListener('click',()=>{
+    const r=document.documentElement,cur=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'),nx=cur==='dark'?'light':'dark';
+    r.setAttribute('data-theme',nx);try{localStorage.setItem('md-theme',nx);}catch(e){}
+  });
+  $('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b) return;kapitel=+b.dataset.k;renderChips();render();});
+  $('#q').addEventListener('input',e=>{query=norm(e.target.value.trim());render();});
+  renderChips();render();
+}
+init();
+})();
+</script>
+</body>
+</html>

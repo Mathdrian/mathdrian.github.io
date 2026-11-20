@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Kurvenlabor</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: Aufgabenkarte oben, links gestapelte Graphen (f, f', f'' mit gemeinsamer x-Achse), rechts die Bedienung.
+   Farbcode: f = dunkles Blau, f' = Türkis, f'' = Violett. Markierungen übernehmen die Farbe ihrer Ableitung. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --surface2:#eceff6; --ink:#18202f; --muted:#576277; --line:#d5dbe7; --grid:#e7ebf3; --axis:#8791a6;
+  --accent:#2d56e0; --accent-ink:#ffffff;
+  --f:#1b2a52; --f1:#0a8a8a; --f2:#7048e8; --left:#1c7ed6; --right:#e8590c; --ok:#2b8a3e; --bad:#d6303a;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+    --accent:#7f9fff; --accent-ink:#0c1226;
+    --f:#dbe4ff; --f1:#3cc9c9; --f2:#b39dfc; --left:#4dabf7; --right:#ff922b; --ok:#51cf66; --bad:#ff7b84;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+  --accent:#7f9fff; --accent-ink:#0c1226;
+  --f:#dbe4ff; --f1:#3cc9c9; --f2:#b39dfc; --left:#4dabf7; --right:#ff922b; --ok:#51cf66; --bad:#ff7b84;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.01em}
+h2{font-size:20px}
+h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.lead{max-width:62ch;color:var(--muted);margin-top:6px}
+header{margin-bottom:18px}
+
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{padding:4px 9px;font-size:13px}
+
+/* Stepper */
+.steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px 5px 6px;font-weight:500;font-size:14px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:12px;font-weight:600}
+.step.done .n{background:color-mix(in srgb,var(--ok) 22%,var(--surface))}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+
+/* Aufgabenkarte */
+.task{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px;display:grid;gap:10px}
+.task-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.ask{background:var(--surface2);border-radius:8px;padding:9px 12px}
+.ask b{font-weight:600}
+.merke{border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));background:color-mix(in srgb,var(--ok) 9%,var(--surface));border-radius:8px;padding:9px 12px}
+.merke b{font-family:var(--font-head)}
+.task-nav{display:flex;gap:8px;justify-content:flex-end}
+details.howto{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+details.howto summary{cursor:pointer;padding:11px 16px;font-weight:600}
+details.howto .inner{padding:0 18px 14px;display:grid;gap:8px;max-width:78ch}
+details.howto ul{margin:0;padding-left:20px;display:grid;gap:4px}
+code,.mono{font-family:var(--font-mono);font-size:.92em}
+code{background:var(--surface2);border-radius:5px;padding:1px 5px}
+
+/* Hauptlayout */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.plots{display:grid;gap:10px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.panel canvas{display:block;width:100%;touch-action:pan-y}
+#cvF{height:340px;cursor:crosshair}
+#cvD1,#cvD2{height:190px}
+@media (max-width:560px){#cvF{height:280px}#cvD1,#cvD2{height:160px}}
+.readout{padding:7px 12px;border-top:1px solid var(--line);font-family:var(--font-mono);font-size:13px;color:var(--muted);min-height:34px}
+.readout b{color:var(--ink);font-weight:500}
+
+.side{display:grid;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--ink);margin:10px 0 0;font-size:14px}
+input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;min-width:0}
+input.mono{font-family:var(--font-mono);font-size:15px}
+.fieldrow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+.fieldrow label{margin:0;font-family:var(--font-mono);font-size:15px;color:var(--ink);white-space:nowrap}
+.read{font-size:13px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
+.msg{font-size:13px;margin-top:6px;overflow-wrap:anywhere}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.info{color:var(--muted)}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.seg button{border:0;background:var(--surface);padding:7px 8px;font-size:13px;font-weight:500;display:flex;gap:6px;align-items:center;justify-content:center}
+.seg button[aria-pressed="true"]{background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent)}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--f1);display:inline-block}
+.dot.w{background:var(--f2);border-radius:2px;transform:rotate(45deg) scale(.9)}
+ul.chips{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:4px 6px 4px 10px;font-family:var(--font-mono);font-size:13px;background:var(--bg)}
+.chip .sp{flex:1}
+.chip.ok{border-color:var(--ok)}.chip.no,.chip.dup{border-color:var(--bad)}
+.chip .stt{font-family:var(--font-body);font-size:12px}
+.chip.ok .stt{color:var(--ok)}.chip.no .stt,.chip.dup .stt{color:var(--bad)}
+.chip button{border:0;background:transparent;font-size:18px;line-height:1;padding:2px 7px;border-radius:6px;color:var(--muted)}
+.chip button:hover{background:var(--surface2);color:var(--ink)}
+.empty{font-size:13px;color:var(--muted);margin-top:8px}
+.note{margin-top:10px;border:1px solid color-mix(in srgb,var(--right) 70%,var(--line));background:color-mix(in srgb,var(--right) 10%,var(--surface));border-radius:8px;padding:8px 10px;font-size:13px}
+.note b{color:var(--right);text-transform:uppercase;letter-spacing:.05em;font-size:12px;margin-right:4px}
+
+.tablewrap{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-weight:600;color:var(--muted);font-size:12px}
+td.bef{white-space:normal;min-width:170px}
+td.bef.ok{color:var(--ok)}td.bef.bad{color:var(--bad)}
+.tcard{margin-top:12px}
+
+.teacher{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
+.teacher .inner{padding:0 18px 14px;max-width:80ch;display:grid;gap:8px}
+.teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Analysis · Polynomfunktionen</p>
+    <h1>Kurvenlabor</h1>
+    <p class="lead">Finde die Stellen mit waagrechter Tangente und die Wendepunkte am Graphen. Berechne danach die Ableitungen selbst und prüfe, ob sie zu deinen Markierungen passen.</p>
+  </header>
+
+  <ol class="steps" id="steps"></ol>
+
+  <section class="task" aria-live="polite">
+    <div class="task-head"><span class="badge" id="tBadge"></span><h2 id="tTitle"></h2></div>
+    <p id="tText"></p>
+    <p class="ask" id="tAsk"></p>
+    <div class="merke" id="tMerke" hidden></div>
+    <div class="task-nav">
+      <button class="btn" id="tipBtn" aria-expanded="false" aria-controls="tMerke">Tipps anzeigen</button>
+      <button class="btn" id="prev">← Zurück</button>
+      <button class="btn primary" id="next">Weiter →</button>
+    </div>
+  </section>
+
+  <details class="howto">
+    <summary>Anleitung: So bedienst du das Kurvenlabor</summary>
+    <div class="inner">
+      <p><b>Funktion eingeben.</b> Wähle ein Beispiel oder tippe deine Funktion ins Feld <code>f(x) =</code>. Schreibweise: <code>x^3</code> für x³, <code>2x</code> oder <code>2*x</code> für 2·x, <code>(1/3)x^3</code> für ein Drittel x³. Unter dem Feld steht, wie das Programm deine Eingabe gelesen hat. Prüfe das immer.</p>
+      <ul>
+        <li><b>Tangente erkunden:</b> Schalte unter «Ansicht» die Tangente ein. Fahre dann mit der Maus (am Tablet mit dem Finger) über den Graphen. Die Tangente und ihre Steigung <code>m</code> erscheinen.</li>
+        <li><b>Markieren:</b> Klicke auf den Graphen, um einen Punkt zu setzen. Er rastet auf das gewählte Raster ein. Das Raster kannst du rechts unter «Markierungen» ändern: Voreingestellt ist 0.01. Gröber (0.1, 1 oder 5) ist praktisch für grosse Bereiche. Nochmals klicken entfernt den Punkt.</li>
+        <li><b>Prüfen:</b> «Markierungen prüfen» sagt dir, wie viele stimmen und ob Stellen fehlen. Die Lösung verrät es nicht.</li>
+        <li><b>Ableitungen:</b> Rechne zuerst auf Papier. Gib dann f′(x), später f″(x) ein. Die Graphen erscheinen untereinander mit derselben x-Achse.</li>
+        <li><b>Ansicht:</b> Mit dem Fenster (x- und y-Bereich) und den Zoom-Tasten stellst du den Ausschnitt ein.</li>
+      </ul>
+    </div>
+  </details>
+
+  <main class="layout">
+    <div class="plots" id="plots">
+      <div class="panel"><canvas id="cvF" aria-label="Graph von f"></canvas><div class="readout" id="readout"></div></div>
+      <div class="panel" id="pan1" hidden><canvas id="cvD1" aria-label="Graph von f Strich"></canvas></div>
+      <div class="panel" id="pan2" hidden><canvas id="cvD2" aria-label="Graph von f Doppelstrich"></canvas></div>
+    </div>
+
+    <aside class="side">
+      <section class="card">
+        <h3>Funktion</h3>
+        <label for="preset" style="margin-top:0">Beispiel wählen</label>
+        <select id="preset"></select>
+        <label for="fsrc">Eigene Funktion</label>
+        <div class="fieldrow"><label for="fsrc">f(x) =</label><input type="text" id="fsrc" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+        <p class="read" id="fread"></p>
+        <p class="note" id="fnote" hidden></p>
+      </section>
+
+      <section class="card" id="cMark">
+        <h3>Markierungen</h3>
+        <div class="seg" id="modeSeg" hidden>
+          <button id="mK" aria-pressed="true"><span class="dot"></span>Steigung null</button>
+          <button id="mW" aria-pressed="false"><span class="dot w"></span>Wendepunkt</button>
+        </div>
+        <label for="step" style="margin-top:0">Raster beim Setzen</label>
+        <select id="step">
+          <option value="0.01" selected>0.01</option><option value="0.1">0.1</option><option value="0.25">0.25</option><option value="0.5">0.5</option>
+          <option value="1">1</option><option value="5">5</option>
+        </select>
+        <ul class="chips" id="chips"></ul>
+        <p class="empty" id="chipsEmpty">Noch nichts markiert. Klicke auf den Graphen.</p>
+        <div class="btnrow">
+          <button class="btn primary small" id="check">Markierungen prüfen</button>
+          <button class="btn small" id="clear">Alle löschen</button>
+        </div>
+        <p class="msg info" id="chkMsg"></p>
+      </section>
+
+      <section class="card" id="cDer" hidden>
+        <h3>Ableitungen</h3>
+        <div class="fieldrow"><label for="d1">f′(x) =</label><input type="text" id="d1" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+        <p class="msg info" id="m1"></p>
+        <div id="d2box" hidden>
+          <div class="fieldrow" style="margin-top:10px"><label for="d2">f″(x) =</label><input type="text" id="d2" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+          <p class="msg info" id="m2"></p>
+          <div class="fieldrow" style="margin-top:10px"><label for="d3">f‴(x) =</label><input type="text" id="d3" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="optional"></div>
+          <p class="msg info" id="m3"></p>
+          <div class="fieldrow" style="margin-top:10px"><label for="d4">f⁽⁴⁾(x) =</label><input type="text" id="d4" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="optional"></div>
+          <p class="msg info" id="m4"></p>
+          <label class="chk"><input type="checkbox" id="chkColor" checked> Krümmung einfärben (Linkskurve / Rechtskurve)</label>
+        </div>
+        <label class="chk"><input type="checkbox" id="chkTrue"> Richtige Ableitungen zur Kontrolle einblenden</label>
+      </section>
+
+      <section class="card">
+        <h3>Ansicht</h3>
+        <div class="range">
+          <div><label for="xmin" style="margin-top:0">x von</label><input type="number" id="xmin" step="any"></div>
+          <div><label for="xmax" style="margin-top:0">x bis</label><input type="number" id="xmax" step="any"></div>
+          <div><label for="ymin">y von</label><input type="number" id="ymin" step="any"></div>
+          <div><label for="ymax">y bis</label><input type="number" id="ymax" step="any"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="autoY"> y-Bereich automatisch</label>
+        <div class="btnrow">
+          <button class="btn small" id="zin" aria-label="Hineinzoomen">Zoom +</button>
+          <button class="btn small" id="zout" aria-label="Herauszoomen">Zoom −</button>
+          <button class="btn small" id="pl" aria-label="Nach links">←</button>
+          <button class="btn small" id="pr" aria-label="Nach rechts">→</button>
+          <button class="btn small" id="reset">Zurücksetzen</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="chkTan"> Tangente und Steigung anzeigen</label>
+      </section>
+    </aside>
+  </main>
+
+  <section class="card tcard" id="tableCard" hidden>
+    <h3>Auswertung der markierten Punkte</h3>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </section>
+
+  <details class="teacher">
+    <summary>Für Lehrpersonen: Einsatz im Unterricht</summary>
+    <div class="inner">
+      <p>Das Kurvenlabor läuft im Browser, ohne Anmeldung und ohne Installation. Der Link lässt sich an die Klasse schicken. Jede Person arbeitet für sich, es werden keine Daten gespeichert.</p>
+      <ul>
+        <li><b>Ablauf (ca. 20 bis 25 Minuten):</b> Die Schritte 1 bis 5 oben entsprechen dem Theorieblatt «Extrema und Wendepunkte». Die Lernenden notieren ihre Beobachtungen im Blatt.</li>
+        <li><b>Differenzieren:</b> Schnelle Lernende wählen eigene Funktionen oder die Achterbahn. Für andere die Funktion x³ − 6x² + 9x + 1 mit eingeblendeten Kontrollableitungen.</li>
+        <li><b>Gute Fälle:</b> x⁴ − 4x³ und x³ − 3x² + 3x + 1 zeigen Sattelpunkte, x⁴ zeigt f″(0) = 0 bei einem Tiefpunkt.</li>
+        <li><b>Rückmeldung:</b> Die Prüfung nennt nur, wie viele Markierungen stimmen und wie viele Stellen fehlen, nie die Lage.</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+
+/* ---------- Parser ---------- */
+const FNS=['sqrt','sin','cos','tan','exp','abs','log','ln'];
+function prep(s){
+  s=String(s).trim();
+  const eq=s.lastIndexOf('='); if(eq>=0) s=s.slice(eq+1);
+  const sup={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-'};
+  s=s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g,m=>'^('+[...m].map(c=>sup[c]).join('')+')');
+  return s.replace(/[−–—]/g,'-').replace(/[·×⋅]/g,'*').replace(/÷/g,'/').replace(/,/g,'.').replace(/π/g,'pi').replace(/\s+/g,'').toLowerCase();
+}
+function tokenize(s){
+  const t=[];let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(/[0-9.]/.test(c)){const m=/^(\d+\.?\d*|\.\d+)/.exec(s.slice(i)); if(!m) throw new Error('Zahl nicht lesbar'); t.push({k:'num',v:parseFloat(m[0])}); i+=m[0].length; continue;}
+    if('+-*/^()'.includes(c)){t.push({k:'op',v:c});i++;continue;}
+    const hit=FNS.find(f=>s.startsWith(f,i));
+    if(hit){t.push({k:'fn',v:hit});i+=hit.length;continue;}
+    if(s.startsWith('pi',i)){t.push({k:'num',v:Math.PI});i+=2;continue;}
+    if(c==='x'){t.push({k:'x'});i++;continue;}
+    if(c==='e'){t.push({k:'num',v:Math.E});i++;continue;}
+    throw new Error('Das Zeichen «'+c+'» kenne ich nicht');
+  }
+  return t;
+}
+function parse(tk){
+  let p=0;
+  const peek=()=>tk[p], next=()=>tk[p++];
+  const isOp=(t,v)=>t&&t.k==='op'&&t.v===v;
+  const startsFactor=t=>t&&(t.k==='num'||t.k==='x'||t.k==='fn'||isOp(t,'('));
+  function expr(){
+    let a=term();
+    while(isOp(peek(),'+')||isOp(peek(),'-')){const o=next().v;const b=term();a={t:o==='+'?'add':'sub',a,b};}
+    return a;
+  }
+  function term(){
+    let a=unary();
+    for(;;){
+      const t=peek(); if(!t) break;
+      if(isOp(t,'*')||isOp(t,'/')){next();const b=unary();a={t:t.v==='*'?'mul':'div',a,b};}
+      else if(startsFactor(t)){const b=power();a={t:'mul',a,b};}
+      else break;
+    }
+    return a;
+  }
+  function unary(){
+    if(isOp(peek(),'-')){next();return {t:'neg',a:unary()};}
+    if(isOp(peek(),'+')){next();return unary();}
+    return power();
+  }
+  function power(){
+    const a=atom();
+    if(isOp(peek(),'^')){next();return {t:'pow',a,b:unary()};}
+    return a;
+  }
+  function atom(){
+    const t=next();
+    if(!t) throw new Error('Der Ausdruck ist unvollständig');
+    if(t.k==='num') return {t:'num',v:t.v};
+    if(t.k==='x') return {t:'x'};
+    if(t.k==='fn'){
+      if(!isOp(peek(),'(')) throw new Error('Nach «'+t.v+'» fehlt eine Klammer');
+      next(); const a=expr(); if(!isOp(next(),')')) throw new Error('Eine Klammer fehlt'); return {t:'fn',n:t.v,a};
+    }
+    if(isOp(t,'(')){const a=expr(); if(!isOp(next(),')')) throw new Error('Eine Klammer fehlt'); return a;}
+    throw new Error('Unerwartetes Zeichen «'+(t.v||'')+'»');
+  }
+  const ast=expr();
+  if(p<tk.length) throw new Error(isOp(tk[p],')')?'Eine Klammer zu viel':'Unerwartetes Zeichen «'+(tk[p].v||'x')+'»');
+  return ast;
+}
+const hasX=n=>n.t==='x'||(n.a&&hasX(n.a))||(n.b&&hasX(n.b));
+function toFn(n){
+  switch(n.t){
+    case 'num':{const v=n.v;return ()=>v;}
+    case 'x':return x=>x;
+    case 'neg':{const a=toFn(n.a);return x=>-a(x);}
+    case 'add':{const a=toFn(n.a),b=toFn(n.b);return x=>a(x)+b(x);}
+    case 'sub':{const a=toFn(n.a),b=toFn(n.b);return x=>a(x)-b(x);}
+    case 'mul':{const a=toFn(n.a),b=toFn(n.b);return x=>a(x)*b(x);}
+    case 'div':{const a=toFn(n.a),b=toFn(n.b);return x=>a(x)/b(x);}
+    case 'pow':{const a=toFn(n.a),b=toFn(n.b);return x=>Math.pow(a(x),b(x));}
+    case 'fn':{
+      const a=toFn(n.a);
+      const m={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,exp:Math.exp,abs:Math.abs,ln:Math.log,log:Math.log10}[n.n];
+      return x=>m(a(x));
+    }
+  }
+}
+/* symbolische Ableitung mit kleiner Vereinfachung */
+const N=v=>({t:'num',v});
+const isN=(n,v)=>n.t==='num'&&n.v===v;
+const ADD=(a,b)=>isN(a,0)?b:isN(b,0)?a:{t:'add',a,b};
+const SUB=(a,b)=>isN(b,0)?a:{t:'sub',a,b};
+const MUL=(a,b)=>(isN(a,0)||isN(b,0))?N(0):isN(a,1)?b:isN(b,1)?a:{t:'mul',a,b};
+const DIV=(a,b)=>isN(a,0)?N(0):{t:'div',a,b};
+const NEG=a=>isN(a,0)?a:{t:'neg',a};
+function derive(n){
+  switch(n.t){
+    case 'num':return N(0);
+    case 'x':return N(1);
+    case 'neg':return NEG(derive(n.a));
+    case 'add':return ADD(derive(n.a),derive(n.b));
+    case 'sub':return SUB(derive(n.a),derive(n.b));
+    case 'mul':return ADD(MUL(derive(n.a),n.b),MUL(n.a,derive(n.b)));
+    case 'div':return DIV(SUB(MUL(derive(n.a),n.b),MUL(n.a,derive(n.b))),{t:'pow',a:n.b,b:N(2)});
+    case 'pow':
+      if(!hasX(n.b)) return MUL(MUL(n.b,{t:'pow',a:n.a,b:SUB(n.b,N(1))}),derive(n.a));
+      return MUL(n,ADD(MUL(derive(n.b),{t:'fn',n:'ln',a:n.a}),DIV(MUL(n.b,derive(n.a)),n.a)));
+    case 'fn':{
+      const a=n.a,da=derive(a);
+      switch(n.n){
+        case 'sin':return MUL({t:'fn',n:'cos',a},da);
+        case 'cos':return NEG(MUL({t:'fn',n:'sin',a},da));
+        case 'tan':return DIV(da,{t:'pow',a:{t:'fn',n:'cos',a},b:N(2)});
+        case 'exp':return MUL(n,da);
+        case 'ln':return DIV(da,a);
+        case 'log':return DIV(da,MUL(a,N(Math.LN10)));
+        case 'sqrt':return DIV(da,MUL(N(2),n));
+        case 'abs':return MUL(DIV(a,n),da);
+      }
+    }
+  }
+}
+/* Anzeige: so hat das Programm die Eingabe gelesen */
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const numStr=v=>String(parseFloat(v.toPrecision(10)));
+function show(n,p){
+  p=p||0;
+  const par=(s,q)=>p>q?'('+s+')':s;
+  switch(n.t){
+    case 'num':return numStr(n.v);
+    case 'x':return 'x';
+    case 'neg':return par('−'+show(n.a,3),2);
+    case 'add':return par(show(n.a,1)+' + '+show(n.b,1),1);
+    case 'sub':return par(show(n.a,1)+' − '+show(n.b,2),1);
+    case 'mul':
+      if(n.a.t==='num'&&(n.b.t==='x'||(n.b.t==='pow'&&n.b.a.t==='x'))) return par(show(n.a,3)+show(n.b,3),2);
+      return par(show(n.a,2)+'·'+show(n.b,3),2);
+    case 'div':return par(show(n.a,2)+'/'+show(n.b,3),2);
+    case 'pow':{
+      let e;
+      if(n.b.t==='num'&&Number.isInteger(n.b.v)&&Math.abs(n.b.v)<100) e=[...String(n.b.v)].map(c=>SUP[c]).join('');
+      else e='^'+show(n.b,4);
+      return par(show(n.a,5)+e,4);
+    }
+    case 'fn':return n.n+'('+show(n.a,0)+')';
+  }
+}
+function build(src){
+  if(!String(src).trim()) return {empty:true};
+  try{
+    const ast=parse(tokenize(prep(src)));
+    const f=toFn(ast);
+    return {ast,f,str:show(ast)};
+  }catch(e){return {err:e.message};}
+}
+function same(fa,fb){
+  const xs=[-7.3,-5.1,-3.7,-2.2,-1.1,-0.4,0.3,0.9,1.7,2.6,3.9,5.5,7.2];
+  let n=0;
+  for(const x of xs){
+    const a=fa(x),b=fb(x);
+    if(!isFinite(a)||!isFinite(b)) continue;
+    n++;
+    if(Math.abs(a-b)>1e-6*(1+Math.abs(a)+Math.abs(b))) return false;
+  }
+  return n>=5;
+}
+
+/* ---------- Numerik ---------- */
+function bisect(g,a,b){
+  let ga=g(a);
+  for(let i=0;i<70;i++){const m=(a+b)/2,gm=g(m); if(ga*gm<=0){b=m;}else{a=m;ga=gm;}}
+  return (a+b)/2;
+}
+function dedupe(arr,tol){
+  const r=[];arr.sort((p,q)=>p-q).forEach(x=>{if(!r.length||x-r[r.length-1]>tol) r.push(x);});
+  return r;
+}
+function maxAbs(g,a,b){let m=0;for(let i=0;i<=400;i++){const v=Math.abs(g(a+(b-a)*i/400)); if(isFinite(v)&&v>m)m=v;}return m;}
+function signRoots(g,a,b,strict){
+  if(maxAbs(g,a,b)<1e-12) return [];
+  const NS=1600,out=[];let px=a,pv=g(a);
+  for(let i=1;i<=NS;i++){
+    const x=a+(b-a)*i/NS,v=g(x);
+    if(isFinite(pv)&&isFinite(v)){ if(pv===0) out.push(px); else if(pv*v<0) out.push(bisect(g,px,x)); }
+    px=x;pv=v;
+  }
+  if(pv===0) out.push(px);
+  let r=dedupe(out,(b-a)*1e-5);
+  if(strict){const h=(b-a)*1e-4; r=r.filter(x=>g(x-h)*g(x+h)<0);}
+  return r;
+}
+function stationary(f1,f2,a,b){
+  if(maxAbs(f1,a,b)<1e-12) return [];
+  const r=signRoots(f1,a,b,false);
+  const scale=1+maxAbs(f1,a,b);
+  signRoots(f2,a,b,false).forEach(x=>{if(Math.abs(f1(x))<1e-7*scale) r.push(x);});
+  return dedupe(r,(b-a)*1e-5);
+}
+function niceStep(range,target){
+  const raw=range/target,mag=Math.pow(10,Math.floor(Math.log10(raw))),nm=raw/mag;
+  return (nm<1.5?1:nm<3?2:nm<7?5:10)*mag;
+}
+function fmt(v){
+  if(!isFinite(v)) return '–';
+  if(Math.abs(v)<1e-9) return '0';
+  return String(parseFloat(v.toFixed(3))).replace('-','−');
+}
+const near0=v=>Math.abs(v)<1e-5;
+
+/* ---------- Zustand ---------- */
+const PRESETS=[
+  {n:'x³ − 6x² + 9x + 1  (Beispiel im Theorieblatt)',s:'x^3-6x^2+9x+1',x:[-1,5],y:[-2,8],st:0.1,st0:0.01},
+  {n:'x³ − 3x',s:'x^3-3x',x:[-3,3],y:[-4,4],st:0.1,st0:0.01},
+  {n:'2x³ − 3x² − 12x + 5',s:'2x^3-3x^2-12x+5',x:[-3,4],y:[-20,20],st:0.1,st0:0.01},
+  {n:'x⁴ − 8x² + 3',s:'x^4-8x^2+3',x:[-3.5,3.5],y:[-14,10],st:0.1,st0:0.01},
+  {n:'x³ − 3x² + 3x + 1  (Sattelpunkt)',s:'x^3-3x^2+3x+1',x:[-1,3],y:[-3,6],st:0.1,st0:0.01},
+  {n:'x⁴ − 4x³  (Sattelpunkt und Tiefpunkt)',s:'x^4-4x^3',x:[-1,4.5],y:[-30,10],st:0.1,st0:0.01},
+  {n:'★ Sonderfall: x⁴ − 4x³ + 6x²',s:'x^4-4x^3+6x^2',x:[-1,2.5],y:[-1,14],st:0.1,st0:0.01,note:'Bei dieser Funktion gibt es eine Stelle mit f″ = 0, die trotzdem kein Wendepunkt ist. Finde sie. Du brauchst dazu auch f⁽⁴⁾(x), die vierte Ableitung (Feld unter f‴).'},
+  {n:'x⁴ − 2x³',s:'x^4-2x^3',x:[-1.5,2.5],y:[-3,4],st:0.1,st0:0.01},
+  {n:'⅓x³ − 2x² + 3x',s:'(1/3)x^3-2x^2+3x',x:[-1,5],y:[-3,7],st:0.1,st0:0.01},
+  {n:'x⁴  (Tiefpunkt trotz f″(0) = 0)',s:'x^4',x:[-2,2],y:[-1,5],st:0.1,st0:0.01},
+  {n:'x⁵ − 5x³',s:'x^5-5x^3',x:[-2.5,2.5],y:[-20,20],st:0.1,st0:0.01},
+  {n:'Achterbahn: 0.001x³ − 0.12x² + 3.6x',s:'0.001x^3-0.12x^2+3.6x',x:[0,60],y:[-5,40],st:1,st0:1}
+];
+const S={phase:1,preset:0,src:PRESETS[0].s,xmin:-1,xmax:5,ymin:-2,ymax:8,autoY:false,step:0.01,stepTouched:false,stepSwitched:false,stepLater:0.01,
+  markers:[],mode:'k',d1:'',d2:'',d3:'',d4:'',checked:{k:false,w:false},hover:null,tips:false,tan:false,showTrue:false,color:true};
+let nid=1,lastF=null,T={},D={},MK={};
+const cv={f:$('#cvF'),d1:$('#cvD1'),d2:$('#cvD2')};
+const geom={};
+
+function truthFrom(F){
+  const a0=F.ast,a1=derive(a0),a2=derive(a1),a3=derive(a2),a4=derive(a3);
+  return {f:F.f,f1:toFn(a1),f2:toFn(a2),f3:toFn(a3),f4:toFn(a4)};
+}
+function matchMarkers(type){
+  const truth=type==='k'?T.cp:T.wp;
+  const items=S.markers.filter(m=>m.type===type).map(m=>({m,r:null,st:'no'}));
+  const tol=S.step/2+1e-9, pairs=[];
+  items.forEach((o,i)=>truth.forEach((r,j)=>{const d=Math.abs(o.m.x-r);if(d<=tol)pairs.push({i,j,d});}));
+  pairs.sort((a,b)=>a.d-b.d);
+  const um=new Set(),ut=new Set();
+  pairs.forEach(p=>{if(um.has(p.i)||ut.has(p.j))return;um.add(p.i);ut.add(p.j);items[p.i].r=truth[p.j];items[p.i].st='ok';});
+  items.forEach((o,i)=>{if(!um.has(i)&&pairs.some(p=>p.i===i))o.st='dup';});
+  return {items,missing:truth.length-ut.size,total:truth.length};
+}
+function compute(){
+  const F=build(S.src);
+  S.fb=F;
+  if(F.f) lastF=F;
+  if(!lastF){T={};D={};MK={k:{items:[],missing:0,total:0},w:{items:[],missing:0,total:0}};T.cp=[];T.wp=[];return;}
+  T=truthFrom(lastF);
+  T.cp=stationary(T.f1,T.f2,S.xmin,S.xmax);
+  T.wp=signRoots(T.f2,S.xmin,S.xmax,true);
+  D.d1=build(S.d1);D.d2=build(S.d2);D.d3=build(S.d3);D.d4=build(S.d4);
+  MK.k=matchMarkers('k');MK.w=matchMarkers('w');
+}
+const resolved=()=>!!(D.d1&&D.d1.f);
+function xEval(info){return (resolved()&&info.r!=null)?info.r:info.m.x;}
+
+/* ---------- Zeichnen ---------- */
+function colors(){
+  const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  return {surface:v('--surface'),ink:v('--ink'),muted:v('--muted'),grid:v('--grid'),axis:v('--axis'),line:v('--line'),f:v('--f'),f1:v('--f1'),f2:v('--f2'),
+    left:v('--left'),right:v('--right'),ok:v('--ok'),bad:v('--bad'),accent:v('--accent')};
+}
+function autoRange(fn){
+  let lo=0,hi=0;
+  for(let i=0;i<=300;i++){const y=fn(S.xmin+(S.xmax-S.xmin)*i/300);if(isFinite(y)){lo=Math.min(lo,y);hi=Math.max(hi,y);}}
+  if(hi-lo<1e-9){lo=-1;hi=1;}
+  const pad=0.12*(hi-lo);
+  return [Math.max(lo-pad,-1e7),Math.min(hi+pad,1e7)];
+}
+function fRange(){
+  if(S.autoY&&T.f) return autoRange(T.f);
+  let a=S.ymin,b=S.ymax; if(!(b>a)){b=a+1;}
+  return [a,b];
+}
+function drawPanel(key,title,color,fn,rangeFn,opts){
+  const c=cv[key],dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
+  if(!W||!H) return;
+  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const C=colors(),L={ml:48,mr:14,mt:12,mb:22},pw=W-L.ml-L.mr,ph=H-L.mt-L.mb;
+  g.font='11px Inter, system-ui, sans-serif';
+  g.fillStyle=C.surface;g.fillRect(0,0,W,H);
+  const noFn=!fn;
+  const yr=noFn?[-1,1]:rangeFn();
+  const X=x=>L.ml+(x-S.xmin)/(S.xmax-S.xmin)*pw, Y=y=>L.mt+(yr[1]-y)/(yr[1]-yr[0])*ph;
+  geom[key]={X,Y,L,pw,ph,W,H,invX:px=>S.xmin+(px-L.ml)/pw*(S.xmax-S.xmin)};
+  // Gitter
+  const sx=niceStep(S.xmax-S.xmin,Math.max(4,pw/80)), sy=niceStep(yr[1]-yr[0],Math.max(3,ph/42));
+  g.lineWidth=1;g.strokeStyle=C.grid;g.fillStyle=C.muted;g.textAlign='center';g.textBaseline='top';
+  g.beginPath();
+  for(let x=Math.ceil(S.xmin/sx)*sx;x<=S.xmax+1e-9;x+=sx){const px=Math.round(X(x))+.5;g.moveTo(px,L.mt);g.lineTo(px,L.mt+ph);}
+  for(let y=Math.ceil(yr[0]/sy)*sy;y<=yr[1]+1e-9;y+=sy){const py=Math.round(Y(y))+.5;g.moveTo(L.ml,py);g.lineTo(L.ml+pw,py);}
+  g.stroke();
+  for(let x=Math.ceil(S.xmin/sx)*sx;x<=S.xmax+1e-9;x+=sx){g.fillText(fmt(Math.abs(x)<1e-9?0:x),X(x),L.mt+ph+5);}
+  g.textAlign='right';g.textBaseline='middle';
+  for(let y=Math.ceil(yr[0]/sy)*sy;y<=yr[1]+1e-9;y+=sy){g.fillText(fmt(Math.abs(y)<1e-9?0:y),L.ml-6,Y(y));}
+  // Achsen
+  g.strokeStyle=C.axis;g.lineWidth=1.4;g.beginPath();
+  if(yr[0]<=0&&yr[1]>=0){g.moveTo(L.ml,Y(0));g.lineTo(L.ml+pw,Y(0));}
+  if(S.xmin<=0&&S.xmax>=0){g.moveTo(X(0),L.mt);g.lineTo(X(0),L.mt+ph);}
+  g.stroke();
+  g.strokeStyle=C.line;g.lineWidth=1;g.strokeRect(L.ml+.5,L.mt+.5,pw,ph);
+  // Titel
+  g.textAlign='left';g.textBaseline='top';g.font='600 13px Inter, system-ui, sans-serif';g.fillStyle=color;g.fillText(title,L.ml+8,L.mt+6);
+  if(noFn){
+    g.fillStyle=C.muted;g.font='13px Inter, system-ui, sans-serif';g.textAlign='center';g.textBaseline='middle';
+    g.fillText(opts.empty,L.ml+pw/2,L.mt+ph/2);
+    return;
+  }
+  // senkrechte Hilfslinien durch Markierungen
+  g.save();g.beginPath();g.rect(L.ml,L.mt,pw,ph);g.clip();
+  const pts=markerPoints();
+  g.setLineDash([3,4]);g.lineWidth=1;
+  pts.forEach(p=>{g.strokeStyle=p.type==='k'?C.f1:C.f2;g.globalAlpha=.45;g.beginPath();g.moveTo(X(p.x),L.mt);g.lineTo(X(p.x),L.mt+ph);g.stroke();});
+  g.globalAlpha=1;g.setLineDash([]);
+  // Kontrollkurve
+  if(opts.truth){g.strokeStyle=C.axis;g.lineWidth=2;g.setLineDash([6,5]);pathOf(g,opts.truth,X,Y,pw);g.setLineDash([]);}
+  // Kurve
+  g.lineWidth=2.4;g.lineJoin='round';
+  if(opts.curvature) curved(g,fn,X,Y,pw,opts.curvature,C); else {g.strokeStyle=color;pathOf(g,fn,X,Y,pw);}
+  // Hover
+  const hv=S.hover;
+  if(hv){
+    g.strokeStyle=C.accent;g.globalAlpha=.55;g.lineWidth=1;g.setLineDash([2,3]);
+    g.beginPath();g.moveTo(X(hv.x),L.mt);g.lineTo(X(hv.x),L.mt+ph);g.stroke();g.setLineDash([]);g.globalAlpha=1;
+    if(opts.tangent&&S.tan&&T.f1){
+      const m=T.f1(hv.x),y0=fn(hv.x),hw=(S.xmax-S.xmin)*0.16;
+      if(isFinite(m)&&isFinite(y0)){
+        g.strokeStyle=C.accent;g.lineWidth=2;g.beginPath();g.moveTo(X(hv.x-hw),Y(y0-m*hw));g.lineTo(X(hv.x+hw),Y(y0+m*hw));g.stroke();
+      }
+    }
+  }
+  g.restore();
+  // Markierungen
+  pts.forEach(p=>{
+    const y=opts.pointY?opts.pointY(p.x):null; if(y==null||!isFinite(y)) return;
+    const px=X(p.x),py=Y(y); if(py<L.mt-2||py>L.mt+ph+2) return;
+    drawMarker(g,p.type,px,py,p.st,C);
+  });
+  if(hv){
+    const y=opts.hoverY?opts.hoverY(hv.x):null;
+    if(y!=null&&isFinite(y)){const py=Y(y);if(py>=L.mt&&py<=L.mt+ph){g.fillStyle=C.surface;g.strokeStyle=C.accent;g.lineWidth=2;g.beginPath();g.arc(X(hv.x),py,4.5,0,6.283);g.fill();g.stroke();}}
+  }
+  if(opts.legend){
+    g.font='12px Inter, system-ui, sans-serif';g.textAlign='right';g.textBaseline='top';
+    g.fillStyle=C.right;g.fillText('Rechtskurve  f″ < 0',L.ml+pw-8,L.mt+6);
+    g.fillStyle=C.left;g.fillText('Linkskurve  f″ > 0',L.ml+pw-8,L.mt+22);
+  }
+}
+function pathOf(g,fn,X,Y,pw){
+  const NS=Math.max(300,Math.floor(pw));let pen=false;g.beginPath();
+  for(let i=0;i<=NS;i++){
+    const x=S.xmin+(S.xmax-S.xmin)*i/NS,y=fn(x);
+    if(!isFinite(y)){pen=false;continue;}
+    const sy=Y(y); if(Math.abs(sy)>1e5){pen=false;continue;}
+    if(!pen){g.moveTo(X(x),sy);pen=true;}else g.lineTo(X(x),sy);
+  }
+  g.stroke();
+}
+function curved(g,fn,X,Y,pw,f2,C){
+  const NS=Math.max(300,Math.floor(pw));let prev=null,col=null;
+  for(let i=0;i<=NS;i++){
+    const x=S.xmin+(S.xmax-S.xmin)*i/NS,y=fn(x);
+    if(!isFinite(y)){prev=null;continue;}
+    const sy=Y(y);
+    if(prev&&Math.abs(sy)<1e5){
+      const c2=f2((x+prev.x)/2),cl=!isFinite(c2)||Math.abs(c2)<1e-9?C.f:(c2>0?C.left:C.right);
+      if(cl!==col){g.stroke();g.beginPath();g.strokeStyle=cl;col=cl;g.moveTo(X(prev.x),prev.sy);}
+      g.lineTo(X(x),sy);
+    }
+    prev={x,sy};
+  }
+  g.stroke();
+}
+function drawMarker(g,type,px,py,st,C){
+  g.save();g.translate(px,py);
+  const col=type==='k'?C.f1:C.f2;
+  const ring=st==='ok'?C.ok:(st==='no'||st==='dup')?C.bad:null;
+  if(type==='w')g.rotate(Math.PI/4);
+  const r=type==='k'?7:6;
+  g.beginPath();
+  if(type==='k')g.arc(0,0,r,0,6.283);else g.rect(-r,-r,2*r,2*r);
+  if(ring){g.lineWidth=5;g.strokeStyle=ring;g.stroke();}
+  g.lineWidth=2.5;g.strokeStyle=C.surface;g.stroke();
+  g.fillStyle=col;g.fill();
+  g.restore();
+}
+function markerPoints(){
+  const out=[];
+  ['k','w'].forEach(t=>{
+    if(!MK[t]) return;
+    MK[t].items.forEach(info=>{out.push({type:t,x:xEval(info),st:S.checked[t]?info.st:'',m:info.m,info});});
+  });
+  return out;
+}
+function draw(){
+  if(!T.f){ return; }
+  const dv=D.d1&&D.d1.f?D.d1.f:null, d2=D.d2&&D.d2.f?D.d2.f:null;
+  drawPanel('f','f(x)',colors().f,T.f,fRange,{
+    pointY:x=>T.f(x),tangent:true,hoverY:x=>T.f(x),
+    curvature:(S.phase>=5&&S.color&&d2)?d2:null,legend:(S.phase>=5&&S.color&&d2)
+  });
+  if(!$('#pan1').hidden) drawPanel('d1','f′(x)',colors().f1,dv,()=>autoRange(dv),{
+    empty:'Gib rechts f′(x) ein, dann erscheint hier dein Graph.',pointY:x=>dv(x),hoverY:x=>dv(x),truth:S.showTrue?T.f1:null});
+  if(!$('#pan2').hidden) drawPanel('d2','f″(x)',colors().f2,d2,()=>autoRange(d2),{
+    empty:'Gib rechts f″(x) ein, dann erscheint hier dein Graph.',pointY:x=>d2(x),hoverY:x=>d2(x),truth:S.showTrue?T.f2:null});
+}
+
+/* ---------- Texte ---------- */
+const P=[null,
+ {t:'Funktion eingeben und Graphen erkunden',
+  x:'Wähle rechts ein Beispiel oder tippe eine eigene Funktion ein. Schalte rechts unter «Ansicht» die Tangente ein und fahre mit der Maus (oder dem Finger) über den Graphen. Die Tangente zeigt dir in jedem Punkt die Steigung.',
+  a:'<b>Beobachte:</b> Wo ist die Tangente waagrecht? Welche Steigung m steht dort unter dem Graphen?'},
+ {t:'Stellen mit Steigung null markieren',
+  x:'Klicke auf den Graphen, um Punkte mit waagrechter Tangente zu markieren. Das sind die möglichen Extrempunkte. Ein zweiter Klick auf dieselbe Stelle entfernt die Markierung. Das Raster (rechts) ist auf 0.01 eingestellt und lässt sich ändern. Drücke danach auf «Markierungen prüfen».',
+  a:'<b>Überlege:</b> Ist jeder markierte Punkt ein Hoch- oder Tiefpunkt? Probiere x³ − 3x² + 3x + 1 aus.'},
+ {t:'Ableitung berechnen und vergleichen',
+  x:'Berechne f′(x) von Hand (Potenzregel) und gib sie rechts ein. Unter dem Graphen von f erscheint der Graph von f′. Deine Markierungen wandern mit nach unten.',
+  a:'<b>Beobachte:</b> Wo liegen die türkisen Punkte im Graphen von f′? Was gilt also für f′ an einer Stelle mit waagrechter Tangente?'},
+ {t:'Wendepunkte markieren',
+  x:'Wo wechselt der Graph von einer Linkskurve zu einer Rechtskurve (oder umgekehrt)? Wähle rechts «Wendepunkt» und markiere diese Stellen. Schau danach im Graphen von f′ bei diesen Stellen nach.',
+  a:'<b>Beobachte:</b> Was haben die violetten Punkte im Graphen von f′ Besonderes? Wie verhält sich dort die Steigung von f?'},
+ {t:'Zweite Ableitung und Art der Punkte',
+  x:'Berechne f″(x) und gib sie ein. Der Graph von f wird nach der Krümmung eingefärbt. Die Tabelle unten fasst zusammen, was bei jedem markierten Punkt gilt. Bei f″ = 0 helfen die höheren Ableitungen f‴(x) und f⁽⁴⁾(x).',
+  a:'<b>Beobachte:</b> Welches Vorzeichen hat f″ bei Hochpunkten, welches bei Tiefpunkten? Was gilt für f″ bei Wendepunkten?'}
+];
+const TIPS=[null,
+  'Schalte unter «Ansicht» die Tangente ein. Waagrecht heisst: Die Steigung ist m = 0.',
+  'Suche Stellen mit m = 0. Es gibt auch waagrechte Tangenten, die weder bei einem Hochpunkt noch bei einem Tiefpunkt liegen.',
+  'Potenzregel: (xⁿ)′ = n·xⁿ⁻¹. Der Faktor vor x bleibt stehen, Konstanten fallen weg. Beispiel: (3x²)′ = 6x.',
+  'An einem Wendepunkt durchquert die Tangente den Graphen. Schau auch im Graphen von f′ nach, was dort mit der Steigung passiert.',
+  'Leite f′(x) nochmals ab. An einer Stelle mit f′ = 0 gilt: f″ negativ ergibt einen Hochpunkt, f″ positiv einen Tiefpunkt.'];
+function merkeHTML(){
+  const m=[];
+  if(S.phase>=3&&D.d1&&D.d1.f&&same(D.d1.f,T.f1))
+    m.push('<b>Merke:</b> Stellen mit waagrechter Tangente sind <b>Nullstellen von f′</b>. Du findest sie rechnerisch mit f′(x) = 0.');
+  if(S.phase>=4&&D.d1&&D.d1.f&&same(D.d1.f,T.f1)&&MK.w.items.some(o=>o.st==='ok'))
+    m.push('<b>Merke:</b> An einem Wendepunkt ist die Steigung von f am grössten oder am kleinsten. Dort hat f′ einen Hoch- oder Tiefpunkt.');
+  if(S.phase>=5&&D.d2&&D.d2.f&&same(D.d2.f,T.f2))
+    m.push('<b>Merke:</b> Wendestellen sind Nullstellen von f″. Bei einem möglichen Extrempunkt entscheidet das Vorzeichen: f″ &lt; 0 Hochpunkt, f″ &gt; 0 Tiefpunkt.');
+  return m.join('<br>');
+}
+function derivMsg(el,Dd,truthFn,hint){
+  if(Dd.empty){el.className='msg info';el.textContent='';return;}
+  if(Dd.err){el.className='msg bad';el.textContent='Eingabe nicht lesbar: '+Dd.err+'.';return;}
+  const ok=same(Dd.f,truthFn);
+  el.className='msg '+(ok?'ok':'bad');
+  el.textContent=(ok?'✓ Stimmt. ':'✗ Stimmt noch nicht. ')+'Gelesen als: '+Dd.str;
+}
+function checkMsg(type){
+  const R=MK[type],n=R.items.length,ok=R.items.filter(o=>o.st==='ok').length,bad=n-ok;
+  const noun=type==='k'?'Stellen mit waagrechter Tangente':'Wendepunkte';
+  if(R.total===0&&n===0) return {c:'ok',t:'Richtig: Im sichtbaren Bereich gibt es keine '+noun+'.'};
+  if(n===0) return {c:'info',t:'Du hast noch nichts markiert.'};
+  if(R.missing===0&&bad===0) return {c:'ok',t:'✓ Alle '+R.total+' '+noun+' gefunden, nichts Überflüssiges markiert.'};
+  let t=ok+' von '+n+' Markierungen stimmen.';
+  if(bad) t+=' '+bad+(bad>1?' Markierungen liegen':' Markierung liegt')+' daneben (rot).';
+  if(R.missing>0) t+=' Es fehlen noch '+R.missing+' im sichtbaren Bereich.';
+  return {c:(bad||R.missing)?'bad':'ok',t};
+}
+
+/* ---------- Oberfläche ---------- */
+function befund(p,x){
+  const d1=D.d1&&D.d1.f?D.d1.f:null,d2=D.d2&&D.d2.f?D.d2.f:null,d3=D.d3&&D.d3.f?D.d3.f:null,d4=D.d4&&D.d4.f?D.d4.f:null;
+  const v1=d1?d1(x):NaN,v2=d2?d2(x):NaN,v3=d3?d3(x):NaN,v4=d4?d4(x):NaN;
+  if(p.type==='k'){
+    if(!d1) return ['','Gib f′(x) ein.'];
+    if(!near0(v1)) return ['bad','f′(x) ≠ 0: hier ist die Tangente nicht waagrecht.'];
+    if(!d2) return ['ok','f′(x) = 0 ✓ möglicher Extrempunkt.'];
+    if(v2<-1e-5) return ['ok','f″ < 0: Hochpunkt'];
+    if(v2>1e-5) return ['ok','f″ > 0: Tiefpunkt'];
+    if(!d3) return ['','f″ = 0: keine Aussage. Berechne f‴.'];
+    if(!near0(v3)) return ['ok','f″ = 0 und f‴ ≠ 0: Sattelpunkt'];
+    if(!d4) return ['','f″ = f‴ = 0: weiter ableiten (f⁽⁴⁾).'];
+    if(v4<-1e-5) return ['ok','f″ = f‴ = 0, f⁽⁴⁾ < 0: Hochpunkt'];
+    if(v4>1e-5) return ['ok','f″ = f‴ = 0, f⁽⁴⁾ > 0: Tiefpunkt'];
+    return ['','f″ = f‴ = f⁽⁴⁾ = 0: weiter ableiten.'];
+  }
+  if(!d2) return ['',d1?'Gib f″(x) ein.':'Gib f′(x) und f″(x) ein.'];
+  if(!near0(v2)) return ['bad','f″(x) ≠ 0: hier wechselt die Krümmung nicht.'];
+  let s='f″ = 0 ✓';
+  if(d3){ if(!near0(v3)) s+=', f‴ ≠ 0: Wendepunkt'; else if(!d4) s+=', f‴ = 0: weiter ableiten (f⁽⁴⁾)'; else if(!near0(v4)) return ['bad',s+', f‴ = 0 und f⁽⁴⁾ ≠ 0 (n = 4 gerade): kein Wendepunkt']; else s+=', f‴ = f⁽⁴⁾ = 0: weiter ableiten'; } else s+=' möglicher Wendepunkt (f‴ prüfen)';
+  if(d1&&near0(v1)&&(!d3||!near0(v3))) s+=' mit waagrechter Tangente: Sattelpunkt';
+  return ['ok',s];
+}
+function renderTable(){
+  const pts=markerPoints().sort((a,b)=>a.x-b.x);
+  const card=$('#tableCard');
+  card.hidden=!(S.phase>=3&&pts.length>0);
+  if(card.hidden) return;
+  const hasD2=D.d2&&D.d2.f,hasD3=D.d3&&D.d3.f,hasD4=D.d4&&D.d4.f;
+  let h='<thead><tr><th>Art</th><th>x</th><th>f(x)</th><th>f′(x)</th>'+(hasD2?'<th>f″(x)</th>':'')+(hasD3?'<th>f‴(x)</th>':'')+(hasD4?'<th>f⁽⁴⁾(x)</th>':'')+'<th>Befund</th></tr></thead><tbody>';
+  pts.forEach(p=>{
+    const x=p.x,v=fn=>fn&&fn.f?fmt(fn.f(x)):'–';
+    const [cls,txt]=befund(p,x);
+    h+='<tr><td>'+(p.type==='k'?'<span class="dot"></span> Steigung 0':'<span class="dot w"></span> Wendepunkt')+'</td><td>'+fmt(x)+'</td><td>'+fmt(T.f(x))+'</td><td>'+v(D.d1)+'</td>'+
+      (hasD2?'<td>'+v(D.d2)+'</td>':'')+(hasD3?'<td>'+v(D.d3)+'</td>':'')+(hasD4?'<td>'+v(D.d4)+'</td>':'')+'<td class="bef '+cls+'">'+txt+'</td></tr>';
+  });
+  $('#tbl').innerHTML=h+'</tbody>';
+}
+function render(){
+  compute();
+  // Stepper
+  document.querySelectorAll('.step').forEach(b=>{const p=+b.dataset.p;b.setAttribute('aria-current',p===S.phase?'step':'false');b.classList.toggle('done',p<S.phase);});
+  const ph=P[S.phase];
+  $('#tBadge').textContent='Schritt '+S.phase+' von 5';
+  $('#tTitle').textContent=ph.t;$('#tText').textContent=ph.x;$('#tAsk').innerHTML=ph.a;
+  const mh=merkeHTML();
+  $('#tMerke').hidden=!S.tips;$('#tMerke').innerHTML='<b>Tipp:</b> '+TIPS[S.phase]+(mh?'<br>'+mh:'');
+  $('#tipBtn').textContent=S.tips?'Tipps ausblenden':'Tipps anzeigen';$('#tipBtn').setAttribute('aria-expanded',String(S.tips));
+  $('#prev').disabled=S.phase===1;$('#next').disabled=S.phase===5;
+  // Sichtbarkeit
+  $('#pan1').hidden=S.phase<3;$('#pan2').hidden=S.phase<5;
+  $('#cDer').hidden=S.phase<3;$('#d2box').hidden=S.phase<5;
+  $('#modeSeg').hidden=S.phase<4;
+  $('#cMark').style.opacity=S.phase<2?.55:1;
+  $('#check').disabled=S.phase<2;
+  $('#mK').setAttribute('aria-pressed',S.mode==='k');$('#mW').setAttribute('aria-pressed',S.mode==='w');
+  // Funktion
+  const F=S.fb;
+  const fr=$('#fread');
+  if(F.err){fr.className='read msg bad';fr.textContent='Eingabe nicht lesbar: '+F.err+'.';}
+  else if(F.empty){fr.className='read';fr.textContent='Gib eine Funktion ein.';}
+  else{fr.className='read';fr.textContent='Gelesen als: f(x) = '+F.str;}
+  const pr=S.preset>=0?PRESETS[S.preset]:null;
+  $('#fnote').hidden=!(pr&&pr.note);$('#fnote').innerHTML=(pr&&pr.note)?'<b>Sonderfall</b>'+pr.note:'';
+  // Ansicht
+  ['xmin','xmax','ymin','ymax'].forEach(k=>{const el=$('#'+k);if(document.activeElement!==el)el.value=+S[k].toFixed(4);});
+  $('#ymin').disabled=$('#ymax').disabled=S.autoY;$('#autoY').checked=S.autoY;
+  // Ableitungen
+  if(T.f){
+    derivMsg($('#m1'),D.d1,T.f1,'Tipp: Potenzregel (xⁿ)′ = n·xⁿ⁻¹, Konstanten fallen weg.');
+    derivMsg($('#m2'),D.d2,T.f2,'Leite f′(x) nochmals ab.');
+    if(D.d3.empty){$('#m3').textContent='';}else derivMsg($('#m3'),D.d3,T.f3,'Leite f″(x) nochmals ab.');
+    if(D.d4.empty){$('#m4').textContent='';}else derivMsg($('#m4'),D.d4,T.f4,'Leite f‴(x) nochmals ab.');
+  }
+  // Marker-Liste
+  const pts=markerPoints().sort((a,b)=>a.x-b.x);
+  $('#chipsEmpty').hidden=pts.length>0;
+  $('#chips').innerHTML=pts.map(p=>{
+    const st=p.st,lab=st==='ok'?'✓':st==='dup'?'doppelt':st==='no'?'✗':'';
+    return '<li class="chip '+st+'"><span class="dot'+(p.type==='w'?' w':'')+'"></span><span class="sp">('+fmt(p.x)+' | '+fmt(T.f?T.f(p.x):NaN)+')</span><span class="stt">'+lab+'</span><button data-del="'+p.m.id+'" aria-label="Markierung entfernen">×</button></li>';
+  }).join('');
+  const cm=$('#chkMsg');
+  if(S.checked[S.mode]){const r=checkMsg(S.mode);cm.className='msg '+r.c;cm.textContent=r.t;}
+  else{cm.className='msg info';cm.textContent=S.phase<2?'Markieren geht ab Schritt 2.':'';}
+  renderTable();
+  draw();
+  readout();
+}
+function readout(){
+  const el=$('#readout');
+  if(!T.f){el.textContent='';return;}
+  if(!S.hover){el.textContent=S.phase<2?'Fahre mit der Maus über den Graphen. Die Tangente schaltest du unter «Ansicht» ein.':'Fahre über den Graphen, klicke zum Markieren.';return;}
+  const x=S.hover.x,y=T.f(x),m=T.f1(x);
+  el.innerHTML='x = <b>'+fmt(x)+'</b> &nbsp; f(x) = <b>'+fmt(y)+'</b>'+(S.tan?' &nbsp; Steigung m = <b>'+fmt(m)+'</b>':'');
+}
+function resetChecks(){S.checked={k:false,w:false};}
+function snap(x){return Math.round(x/S.step)*S.step;}
+function hoverAt(key,e){
+  const gm=geom[key];if(!gm) return;
+  const r=cv[key].getBoundingClientRect();
+  const px=e.clientX-r.left;
+  let x=gm.invX(px);
+  if(px<gm.L.ml||px>gm.L.ml+gm.pw){S.hover=null;}
+  else{
+    x=Math.min(S.xmax,Math.max(S.xmin,snap(x)));
+    x=parseFloat(x.toFixed(6));
+    // Magnet: liegt ein Extrem- oder Wendepunkt innerhalb von 0.01, springt der Cursor genau darauf
+    const cand=(T.cp||[]).concat(T.wp||[]);
+    let best=null;
+    cand.forEach(r=>{const d=Math.abs(x-r);if(d<=0.01+1e-9&&(best===null||d<best.d))best={r,d};});
+    if(best) x=parseFloat(best.r.toFixed(9));
+    S.hover={x};
+  }
+  draw();readout();
+}
+function setPreset(i){
+  const p=PRESETS[i];
+  S.preset=i;S.src=p.s;S.xmin=p.x[0];S.xmax=p.x[1];S.ymin=p.y[0];S.ymax=p.y[1];S.autoY=false;S.step=p.st0;S.stepLater=p.st0;S.stepTouched=false;S.stepSwitched=false;
+  S.markers=[];S.d1=S.d2=S.d3=S.d4='';resetChecks();
+  $('#fsrc').value=p.s;$('#step').value=String(p.st0);$('#d1').value=$('#d2').value=$('#d3').value=$('#d4').value='';
+}
+
+/* ---------- Ereignisse ---------- */
+function init(){
+  $('#steps').innerHTML=['Funktion','Steigung null','Ableitung','Wendepunkte','Zweite Ableitung'].map((n,i)=>'<li><button class="step" data-p="'+(i+1)+'"><span class="n">'+(i+1)+'</span>'+n+'</button></li>').join('');
+  $('#preset').innerHTML=PRESETS.map((p,i)=>'<option value="'+i+'">'+p.n+'</option>').join('')+'<option value="-1">Eigene Funktion</option>';
+  setPreset(0);
+  $('#steps').addEventListener('click',e=>{const b=e.target.closest('.step');if(!b)return;go(+b.dataset.p);});
+  $('#tipBtn').onclick=()=>{S.tips=!S.tips;render();};
+  $('#prev').onclick=()=>go(S.phase-1);$('#next').onclick=()=>go(S.phase+1);
+  $('#preset').onchange=e=>{const i=+e.target.value;if(i>=0){setPreset(i);render();}};
+  $('#fsrc').addEventListener('input',e=>{
+    S.src=e.target.value;S.markers=[];resetChecks();
+    if(S.preset!==-1){S.preset=-1;$('#preset').value='-1';S.autoY=true;}
+    render();
+  });
+  ['d1','d2','d3','d4'].forEach(k=>$('#'+k).addEventListener('input',e=>{S[k]=e.target.value;render();}));
+  ['xmin','xmax','ymin','ymax'].forEach(k=>$('#'+k).addEventListener('input',e=>{
+    const v=parseFloat(e.target.value);if(!isFinite(v))return;
+    const t=Object.assign({},S,{[k]:v});
+    if(!(t.xmax>t.xmin)||!(t.ymax>t.ymin))return;
+    S[k]=v;S.markers=S.markers.filter(m=>m.x>=S.xmin&&m.x<=S.xmax);resetChecks();render();
+  }));
+  $('#autoY').onchange=e=>{S.autoY=e.target.checked;if(S.autoY&&T.f){const r=autoRange(T.f);S.ymin=r[0];S.ymax=r[1];}render();};
+  $('#step').onchange=e=>{S.step=parseFloat(e.target.value);S.stepTouched=true;resetChecks();render();};
+  $('#chkTan').onchange=e=>{S.tan=e.target.checked;draw();readout();};
+  $('#chkTrue').onchange=e=>{S.showTrue=e.target.checked;draw();};
+  $('#chkColor').onchange=e=>{S.color=e.target.checked;draw();};
+  $('#mK').onclick=()=>{S.mode='k';render();};$('#mW').onclick=()=>{S.mode='w';render();};
+  $('#check').onclick=()=>{S.checked[S.mode]=true;render();};
+  $('#clear').onclick=()=>{S.markers=S.markers.filter(m=>m.type!==S.mode);S.checked[S.mode]=false;render();};
+  $('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;S.markers=S.markers.filter(m=>m.id!==+b.dataset.del);resetChecks();render();});
+  const zoom=f=>{const c=(S.xmin+S.xmax)/2,h=(S.xmax-S.xmin)/2*f;S.xmin=c-h;S.xmax=c+h;
+    if(!S.autoY){const cy=(S.ymin+S.ymax)/2,hy=(S.ymax-S.ymin)/2*f;S.ymin=cy-hy;S.ymax=cy+hy;}
+    S.markers=S.markers.filter(m=>m.x>=S.xmin&&m.x<=S.xmax);resetChecks();render();};
+  $('#zin').onclick=()=>zoom(.8);$('#zout').onclick=()=>zoom(1.25);
+  const pan=d=>{const s=(S.xmax-S.xmin)*d;S.xmin+=s;S.xmax+=s;S.markers=S.markers.filter(m=>m.x>=S.xmin&&m.x<=S.xmax);resetChecks();render();};
+  $('#pl').onclick=()=>pan(-.25);$('#pr').onclick=()=>pan(.25);
+  $('#reset').onclick=()=>{const i=S.preset>=0?S.preset:0;const keep={s:S.src,d1:S.d1,d2:S.d2,d3:S.d3,mk:S.markers};
+    if(S.preset>=0){const p=PRESETS[i];S.xmin=p.x[0];S.xmax=p.x[1];S.ymin=p.y[0];S.ymax=p.y[1];S.autoY=false;}else{S.xmin=-5;S.xmax=5;S.autoY=true;}
+    S.markers=keep.mk.filter(m=>m.x>=S.xmin&&m.x<=S.xmax);resetChecks();render();};
+  ['f','d1','d2'].forEach(k=>{
+    cv[k].addEventListener('pointermove',e=>hoverAt(k,e));
+    cv[k].addEventListener('pointerleave',()=>{S.hover=null;draw();readout();});
+  });
+  cv.f.addEventListener('click',e=>{
+    if(S.phase<2||!S.hover||!T.f) return;
+    const x=S.hover.x,tol=S.step/2+1e-9;
+    const ex=S.markers.find(m=>m.type===S.mode&&Math.abs(m.x-x)<tol);
+    if(ex) S.markers=S.markers.filter(m=>m!==ex); else S.markers.push({id:nid++,type:S.mode,x});
+    S.checked[S.mode]=false;render();
+  });
+  new ResizeObserver(()=>draw()).observe($('#plots'));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw());
+  new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  render();
+}
+function go(p){
+  if(p>S.phase&&!S.stepTouched&&!S.stepSwitched){S.step=S.stepLater;S.stepSwitched=true;$('#step').value=String(S.step);}
+  if(Math.min(5,Math.max(1,p))!==S.phase)S.tips=false;
+  S.phase=Math.min(5,Math.max(1,p));
+  if(S.phase===2)S.mode='k';
+  if(S.phase===4)S.mode='w';
+  if(S.phase<4)S.mode='k';
+  render();
+}
+init();
+})();
+</script>
+
+<p style="text-align:center;margin:24px 0"><a href="/" style="color:inherit;font:14px system-ui">← mathdrian</a></p></body></html>

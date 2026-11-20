@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LGS-Werkstatt</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --surface2:#eceff6; --ink:#18202f; --muted:#576277; --line:#d5dbe7; --grid:#e7ebf3; --axis:#8791a6;
+  --accent:#2d56e0; --accent-ink:#ffffff; --e1:#2d56e0; --e2:#d9480f; --ok:#2b8a3e; --bad:#d6303a; --warn:#b36b00;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+    --accent:#7f9fff; --accent-ink:#0c1226; --e1:#7f9fff; --e2:#ff922b; --ok:#51cf66; --bad:#ff7b84; --warn:#ffc078; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+  --accent:#7f9fff; --accent-ink:#0c1226; --e1:#7f9fff; --e2:#ff922b; --ok:#51cf66; --bad:#ff7b84; --warn:#ffc078; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1100px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--font-head);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.01em}
+h2{font-size:20px;margin-bottom:10px}
+h3{font-size:17px}
+h4{font-size:15px;margin-bottom:4px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.lead{max-width:66ch;color:var(--muted);margin-top:6px}
+header{margin-bottom:18px}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:500;transition:background .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{padding:5px 10px;font-size:13px}
+.steps{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px 5px 6px;font-weight:500;font-size:14px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:12px;font-weight:600}
+.step.done .n{background:color-mix(in srgb,var(--ok) 22%,var(--surface))}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+.step:disabled{opacity:.5;cursor:default}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.stack{display:grid;gap:14px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.mono{font-family:var(--font-mono);font-size:.94em}
+.muted{color:var(--muted)}
+.e1{color:var(--e1)}.e2{color:var(--e2)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.gh{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.gh:first-of-type{margin-top:0}
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.pre{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;font-family:var(--font-mono);font-size:13px;line-height:1.45}
+.pre:hover{background:var(--surface2)}
+.pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.rand{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.seg button{border:0;background:var(--surface);padding:7px 14px;font-weight:500;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.eqrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.eqrow b{font-family:var(--font-mono)}
+input[type=text]{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0;font-family:var(--font-mono);font-size:15px}
+.corow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-family:var(--font-mono)}
+.corow input{width:78px;text-align:center}
+.read{font-size:13px;color:var(--muted);margin-top:6px}
+.read.bad{color:var(--bad)}
+.sysbox{display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:17px;margin:8px 0}
+.brace{font-size:54px;font-weight:300;line-height:.9;color:var(--muted);font-family:var(--font-body)}
+.sysbox .lines{display:grid;gap:4px}
+.sysline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nav{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.82em;line-height:1.15;margin:0 1px}
+.fr i{font-style:normal;padding:0 3px}
+.fr i:first-child{border-bottom:1.5px solid currentColor}
+.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.method{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;display:grid;gap:8px;align-content:start}
+.method:hover{border-color:var(--accent);background:var(--surface2)}
+.method .why{font-size:14px;color:var(--ink)}
+.method .how{font-size:13px;color:var(--muted)}
+.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;color:#fff;width:fit-content}
+.badge.good{background:var(--ok)}.badge.ok2{background:#1c7ed6}.badge.meh{background:var(--warn)}.badge.warn{background:#868e96}
+.rec{position:absolute;top:10px;right:12px;font-size:12px;font-weight:600;color:var(--accent)}
+.lrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:var(--font-mono);font-size:18px;margin:6px 0 12px}
+.lrow input{width:120px;text-align:center}
+.lrow input.wide{width:min(260px,60vw)}
+.fb{border-radius:8px;padding:10px 12px;margin-top:12px;border:1px solid var(--line);display:grid;gap:6px}
+.fb.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));color:var(--ink)}
+.fb.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--surface));color:var(--ink)}
+.fb.info{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--surface));color:var(--ink)}
+.warnbox{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--surface));border-radius:8px;padding:8px 12px;font-size:14px}
+canvas.g{display:block;width:100%;max-width:560px;aspect-ratio:1/1;margin:0 auto;border:1px solid var(--line);border-radius:8px;background:var(--surface);touch-action:none}
+.hover{font-family:var(--font-mono);font-size:13px;color:var(--muted);text-align:center;margin-top:6px;min-height:20px}
+ol.path{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:s}
+ol.path>li{counter-increment:s;position:relative;padding-left:40px}
+ol.path>li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:600;font-size:13px}
+ol.path p{font-size:14px;color:var(--muted);margin-bottom:6px}
+ol.path p.verdict{color:var(--ink);font-weight:500;margin-top:6px}
+.calc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;display:grid;gap:3px;overflow-x:auto}
+.cr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;font-family:var(--font-mono);font-size:15px;align-items:center}
+.co{color:var(--muted);font-size:13px;white-space:nowrap}
+.cr .ce{overflow-wrap:anywhere}
+.lsol{font-family:var(--font-mono);font-size:18px;font-weight:500}
+table{border-collapse:collapse;font-size:14px}
+th,td{padding:5px 12px;border-bottom:1px solid var(--line);text-align:left;font-family:var(--font-mono)}
+th{font-size:12px;color:var(--muted);font-weight:600}
+details.k{margin-top:14px}
+details.k summary{cursor:pointer;font-weight:600}
+.teacher{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
+.teacher .inner{padding:0 18px 14px;max-width:80ch;display:grid;gap:8px}
+.teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Algebra · Lineare Gleichungssysteme</p>
+    <h1>LGS-Werkstatt</h1>
+    <p class="lead">Wähle oder tippe ein Gleichungssystem, suche dir die passende Methode aus, gib deine Lösungsmenge ein und vergleiche mit dem schnellsten Lösungsweg.</p>
+  </header>
+  <ol class="steps" id="steps"></ol>
+
+  <section id="s1" class="stack">
+    <div class="grid2">
+      <div class="card">
+        <h2>Beispiele</h2>
+        <div id="presets"></div>
+        <div class="rand"><span class="muted">Zufällige Aufgabe:</span>
+          <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button></div>
+      </div>
+      <div class="card">
+        <h2>Eigenes System</h2>
+        <div class="seg"><button id="mEq" aria-pressed="true">Gleichungen</button><button id="mCo" aria-pressed="false">Koeffizienten</button></div>
+        <div id="inEq">
+          <div class="eqrow"><b class="e1">(I)</b><input type="text" id="q0" autocomplete="off" spellcheck="false" aria-label="Gleichung I"></div>
+          <div class="eqrow"><b class="e2">(II)</b><input type="text" id="q1" autocomplete="off" spellcheck="false" aria-label="Gleichung II"></div>
+          <p class="read">Schreibweise: <span class="mono">2x + 3y = 12</span>, <span class="mono">y = 2x - 1</span>, <span class="mono">2(x - 1) = y + 3</span>, <span class="mono">x/2 + y/3 = 3</span>, <span class="mono">0.5x</span>.</p>
+        </div>
+        <div id="inCo" hidden>
+          <div class="corow"><b class="e1">(I)</b><input type="text" id="c00" aria-label="a1"> x + <input type="text" id="c01" aria-label="b1"> y = <input type="text" id="c02" aria-label="c1"></div>
+          <div class="corow"><b class="e2">(II)</b><input type="text" id="c10" aria-label="a2"> x + <input type="text" id="c11" aria-label="b2"> y = <input type="text" id="c12" aria-label="c2"></div>
+          <p class="read">Zahlen, Dezimalzahlen oder Brüche (z. B. <span class="mono">-3</span>, <span class="mono">0.5</span>, <span class="mono">2/3</span>).</p>
+        </div>
+        <p class="read" id="sysErr"></p>
+        <div class="sysbox" id="sysPrev"></div>
+        <div class="nav"><button class="btn primary" id="to2">Weiter: Methode wählen →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2" class="stack" hidden>
+    <div class="card"><div class="sysbox" id="rec2"></div></div>
+    <div>
+      <h2>Welche Methode wählst du?</h2>
+      <p class="muted" style="margin-bottom:10px">Die Anzeige sagt dir, wie geschickt jede Methode für dieses System ist. Du darfst trotzdem jede wählen.</p>
+      <div class="methods" id="methods"></div>
+    </div>
+    <div class="nav"><button class="btn" id="back1">← Anderes System</button></div>
+  </section>
+
+  <section id="s3" class="stack" hidden>
+    <div class="card"><div class="sysbox" id="rec3"></div><p class="muted" id="mtag" style="margin-top:6px"></p></div>
+    <div class="card" id="gcard" hidden>
+      <canvas class="g" id="cvG" aria-label="Koordinatensystem mit den beiden Geraden"></canvas>
+      <p class="hover" id="hovG"></p>
+      <p class="warnbox">Achtung: Die graphische Methode ist ungenau. Du liest den Schnittpunkt nur näherungsweise ab. Ganze Zahlen erkennst du sicher, Brüche und Dezimalzahlen nur ungefähr.</p>
+    </div>
+    <div class="card">
+      <h2>Deine Lösungsmenge</h2>
+      <div class="seg" id="amode"><button data-m="one" aria-pressed="true">Eine Lösung</button><button data-m="none" aria-pressed="false">Keine Lösung</button><button data-m="inf" aria-pressed="false">Unendlich viele Lösungen</button></div>
+      <div class="lrow" id="aOne">L = { ( <input type="text" id="ax" autocomplete="off" aria-label="x-Koordinate" placeholder="x"> ; <input type="text" id="ay" autocomplete="off" aria-label="y-Koordinate" placeholder="y"> ) }</div>
+      <div class="lrow" id="aNone" hidden>L = { }</div>
+      <div class="lrow" id="aInf" hidden>L = { (x; y) | <input type="text" class="wide" id="al" autocomplete="off" aria-label="Gleichung der Geraden" placeholder="y = ..."> }</div>
+      <p class="read" id="ahint"></p>
+      <button class="btn primary" id="check">Prüfen</button>
+      <div id="fb" aria-live="polite"></div>
+    </div>
+    <div class="card" id="pcard" hidden>
+      <h2>Der schnellste Lösungsweg</h2>
+      <div id="path"></div>
+      <details class="k" id="kdet"><summary>Kontrollbild im Koordinatensystem</summary>
+        <canvas class="g" id="cvK" aria-label="Kontrollbild" style="margin-top:10px"></canvas><p class="hover" id="hovK"></p></details>
+    </div>
+    <div class="nav"><button class="btn" id="other">Gleiches System, andere Methode</button><button class="btn primary" id="again">Neues System</button></div>
+  </section>
+
+  <details class="teacher">
+    <summary>Für Lehrpersonen: Einsatz im Unterricht</summary>
+    <div class="inner">
+      <p>Die Seite läuft im Browser, ohne Anmeldung. Die Lernenden wählen die Methode selbst und erhalten sofort eine Rückmeldung samt Probe.</p>
+      <ul>
+        <li><b>Methodenwahl üben:</b> Gleiches System mit zwei Methoden lösen lassen und vergleichen, welche geschickter war.</li>
+        <li><b>Sonderfälle:</b> Keine Lösung (parallele Geraden) und unendlich viele Lösungen (gleiche Gerade) sind unter «Sonderfälle» vorbereitet.</li>
+        <li><b>Graphisch:</b> Zeigt die Grenzen des Ablesens, besonders beim Beispiel mit Bruchlösung.</li>
+        <li><b>Übungsmaterial:</b> «Zufällige Aufgabe» erzeugt unbegrenzt neue Systeme in drei Stufen.</li>
+      </ul>
+    </div>
+  </details>
+</div>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Brüche ---------- */
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t;}return a;};
+function Fr(n,d){if(d===undefined)d=1;if(d<0){n=-n;d=-d;}const g=gcd(n,d)||1;return {n:n/g,d:d/g};}
+const fAdd=(a,b)=>Fr(a.n*b.d+b.n*a.d,a.d*b.d);
+const fSub=(a,b)=>Fr(a.n*b.d-b.n*a.d,a.d*b.d);
+const fMul=(a,b)=>Fr(a.n*b.n,a.d*b.d);
+const fDiv=(a,b)=>Fr(a.n*b.d,a.d*b.n);
+const fNeg=a=>Fr(-a.n,a.d);
+const fIs0=a=>a.n===0;
+const fEq=(a,b)=>a.n===b.n&&a.d===b.d;
+const fNum=a=>a.n/a.d;
+const ZERO=Fr(0),ONE=Fr(1);
+
+/* ---------- Parser für lineare Ausdrücke in x und y ---------- */
+const F=(x,y,c)=>({x,y,c});
+const fconst=f=>fIs0(f.x)&&fIs0(f.y);
+const fmAdd=(p,q)=>F(fAdd(p.x,q.x),fAdd(p.y,q.y),fAdd(p.c,q.c));
+const fmSub=(p,q)=>F(fSub(p.x,q.x),fSub(p.y,q.y),fSub(p.c,q.c));
+const fmScale=(p,k)=>F(fMul(p.x,k),fMul(p.y,k),fMul(p.c,k));
+function fmMul(p,q){
+  if(fconst(p)) return fmScale(q,p.c);
+  if(fconst(q)) return fmScale(p,q.c);
+  throw new Error('x und y dürfen nicht miteinander multipliziert werden (das wäre nicht linear).');
+}
+function fmDiv(p,q){
+  if(!fconst(q)) throw new Error('Durch x oder y darf hier nicht geteilt werden (das wäre nicht linear).');
+  if(fIs0(q.c)) throw new Error('Durch 0 kann man nicht teilen.');
+  return fmScale(p,fDiv(ONE,q.c));
+}
+function prep(s){
+  return String(s).toLowerCase().replace(/[−–—]/g,'-').replace(/[·×⋅]/g,'*').replace(/[÷:]/g,'/').replace(/,/g,'.').replace(/\s+/g,'');
+}
+function numFr(str){
+  const m=/^(\d*)\.?(\d*)$/.exec(str);
+  const ip=m[1]||'0',dp=m[2]||'';
+  if(dp.length>6) throw new Error('Zu viele Nachkommastellen.');
+  return Fr(parseInt(ip+dp,10),Math.pow(10,dp.length));
+}
+function tokenize(s){
+  const t=[];let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(/[0-9.]/.test(c)){const m=/^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));if(!m)throw new Error('Diese Zahl kann ich nicht lesen.');t.push({k:'num',v:m[0]});i+=m[0].length;continue;}
+    if('+-*/()'.includes(c)){t.push({k:'op',v:c});i++;continue;}
+    if(c==='x'||c==='y'){t.push({k:'var',v:c});i++;continue;}
+    if(c==='^') throw new Error('Potenzen kommen in linearen Gleichungen nicht vor.');
+    throw new Error('Das Zeichen «'+c+'» kenne ich nicht.');
+  }
+  return t;
+}
+function parseForm(s){
+  const tk=tokenize(s);let p=0;
+  const peek=()=>tk[p],next=()=>tk[p++];
+  const isOp=(t,v)=>t&&t.k==='op'&&t.v===v;
+  const startsF=t=>t&&(t.k==='num'||t.k==='var'||isOp(t,'('));
+  function expr(){let a=term();while(isOp(peek(),'+')||isOp(peek(),'-')){const o=next().v;const b=term();a=o==='+'?fmAdd(a,b):fmSub(a,b);}return a;}
+  function term(){
+    let a=unary();
+    for(;;){
+      const t=peek();if(!t)break;
+      if(isOp(t,'*')){next();a=fmMul(a,unary());}
+      else if(isOp(t,'/')){next();a=fmDiv(a,unary());}
+      else if(startsF(t)){a=fmMul(a,atom());}
+      else break;
+    }
+    return a;
+  }
+  function unary(){
+    if(isOp(peek(),'-')){next();return fmScale(unary(),Fr(-1));}
+    if(isOp(peek(),'+')){next();return unary();}
+    return atom();
+  }
+  function atom(){
+    const t=next();
+    if(!t) throw new Error('Der Ausdruck ist unvollständig.');
+    if(t.k==='num') return F(ZERO,ZERO,numFr(t.v));
+    if(t.k==='var') return t.v==='x'?F(ONE,ZERO,ZERO):F(ZERO,ONE,ZERO);
+    if(isOp(t,'(')){const a=expr();if(!isOp(next(),')'))throw new Error('Eine Klammer fehlt.');return a;}
+    throw new Error('Unerwartetes Zeichen «'+t.v+'».');
+  }
+  if(!tk.length) throw new Error('Der Ausdruck ist unvollständig.');
+  const r=expr();
+  if(p<tk.length) throw new Error(isOp(tk[p],')')?'Eine Klammer ist zu viel.':'Unerwartetes Zeichen «'+tk[p].v+'».');
+  return r;
+}
+function parseEq(raw){
+  const s=prep(raw);
+  if(!s) throw new Error('Bitte eine Gleichung eingeben.');
+  const parts=s.split('=');
+  if(parts.length!==2) throw new Error(parts.length<2?'Es fehlt das Gleichheitszeichen «=».':'Es darf nur ein Gleichheitszeichen vorkommen.');
+  const d=fmSub(parseForm(parts[0]),parseForm(parts[1]));
+  const e={a:d.x,b:d.y,c:fNeg(d.c),orig:String(raw).trim(),iso:null};
+  if(fIs0(e.a)&&fIs0(e.b)) throw new Error('Die Gleichung enthält weder x noch y.');
+  ['x','y'].forEach(v=>{
+    if(parts[0]===v&&!parts[1].includes(v)) e.iso=v;
+    else if(parts[1]===v&&!parts[0].includes(v)) e.iso=v;
+  });
+  return e;
+}
+function eqFromCoef(arr){
+  const f=arr.map(t=>{
+    if(!String(t).trim()) return ZERO;
+    const r=parseForm(prep(t));
+    if(!fconst(r)) throw new Error('In den Feldern dürfen nur Zahlen stehen.');
+    return r.c;
+  });
+  if(fIs0(f[0])&&fIs0(f[1])) throw new Error('Die Gleichung enthält weder x noch y.');
+  return {a:f[0],b:f[1],c:f[2],orig:null,iso:null};
+}
+function parseConst(str){
+  try{const r=parseForm(prep(str));return fconst(r)?r.c:null;}catch(e){return null;}
+}
+
+/* ---------- Darstellung ---------- */
+const MINUS='−';
+function isTerm(f){let d=f.d;if(d<=0)return false;while(d%2===0)d/=2;while(d%5===0)d/=5;return d===1;}
+function decStr(f){return String(parseFloat((Math.abs(f.n)/f.d).toFixed(6)));}
+const frac=(n,d)=>'<span class="fr"><i>'+n+'</i><i>'+d+'</i></span>';
+function numHTML(f,abs){
+  const neg=f.n<0&&!abs,A=Math.abs(f.n);let s;
+  if(f.d===1) s=String(A);
+  else if(isTerm(f)&&f.d<=1000) s=decStr(f);
+  else s=frac(A,f.d);
+  return (neg?MINUS:'')+s;
+}
+function numPlain(f){
+  if(f.d===1) return (f.n<0?MINUS:'')+Math.abs(f.n);
+  if(isTerm(f)&&f.d<=1000) return (f.n<0?MINUS:'')+decStr(f);
+  return (f.n<0?MINUS:'')+Math.abs(f.n)+'/'+f.d;
+}
+const pn=f=>f.n<0?'('+numHTML(f)+')':numHTML(f);
+const pnInt=k=>k<0?'('+MINUS+Math.abs(k)+')':String(k);
+function linSub(terms,vals){
+  let out='',first=true;
+  terms.forEach(([k,v])=>{
+    if(fIs0(k)) return;
+    const neg=k.n<0,ak=neg?fNeg(k):k;let body;
+    if(v==='') body=numHTML(ak,true);
+    else if(vals&&vals[v]) body=(fEq(ak,ONE)?'':numHTML(ak,true)+'·')+pn(vals[v]);
+    else body=(fEq(ak,ONE)?'':numHTML(ak,true))+v;
+    if(first){out+=(neg?MINUS:'')+body;first=false;}
+    else out+=' '+(neg?MINUS:'+')+' '+body;
+  });
+  return out||'0';
+}
+const lin=t=>linSub(t,null);
+const eqStr=(a,b,c)=>lin([[a,'x'],[b,'y']])+' = '+numHTML(c);
+const nm=i=>'<b class="e'+(i+1)+'">('+(i?'II':'I')+')</b>';
+const nmP=i=>'<b class="e'+(i+1)+'">('+(i?'II':'I')+')′</b>';
+const pretty=s=>esc(String(s).trim()).replace(/-/g,MINUS).replace(/\*/g,'·');
+const strip=h=>String(h).replace(/<[^>]*>/g,'');
+const opPlus=(f,name)=>'| '+(f.n<0?'− ':'+ ')+numHTML(fIs0(f)?f:Fr(Math.abs(f.n),f.d),true)+(name||'');
+const opDiv=f=>'| : '+pn(f);
+const FI=n=>Fr(n);
+
+/* ---------- Analyse eines Systems ---------- */
+function analyse(e1,e2){
+  const D=fSub(fMul(e1.a,e2.b),fMul(e2.a,e1.b));
+  let sol;
+  if(!fIs0(D)){
+    sol={type:'one',x:fDiv(fSub(fMul(e1.c,e2.b),fMul(e2.c,e1.b)),D),y:fDiv(fSub(fMul(e1.a,e2.c),fMul(e2.a,e1.c)),D)};
+  }else{
+    const cons=fIs0(fSub(fMul(e1.a,e2.c),fMul(e2.a,e1.c)))&&fIs0(fSub(fMul(e1.b,e2.c),fMul(e2.b,e1.c)));
+    sol={type:cons?'inf':'none'};
+  }
+  return {e1,e2,sol,i1:intEq(e1),i2:intEq(e2)};
+}
+function intEq(e){
+  let L=1;[e.a,e.b,e.c].forEach(f=>{L=L*f.d/gcd(L,f.d);});
+  return {A:e.a.n*L/e.a.d,B:e.b.n*L/e.b.d,C:e.c.n*L/e.c.d,L};
+}
+function needsOrder(e){
+  if(!e.orig) return false;
+  const canon=prep(e.orig).replace(/\*/g,'');
+  const std=strip(eqStr(e.a,e.b,e.c)).replace(/\s/g,'').replace(/−/g,'-');
+  return canon!==std;
+}
+function lineForm(e){ // Gerade als y = mx+q oder x = c
+  if(!fIs0(e.b)) return {vert:false,m:fNeg(fDiv(e.a,e.b)),q:fDiv(e.c,e.b)};
+  return {vert:true,x0:fDiv(e.c,e.a)};
+}
+function infLine(e){
+  return !fIs0(e.b)?'y = '+lin([[fNeg(fDiv(e.a,e.b)),'x'],[fDiv(e.c,e.b),'']]):'x = '+numHTML(fDiv(e.c,e.a));
+}
+
+/* ---------- Lösungswege ---------- */
+const opPlus2=(f,name)=>{const a=f.n<0?fNeg(f):f;return '| '+(f.n<0?'− ':'+ ')+((name&&fEq(a,ONE))?'':numHTML(a,true))+(name||'');};
+function rowsHTML(rows){return '<div class="calc">'+rows.map(r=>'<div class="cr"><span class="ce">'+r.h+'</span><span class="co">'+(r.op||'')+'</span></div>').join('')+'</div>';}
+function stepsHTML(steps){
+  return '<ol class="path">'+steps.map(s=>'<li><h4>'+s.t+'</h4>'+(s.p?'<p>'+s.p+'</p>':'')
+    +(s.blocks?s.blocks.map(rowsHTML).join('<div style="height:6px"></div>'):(s.rows?rowsHTML(s.rows):''))
+    +(s.html||'')+(s.v?'<p class="verdict">'+s.v+'</p>':'')+'</li>').join('')+'</ol>';
+}
+function solveRows(e,v,tag){
+  const w=v==='x'?'y':'x',p=v==='x'?e.a:e.b,r=v==='x'?e.b:e.a;
+  const m=fNeg(fDiv(r,p)),q=fDiv(e.c,p),rows=[{h:(tag?tag+' ':'')+eqStr(e.a,e.b,e.c)}];
+  const last=()=>rows[rows.length-1];
+  if(!fIs0(r)){last().op=opPlus2(fNeg(r),w);rows.push({h:lin([[p,v]])+' = '+lin([[fNeg(r),w],[e.c,'']])});}
+  if(!fEq(p,ONE)){last().op=opDiv(p);rows.push({h:v+' = '+lin([[m,w],[q,'']])});}
+  return {rows,m,q,w};
+}
+function orderStep(E,idx){
+  if(!idx.length) return null;
+  const rows=[];
+  idx.forEach(k=>{rows.push({h:nm(k)+' '+pretty(E[k].orig),op:'| ordnen'});rows.push({h:nm(k)+' '+eqStr(E[k].a,E[k].b,E[k].c)});});
+  return {t:(idx.length>1?'Gleichungen':'Gleichung '+nm(idx[0]))+' ordnen',p:'Variablen nach links, Zahlen nach rechts, Klammern auflösen.',rows};
+}
+/* Zeile "A·w + Qc = rhs" steht schon als letzte Zeile: weiterumformen */
+function finishEq(rows,w,A,Qc,rhs){
+  const last=()=>rows[rows.length-1];
+  if(fIs0(A)) return {degenerate:true,truth:fEq(Qc,rhs),lhs:Qc,rhs};
+  const D=fSub(rhs,Qc);
+  if(!fIs0(Qc)){last().op=opPlus2(fNeg(Qc),'');rows.push({h:lin([[A,w]])+' = '+numHTML(D)});}
+  const val=fDiv(D,A);
+  if(!fEq(A,ONE)){last().op=opDiv(A);rows.push({h:w+' = '+numHTML(val)});}
+  return {degenerate:false,val};
+}
+function degenVerdict(d){
+  return '<b>'+numHTML(d.lhs)+' = '+numHTML(d.rhs)+'</b> ist '+(d.truth?'<b class="ok">wahr</b>: Die Gleichung gilt für jedes x. Es gibt unendlich viele Lösungen.':'<b class="bad">falsch</b>: Ein Widerspruch. Es gibt keine Lösung.');
+}
+function substStr(e,v,expr){
+  let out='',first=true;
+  [['x',e.a],['y',e.b]].forEach(([name,k])=>{
+    if(fIs0(k)) return;
+    const neg=k.n<0,ak=neg?fNeg(k):k;
+    const body=name===v?(fEq(ak,ONE)?'':numHTML(ak,true)+'·')+'('+expr+')':(fEq(ak,ONE)?'':numHTML(ak,true))+name;
+    if(first){out+=(neg?MINUS:'')+body;first=false;}else out+=' '+(neg?MINUS:'+')+' '+body;
+  });
+  return out+' = '+numHTML(e.c);
+}
+function probeRows(sys,x,y){
+  return [sys.e1,sys.e2].map((e,i)=>{
+    const lhs=fAdd(fMul(e.a,x),fMul(e.b,y)),ok=fEq(lhs,e.c);
+    return {ok,h:nm(i)+' '+linSub([[e.a,'x'],[e.b,'y']],{x,y})+' = '+numHTML(lhs)+(ok?' <b class="ok">✓</b>':' ≠ '+numHTML(e.c)+' <b class="bad">✗</b>')};
+  });
+}
+const LHTML=sys=>{const s=sys.sol;return s.type==='one'?'L = {('+numHTML(s.x)+'; '+numHTML(s.y)+')}':s.type==='none'?'L = { }':'L = {(x; y) | '+infLine(sys.e1)+'}';};
+function endSteps(sys,steps){
+  const s=sys.sol;
+  if(s.type==='one'){
+    steps.push({t:'Probe',p:'Das Ergebnis in beide ursprünglichen Gleichungen einsetzen.',rows:probeRows(sys,s.x,s.y).map(r=>({h:r.h}))});
+  }else if(s.type==='none'){
+    const l1=lineForm(sys.e1),l2=lineForm(sys.e2);
+    steps[steps.length-1].v=(steps[steps.length-1].v||'')+'';
+    steps.push({t:'Warum gibt es keine Lösung?',html:'<p style="color:var(--ink)">'+(l1.vert&&l2.vert?'Beide Gleichungen beschreiben senkrechte Geraden an verschiedenen Stellen.':'Beide Geraden haben dieselbe Steigung <b>'+numHTML(l1.m)+'</b>, schneiden die y-Achse aber an verschiedenen Stellen ('+numHTML(l1.q)+' und '+numHTML(l2.q)+').')+' Sie sind <b>parallel</b> und haben keinen gemeinsamen Punkt.</p>'});
+  }else{
+    const l=lineForm(sys.e1),pt=l.vert?{x:l.x0,y:ZERO}:{x:ZERO,y:l.q};
+    steps.push({t:'Warum unendlich viele Lösungen?',p:'Beide Gleichungen beschreiben dieselbe Gerade (die eine ist ein Vielfaches der anderen). Jeder Punkt dieser Geraden löst beide Gleichungen. Probe mit dem Beispielpunkt ('+numHTML(pt.x)+'; '+numHTML(pt.y)+'):',rows:probeRows(sys,pt.x,pt.y).map(r=>({h:r.h}))});
+  }
+  steps.push({t:'Lösungsmenge',html:'<span class="lsol">'+LHTML(sys)+'</span>'});
+  return steps;
+}
+
+function pathSub(sys){
+  const E=[sys.e1,sys.e2],steps=[];let best=null;
+  [[0,'y'],[0,'x'],[1,'y'],[1,'x']].forEach(([i,v])=>{
+    const e=E[i],p=v==='x'?e.a:e.b,r=v==='x'?e.b:e.a;
+    if(fIs0(p)) return;
+    let cost,why;
+    if(fIs0(r)){cost=-2;why=v+' steht in '+nm(i)+' schon allein.';}
+    else if(e.iso===v){cost=-1;why=nm(i)+' ist schon nach '+v+' aufgelöst. Das spart den ersten Rechenschritt.';}
+    else if(fEq(p,ONE)){cost=0;why=v+' hat in '+nm(i)+' den Faktor 1. Das ist die einfachste Wahl, es entstehen keine Brüche.';}
+    else if(fEq(p,fNeg(ONE))){cost=.5;why=v+' hat in '+nm(i)+' den Faktor −1.';}
+    else if(fDiv(r,p).d===1&&fDiv(e.c,p).d===1){cost=1;why='Die Division durch '+numHTML(p)+' geht auf: Es entstehen keine Brüche.';}
+    else{cost=2+((isTerm(fDiv(r,p))&&isTerm(fDiv(e.c,p)))?0:1);why='Eine Auflösung ganz ohne Bruch gibt es hier nicht. Dann nimmt man die einfachste.';}
+    if(!best||cost<best.cost) best={i,v,cost,why};
+  });
+  const {i,v}=best,j=1-i,e=E[i],o=E[j],w=v==='x'?'y':'x';
+  const od=orderStep(E,[0,1].filter(k=>needsOrder(E[k])&&E[k].iso!==v));
+  if(od) steps.push(od);
+  const sv=solveRows(e,v,nm(i)),m=sv.m,q=sv.q,expr=lin([[m,w],[q,'']]);
+  steps.push({t:nm(i)+' nach '+v+' auflösen',p:best.why,rows:e.iso===v?[{h:nm(i)+' '+v+' = '+expr}]:sv.rows});
+  const rows=[],last=()=>rows[rows.length-1];let title,fin,kw=v==='x'?o.b:o.a,kv=v==='x'?o.a:o.b;
+  const ov=fIs0(kv)?null:solveRows(o,v);
+  if(o.iso===v&&!fIs0(kv)){
+    title='Gleichsetzen: '+nm(j)+' ist ebenfalls nach '+v+' aufgelöst';
+    rows.push({h:expr+' = '+lin([[ov.m,w],[ov.q,'']])});
+    const A=fSub(m,ov.m);
+    if(!fIs0(ov.m)){last().op=opPlus2(fNeg(ov.m),w);rows.push({h:lin([[A,w],[q,'']])+' = '+numHTML(ov.q)});}
+    fin=finishEq(rows,w,A,q,ov.q);
+  }else if(fIs0(kv)){
+    title=nm(j)+' enthält '+v+' gar nicht';
+    rows.push({h:nm(j)+' '+eqStr(o.a,o.b,o.c)});
+    fin=finishEq(rows,w,kw,ZERO,o.c);
+  }else{
+    title=v+' = … in '+nm(j)+' einsetzen';
+    rows.push({h:nm(j)+' '+substStr(o,v,expr),op:'| Klammer auflösen'});
+    const A=fAdd(kw,fMul(kv,m)),Qc=fMul(kv,q);
+    const ex=lin([[kw,w],[fMul(kv,m),w],[Qc,'']])+' = '+numHTML(o.c),cb=lin([[A,w],[Qc,'']])+' = '+numHTML(o.c);
+    rows.push({h:ex});
+    if(ex!==cb){last().op='| zusammenfassen';rows.push({h:cb});}
+    fin=finishEq(rows,w,A,Qc,o.c);
+  }
+  const stB={t:title,rows};
+  steps.push(stB);
+  if(fin.degenerate){stB.v=degenVerdict(fin);return endSteps(sys,steps);}
+  const W=fin.val,vval=fAdd(fMul(m,W),q),vals={};vals[w]=W;
+  steps.push({t:v+' berechnen',p:(fIs0(m)?v+' ist schon bekannt.':'Den Wert von '+w+' in '+v+' = '+expr+' einsetzen.'),
+    rows:fIs0(m)?[{h:v+' = '+numHTML(q)}]:[{h:v+' = '+linSub([[m,w],[q,'']],vals)},{h:v+' = '+numHTML(vval)}]});
+  return endSteps(sys,steps);
+}
+
+function pathAdd(sys){
+  const E=[sys.e1,sys.e2],I=[sys.i1,sys.i2],steps=[];
+  const prepIdx=[0,1].filter(k=>needsOrder(E[k])||I[k].L!==1);
+  if(prepIdx.length){
+    const blocks=[];
+    prepIdx.forEach(k=>{
+      const rows=[],ord=needsOrder(E[k]),sc=I[k].L!==1;
+      if(ord) rows.push({h:nm(k)+' '+pretty(E[k].orig),op:'| ordnen'});
+      rows.push({h:nm(k)+' '+eqStr(E[k].a,E[k].b,E[k].c),op:sc?'| · '+I[k].L:''});
+      if(sc) rows.push({h:nm(k)+' '+eqStr(FI(I[k].A),FI(I[k].B),FI(I[k].C))});
+      if(!ord&&!sc) return;
+      blocks.push(rows);
+    });
+    steps.push({t:'Gleichungen vorbereiten',p:'Variablen nach links, Zahlen nach rechts'+(prepIdx.some(k=>I[k].L!==1)?'; Brüche und Dezimalzahlen mit einer passenden Zahl wegmultiplizieren.':'.'),blocks});
+  }
+  const [A1,B1,C1]=[I[0].A,I[0].B,I[0].C],[A2,B2,C2]=[I[1].A,I[1].B,I[1].C];
+  const cand=[];
+  ['x','y'].forEach(v=>{
+    const p1=v==='x'?A1:B1,p2=v==='x'?A2:B2;
+    if(p1===0&&p2===0) return;
+    let cost;
+    if(p1===0||p2===0) cost=-1;
+    else if(Math.abs(p1)===Math.abs(p2)) cost=0;
+    else if(p1%p2===0||p2%p1===0) cost=1;
+    else cost=2;
+    cand.push({v,p1,p2,cost});
+  });
+  cand.sort((a,b)=>a.cost-b.cost);
+  const c=cand[0],v=c.v,w=v==='x'?'y':'x';
+  const co=(k,u)=>u==='x'?I[k].A:I[k].B;
+  let r,d,fin;
+  const rows=[],last=()=>rows[rows.length-1];
+  if(c.cost===-1){
+    const k=c.p1===0?0:1;
+    rows.push({h:nm(k)+' '+eqStr(FI(I[k].A),FI(I[k].B),FI(I[k].C))});
+    steps.push({t:v+' kommt in '+nm(k)+' gar nicht vor',p:'Diese Gleichung enthält nur noch '+w+' und lässt sich direkt lösen.',rows});
+    r=co(k,w);d=I[k].C;
+  }else{
+    const L=Math.abs(c.p1)*Math.abs(c.p2)/gcd(c.p1,c.p2),k1=L/Math.abs(c.p1),k2=L/Math.abs(c.p2);
+    const sgn=Math.sign(c.p1)===Math.sign(c.p2)?'−':'+';
+    const a1=[k1*A1,k1*B1,k1*C1],a2=[k2*A2,k2*B2,k2*C2];
+    const prs=[];
+    if(k1!==1){prs.push({h:nm(0)+' '+eqStr(FI(A1),FI(B1),FI(C1)),op:'| · '+pnInt(k1)});prs.push({h:nmP(0)+' '+eqStr(FI(a1[0]),FI(a1[1]),FI(a1[2]))});}
+    if(k2!==1){prs.push({h:nm(1)+' '+eqStr(FI(A2),FI(B2),FI(C2)),op:'| · '+pnInt(k2)});prs.push({h:nmP(1)+' '+eqStr(FI(a2[0]),FI(a2[1]),FI(a2[2]))});}
+    const n1=k1!==1?nmP(0):nm(0),n2=k2!==1?nmP(1):nm(1);
+    const note=c.cost===0?(sgn==='+'?v+' hat in beiden Gleichungen entgegengesetzte Koeffizienten: Addieren genügt.':v+' hat in beiden Gleichungen denselben Koeffizienten: Subtrahieren genügt.')
+      :'Beide Koeffizienten von '+v+' auf '+L+' bringen, dann '+(sgn==='+'?'addieren':'subtrahieren')+'.';
+    if(prs.length) steps.push({t:v+' vorbereiten',p:note,rows:prs});
+    const lhs=k=>lin([[FI(k[0]),'x'],[FI(k[1]),'y']]);
+    r=fNeg(ZERO);
+    const r1=v==='x'?a1[1]:a1[0],r2=v==='x'?a2[1]:a2[0];
+    const rr=sgn==='+'?r1+r2:r1-r2;d=sgn==='+'?a1[2]+a2[2]:a1[2]-a2[2];r=rr;
+    rows.push({h:n1+' '+sgn+' '+n2+':  ('+lhs(a1)+') '+sgn+' ('+lhs(a2)+') = '+numHTML(FI(a1[2]))+' '+sgn+' '+pnInt(a2[2])});
+    steps.push({t:(sgn==='+'?'Addieren':'Subtrahieren')+': '+v+' fällt weg',p:prs.length?'':note,rows});
+    const res=[{h:lin([[FI(r),w]])+' = '+numHTML(FI(d))}];
+    steps[steps.length-1].rows.push(res[0]);
+  }
+  const srows=steps[steps.length-1].rows;
+  if(c.cost===-1) {/* Zeile steht schon */}
+  fin=finishEq(srows,w,FI(r),ZERO,FI(d));
+  if(fin.degenerate){steps[steps.length-1].v=degenVerdict(fin);return endSteps(sys,steps);}
+  const W=fin.val;
+  let t=-1,bp=Infinity;
+  [0,1].forEach(k=>{const p=Math.abs(co(k,v));if(p!==0&&p<bp){bp=p;t=k;}});
+  const pv=FI(co(t,v)),rw=FI(co(t,w)),Ct=FI(I[t].C),vals={};vals[w]=W;
+  const prow=[{h:nm(t)+' '+linSub([[pv,v],[rw,w]],vals)+' = '+numHTML(Ct)}];
+  const rwW=fMul(rw,W);
+  if(!fIs0(rw)){prow.push({h:lin([[pv,v],[rwW,'']])+' = '+numHTML(Ct)});}
+  const lp=()=>prow[prow.length-1];
+  if(!fIs0(rw)){lp().op=opPlus2(fNeg(rwW),'');prow.push({h:lin([[pv,v]])+' = '+numHTML(fSub(Ct,rwW))});}
+  if(!fEq(pv,ONE)){lp().op=opDiv(pv);prow.push({h:v+' = '+numHTML(fDiv(fSub(Ct,rwW),pv))});}
+  steps.push({t:w+' = '+numHTML(W)+' in '+nm(t)+' einsetzen',p:'Damit erhält man auch '+v+'.',rows:prow});
+  return endSteps(sys,steps);
+}
+
+function pathGraph(sys){
+  const E=[sys.e1,sys.e2],steps=[],L=E.map(lineForm);
+  steps.push({t:'Beide Gleichungen nach y auflösen',p:'So erkennst du Steigung und y-Achsenabschnitt und kannst die Geraden zeichnen.',
+    blocks:E.map((e,i)=>L[i].vert?solveRows(e,'x',nm(i)).rows.concat([{h:'Das ist eine senkrechte Gerade.'}]):solveRows(e,'y',nm(i)).rows)});
+  const tr=E.map((e,i)=>{
+    const l=L[i];let p1,p2;
+    if(l.vert){p1=[l.x0,ZERO];p2=[l.x0,ONE];}
+    else{const k=FI(l.m.d);p1=[ZERO,l.q];p2=[k,fAdd(fMul(l.m,k),l.q)];}
+    return '<tr><td>'+nm(i)+'</td><td>('+numHTML(p1[0])+'; '+numHTML(p1[1])+')</td><td>('+numHTML(p2[0])+'; '+numHTML(p2[1])+')</td></tr>';
+  }).join('');
+  steps.push({t:'Zwei Punkte pro Gerade',p:'Zwei Punkte genügen, um eine Gerade zu zeichnen.',html:'<table><tr><th></th><th>Punkt 1</th><th>Punkt 2</th></tr>'+tr+'</table>'});
+  const s=sys.sol;
+  steps.push({t:'Schnittpunkt ablesen',p:s.type==='one'?'Der Schnittpunkt S der beiden Geraden liefert die Lösung. Er ist im Bild hervorgehoben. <b>Aber:</b> Abgelesen ist nur ein Näherungswert.':s.type==='none'?'Die beiden Geraden schneiden sich nirgends: Sie sind parallel.':'Beide Geraden liegen genau aufeinander.'});
+  const rows=[];let title='Rechnerisch kontrollieren',fin=null;
+  const last=()=>rows[rows.length-1];
+  if(!L[0].vert&&!L[1].vert){
+    rows.push({h:lin([[L[0].m,'x'],[L[0].q,'']])+' = '+lin([[L[1].m,'x'],[L[1].q,'']])});
+    const A=fSub(L[0].m,L[1].m);
+    if(!fIs0(L[1].m)){last().op=opPlus2(fNeg(L[1].m),'x');rows.push({h:lin([[A,'x'],[L[0].q,'']])+' = '+numHTML(L[1].q)});}
+    fin=finishEq(rows,'x',A,L[0].q,L[1].q);
+    steps.push({t:'Rechnerisch kontrollieren: gleichsetzen',p:'Beide y-Terme sind gleich: m₁x + q₁ = m₂x + q₂.',rows});
+    if(!fin.degenerate){
+      const X=fin.val,y=fAdd(fMul(L[0].m,X),L[0].q),vals={x:X};
+      steps.push({t:'y berechnen',rows:[{h:'y = '+linSub([[L[0].m,'x'],[L[0].q,'']],vals)},{h:'y = '+numHTML(y)}]});
+    }else steps[steps.length-1].v=degenVerdict(fin);
+  }else if(L[0].vert&&L[1].vert){
+    rows.push({h:'x = '+numHTML(L[0].x0)+'   und   x = '+numHTML(L[1].x0)});
+    steps.push({t:'Zwei senkrechte Geraden',rows,v:fEq(L[0].x0,L[1].x0)?'Dieselbe Gerade: unendlich viele Lösungen.':'Parallel: keine Lösung.'});
+  }else{
+    const vi=L[0].vert?0:1,hi=1-vi,X=L[vi].x0,y=fAdd(fMul(L[hi].m,X),L[hi].q);
+    steps.push({t:'Eine Gerade ist senkrecht',p:nm(vi)+' liefert direkt x = '+numHTML(X)+'. Das setzt man in '+nm(hi)+' ein.',rows:[{h:'y = '+linSub([[L[hi].m,'x'],[L[hi].q,'']],{x:X})},{h:'y = '+numHTML(y)}]});
+  }
+  return endSteps(sys,steps);
+}
+
+/* ---------- Eignung der Methoden ---------- */
+function rate(sys){
+  const E=[sys.e1,sys.e2],I=[sys.i1,sys.i2],nmS=i=>nm(i);
+  let sub={score:2,why:'Keine Variable hat den Faktor 1: Beim Auflösen entstehen Brüche.'};
+  const ii=E.findIndex(e=>e.iso);
+  if(ii>=0) sub={score:5,why:'Gleichung '+nmS(ii)+' ist schon nach '+E[ii].iso+' aufgelöst: Du kannst direkt einsetzen.'};
+  else{
+    for(let i=0;i<2&&sub.score<4;i++)['x','y'].forEach(v=>{
+      const p=v==='x'?E[i].a:E[i].b;
+      if(sub.score<4&&(fEq(p,ONE)||fEq(p,fNeg(ONE)))) sub={score:4,why:'In '+nmS(i)+' hat '+v+' den Faktor '+(p.n<0?'−1':'1')+': Das lässt sich leicht auflösen.'};
+    });
+  }
+  let add={score:2,why:'Die Koeffizienten passen nicht zusammen: Du musst beide Gleichungen multiplizieren.'};
+  ['x','y'].forEach(v=>{
+    const p1=v==='x'?I[0].A:I[0].B,p2=v==='x'?I[1].A:I[1].B;
+    if(p1===0&&p2===0) return;
+    let s,why;
+    if(p1===0||p2===0){s=4;why=v+' kommt nur in einer Gleichung vor: Es ist schon fast fertig.';}
+    else if(p1===-p2){s=4;why=v+' hat entgegengesetzte Koeffizienten: Addieren, und '+v+' verschwindet sofort.';}
+    else if(p1===p2){s=4;why=v+' hat gleiche Koeffizienten: Subtrahieren, und '+v+' verschwindet sofort.';}
+    else if(p1%p2===0||p2%p1===0){s=3;why='Die Koeffizienten von '+v+' sind Vielfache: Eine Gleichung multiplizieren, dann addieren.';}
+    else return;
+    if(s>add.score) add={score:s,why};
+  });
+  const s=sys.sol,integer=s.type==='one'&&s.x.d===1&&s.y.d===1;
+  const gr={score:0,why:'Du liest den Schnittpunkt aus der Zeichnung ab. Das ist anschaulich, aber ungenau.'+(s.type==='one'&&!integer?' Hier ist die Lösung keine ganze Zahl, ablesen wird besonders ungenau.':'')};
+  const mx=Math.max(sub.score,add.score);
+  return {sub:{...sub,rec:sub.score===mx},add:{...add,rec:add.score===mx},graph:gr};
+}
+const badge=sc=>sc>=4?['good','sehr geschickt']:sc===3?['ok2','geschickt']:['meh','umständlich'];
+const MNAME={sub:'Einsetzungsverfahren',add:'Additionsverfahren',graph:'Graphische Methode'};
+const MHOW={sub:'Eine Gleichung nach einer Variablen auflösen und in die andere einsetzen.',add:'Die Gleichungen so vorbereiten, dass beim Addieren oder Subtrahieren eine Variable verschwindet.',graph:'Beide Gleichungen als Geraden zeichnen. Der Schnittpunkt ist die Lösung.'};
+
+/* ---------- Grafik ---------- */
+function colors(){const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  return {surface:v('--surface'),ink:v('--ink'),muted:v('--muted'),grid:v('--grid'),axis:v('--axis'),e1:v('--e1'),e2:v('--e2'),accent:v('--accent'),line:v('--line'),ok:v('--ok')};}
+function winR(){
+  const s=S.sys.sol;let R=8;
+  if(s.type==='one'){R=Math.max(6,Math.ceil(Math.max(Math.abs(fNum(s.x)),Math.abs(fNum(s.y)))*1.4+1));}
+  return [6,8,10,12,15,20,25,30,40,50,60,80,100,150,200,300,500,1000].find(v=>v>=R)||R;
+}
+const HV={cvG:null,cvK:null};
+function drawGraph(c,show){
+  if(!S.sys||!c.clientWidth) return;
+  const dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
+  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const C=colors(),R=winR(),pad=28,sz=Math.min(W,H)-2*pad,sc=sz/(2*R),X=x=>pad+(x+R)*sc,Y=y=>pad+(R-y)*sc;
+  const st=R<=8?1:R<=12?2:R<=20?5:R<=50?10:R<=100?20:R<=300?50:100,gs=R<=12?1:st;
+  g.fillStyle=C.surface;g.fillRect(0,0,W,H);
+  g.lineWidth=1;g.strokeStyle=C.grid;g.beginPath();
+  for(let k=-Math.floor(R/gs)*gs;k<=R;k+=gs){g.moveTo(X(k),Y(-R));g.lineTo(X(k),Y(R));g.moveTo(X(-R),Y(k));g.lineTo(X(R),Y(k));}
+  g.stroke();
+  g.strokeStyle=C.axis;g.lineWidth=1.6;g.beginPath();g.moveTo(X(-R),Y(0));g.lineTo(X(R),Y(0));g.moveTo(X(0),Y(-R));g.lineTo(X(0),Y(R));g.stroke();
+  g.font='11px Inter, system-ui, sans-serif';g.fillStyle=C.muted;
+  g.textAlign='center';g.textBaseline='top';
+  for(let k=-Math.floor(R/st)*st;k<=R;k+=st){if(k!==0)g.fillText(String(k).replace('-','−'),X(k),Y(0)+4);}
+  g.textAlign='right';g.textBaseline='middle';
+  for(let k=-Math.floor(R/st)*st;k<=R;k+=st){if(k!==0)g.fillText(String(k).replace('-','−'),X(0)-5,Y(k));}
+  g.textAlign='left';g.textBaseline='bottom';g.fillText('x',X(R)-10,Y(0)-5);g.textAlign='left';g.fillText('y',X(0)+7,Y(R)+12);
+  g.save();g.beginPath();g.rect(X(-R),Y(R),2*R*sc,2*R*sc);g.clip();
+  const E=[S.sys.e1,S.sys.e2],cols=[C.e1,C.e2],labels=[];
+  E.forEach((e,i)=>{
+    const l=lineForm(e);g.strokeStyle=cols[i];g.lineWidth=2.8;g.lineCap='round';g.beginPath();
+    if(l.vert){g.moveTo(X(fNum(l.x0)),Y(-R));g.lineTo(X(fNum(l.x0)),Y(R));}
+    else{const m=fNum(l.m),q=fNum(l.q);g.moveTo(X(-R),Y(m*-R+q));g.lineTo(X(R),Y(m*R+q));}
+    g.stroke();
+    let side=i===0?1:-1;let pos=null;
+    if(l.vert) pos={x:fNum(l.x0),y:side*R*0.8};
+    else{const m=fNum(l.m),q=fNum(l.q);outer:for(const sd of [side,-side])for(const t of [.8,.65,.5,.35,.2]){const x=sd*R*t,y=m*x+q;if(Math.abs(y)<R*.85){pos={x,y};side=sd;break outer;}}}
+    if(pos) labels.push({pos,side,text:'('+(i?'II':'I')+') '+strip(eqStr(e.a,e.b,e.c)),col:cols[i]});
+  });
+  g.restore();
+  g.font='600 12px Inter, system-ui, sans-serif';g.textBaseline='bottom';
+  labels.forEach(L=>{
+    g.textAlign=L.side>0?'right':'left';
+    const tx=X(L.pos.x)+(L.side>0?-4:4),ty=Y(L.pos.y)-8;
+    g.lineWidth=4;g.strokeStyle=C.surface;g.strokeText(L.text,tx,ty);g.fillStyle=L.col;g.fillText(L.text,tx,ty);
+  });
+  const s=S.sys.sol;
+  if(show&&s.type==='one'){
+    const sx=fNum(s.x),sy=fNum(s.y);
+    g.setLineDash([4,4]);g.strokeStyle=C.ok;g.lineWidth=1.3;g.beginPath();g.moveTo(X(sx),Y(0));g.lineTo(X(sx),Y(sy));g.lineTo(X(0),Y(sy));g.stroke();g.setLineDash([]);
+    g.beginPath();g.arc(X(sx),Y(sy),9,0,6.283);g.lineWidth=3;g.strokeStyle=C.ok;g.stroke();
+    g.beginPath();g.arc(X(sx),Y(sy),3.5,0,6.283);g.fillStyle=C.ok;g.fill();
+    const t='S('+numPlain(s.x)+' | '+numPlain(s.y)+')';
+    g.font='700 13px Inter, system-ui, sans-serif';g.textAlign=sx>R*.4?'right':'left';g.textBaseline='bottom';
+    const tx=X(sx)+(sx>R*.4?-12:12),ty=Y(sy)-12;g.lineWidth=4;g.strokeStyle=C.surface;g.strokeText(t,tx,ty);g.fillStyle=C.ok;g.fillText(t,tx,ty);
+  }
+  const h=HV[c.id];
+  if(h){
+    g.strokeStyle=C.muted;g.lineWidth=1;g.setLineDash([3,3]);g.beginPath();g.moveTo(X(h.x),Y(-R));g.lineTo(X(h.x),Y(R));g.moveTo(X(-R),Y(h.y));g.lineTo(X(R),Y(h.y));g.stroke();g.setLineDash([]);
+  }
+}
+function hookHover(c,out,show){
+  const R=()=>winR();
+  c.addEventListener('pointermove',ev=>{
+    const r=c.getBoundingClientRect(),W=r.width,pad=28,sz=Math.min(W,r.height)-2*pad,Rr=R();
+    let x=((ev.clientX-r.left-pad)/sz)*2*Rr-Rr,y=Rr-((ev.clientY-r.top-pad)/sz)*2*Rr;
+    if(Math.abs(x)>Rr||Math.abs(y)>Rr){HV[c.id]=null;out.textContent='';drawGraph(c,show());return;}
+    const rx=Math.round(x),ry=Math.round(y);
+    if(Math.abs(x-rx)<.01&&Math.abs(y-ry)<.01){x=rx;y=ry;out.textContent='( '+String(rx).replace('-','−')+' | '+String(ry).replace('-','−')+' )';}
+    else out.textContent='( '+x.toFixed(1).replace('-','−')+' | '+y.toFixed(1).replace('-','−')+' )';
+    HV[c.id]={x,y};drawGraph(c,show());
+  });
+  c.addEventListener('pointerleave',()=>{HV[c.id]=null;out.textContent='';drawGraph(c,show());});
+}
+
+/* ---------- Beispiele und Zufall ---------- */
+const PRESETS=[
+  {g:'Leicht',e:['y = 2x - 1','x + y = 5']},
+  {g:'Leicht',e:['x = 3y','x + y = 8']},
+  {g:'Leicht',e:['y = x + 2','y = -x + 6']},
+  {g:'Mittel',e:['3x + 2y = 12','3x - y = 3']},
+  {g:'Mittel',e:['2x + 3y = 12','4x - 3y = 6']},
+  {g:'Mittel',e:['5x + 2y = 16','3x - 4y = -6']},
+  {g:'Schwer',e:['2(x - 1) + 3y = 15','4x - (y + 2) = 11']},
+  {g:'Schwer',e:['x/2 + y/3 = 3','x/4 - y/3 = 0']},
+  {g:'Schwer',e:['0.4x + 0.3y = 2.5','0.2x - 0.6y = -1']},
+  {g:'Schwer',e:['2x + y = 4','4x - y = -1']},
+  {g:'Sonderfälle',e:['2x + 3y = 6','4x + 6y = 5']},
+  {g:'Sonderfälle',e:['x + 2y = 4','3x + 6y = 12']},
+  {g:'Sonderfälle',e:['y = 2x + 1','y = 2x - 3']},
+  {g:'Sonderfälle',e:['y = 0.5x + 1','x - 2y = -2']}
+];
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function mkEq(a,b,c){
+  const t=(k,v,first)=>k===0?'':(first?(k<0?'-':''):(k<0?' - ':' + '))+(Math.abs(k)===1?'':Math.abs(k))+v;
+  const l=t(a,'x',true)+t(b,'y',a===0);
+  return l+' = '+c;
+}
+function randomSys(lvl){
+  for(let n=0;n<400;n++){
+    const sx=ri(-6,6),sy=ri(-6,6);
+    if(sx===0&&sy===0) continue;
+    if(lvl===0){
+      const m=ri(-3,3);if(!m)continue;const q=sy-m*sx;
+      const k=ri(0,2),eq2=k===0?[1,1,sx+sy]:k===1?[1,-1,sx-sy]:[2,1,2*sx+sy];
+      if(-m*eq2[1]-eq2[0]===0) continue;
+      return ['y = '+(m===1?'':m===-1?'-':m)+'x '+(q<0?'- '+(-q):'+ '+q),mkEq(...eq2)].map(s=>s.replace('+ 0','').trim());
+    }
+    if(lvl===1){
+      const b=ri(1,4),a1=ri(1,6),a2=ri(1,6),flip=Math.random()<.5;
+      const e1=flip?[b,a1]:[a1,b],e2=flip?[-b,a2]:[a2,-b];
+      return [mkEq(e1[0],e1[1],e1[0]*sx+e1[1]*sy),mkEq(e2[0],e2[1],e2[0]*sx+e2[1]*sy)];
+    }
+    const a1=ri(-5,5),b1=ri(-5,5),a2=ri(-5,5),b2=ri(-5,5);
+    if(!a1||!b1||!a2||!b2||a1*b2-a2*b1===0) continue;
+    if(Math.abs(a1)===Math.abs(a2)||Math.abs(b1)===Math.abs(b2)||a1%a2===0||a2%a1===0||b1%b2===0||b2%b1===0) continue;
+    return [mkEq(a1,b1,a1*sx+b1*sy),mkEq(a2,b2,a2*sx+b2*sy)];
+  }
+  return PRESETS[3].e.slice();
+}
+
+/* ---------- Zustand ---------- */
+const S={step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
+function refreshSys(){
+  const eqs=[],errs=[null,null];
+  for(let i=0;i<2;i++){
+    try{eqs.push(S.mode==='eq'?parseEq(S.src[i]):eqFromCoef(S.co[i]));}
+    catch(e){errs[i]=e.message;eqs.push(null);}
+  }
+  S.errs=errs;S.sys=(eqs[0]&&eqs[1])?analyse(eqs[0],eqs[1]):null;
+}
+function plainEq(e){
+  let s='',first=true;
+  [[e.a,'x'],[e.b,'y']].forEach(([k,v])=>{
+    if(fIs0(k)) return;
+    const neg=k.n<0,a=neg?fNeg(k):k;
+    const num=fEq(a,ONE)?'':(a.d===1?String(a.n):isTerm(a)?decStr(a):a.n+'/'+a.d);
+    s+=(first?(neg?'-':''):(neg?' - ':' + '))+num+v;first=false;
+  });
+  return s+' = '+numPlain(e.c).replace('−','-');
+}
+const coStr=f=>f.d===1?String(f.n):isTerm(f)?(f.n<0?'-':'')+decStr(f):f.n+'/'+f.d;
+
+/* ---------- Rendering ---------- */
+function sysHTML(sys){
+  return '<span class="brace">{</span><span class="lines"><span>'+nm(0)+' '+eqStr(sys.e1.a,sys.e1.b,sys.e1.c)+'</span><span>'+nm(1)+' '+eqStr(sys.e2.a,sys.e2.b,sys.e2.c)+'</span></span>';
+}
+function renderSteps(){
+  const names=['Gleichungssystem','Methode','Lösen'];
+  $('#steps').innerHTML=names.map((n,i)=>'<li><button class="step'+(i+1<S.step?' done':'')+'" data-p="'+(i+1)+'" aria-current="'+(i+1===S.step?'step':'false')+'"'+(i+1>1&&!S.sys?' disabled':'')+(i+1>2&&!S.method?' disabled':'')+'><span class="n">'+(i+1)+'</span>'+n+'</button></li>').join('');
+}
+function renderPresets(){
+  const groups=['Leicht','Mittel','Schwer','Sonderfälle'];
+  $('#presets').innerHTML=groups.map(g=>'<h3 class="gh">'+g+'</h3><div class="presets">'+PRESETS.map((p,i)=>p.g!==g?'':'<button class="pre" data-i="'+i+'" aria-pressed="'+(S.preset===i)+'">'+pretty(p.e[0])+'<br>'+pretty(p.e[1])+'</button>').join('')+'</div>').join('');
+}
+function renderS1(){
+  $('#mEq').setAttribute('aria-pressed',String(S.mode==='eq'));$('#mCo').setAttribute('aria-pressed',String(S.mode==='co'));
+  $('#inEq').hidden=S.mode!=='eq';$('#inCo').hidden=S.mode!=='co';
+  [0,1].forEach(i=>{if(document.activeElement!==$('#q'+i))$('#q'+i).value=S.src[i];[0,1,2].forEach(k=>{const el=$('#c'+i+k);if(document.activeElement!==el)el.value=S.co[i][k];});});
+  renderPresets();renderPrev();
+}
+function renderPrev(){
+  const er=S.errs.map((m,i)=>m?nm(i)+': '+esc(m):'').filter(Boolean);
+  $('#sysErr').className='read'+(er.length?' bad':'');$('#sysErr').innerHTML=er.join('<br>');
+  $('#sysPrev').innerHTML=S.sys?sysHTML(S.sys):'';
+  $('#to2').disabled=!S.sys;
+  renderSteps();
+}
+function renderS2(){
+  const r=rate(S.sys);$('#rec2').innerHTML=sysHTML(S.sys);
+  const card=(k,b,why,rec)=>'<button class="method" data-m="'+k+'">'+(rec?'<span class="rec">Empfohlen</span>':'')+'<h3>'+MNAME[k]+'</h3><span class="badge '+b[0]+'">'+b[1]+'</span><span class="why">'+why+'</span><span class="how">'+MHOW[k]+'</span></button>';
+  $('#methods').innerHTML=card('sub',badge(r.sub.score),r.sub.why,r.sub.rec)+card('add',badge(r.add.score),r.add.why,r.add.rec)+card('graph',['warn','ungenau'],'<b>Achtung, ungenau:</b> '+r.graph.why,false);
+}
+function renderS3(){
+  $('#rec3').innerHTML=sysHTML(S.sys);
+  $('#mtag').innerHTML='Methode: <b>'+MNAME[S.method]+'</b>'+(S.method==='graph'?'. Lies den Schnittpunkt aus dem Bild ab.':'. Rechne auf Papier und gib dann deine Lösungsmenge ein.');
+  $('#gcard').hidden=S.method!=='graph';
+  $('#kdet').hidden=S.method==='graph';
+  $('#ahint').textContent='Zahlen als ganze Zahl, Dezimalzahl oder Bruch, z. B. 2, −1.5 oder 7/3.'+(S.method==='graph'?' Beim Ablesen genügt ein Näherungswert.':'');
+  $('#fb').innerHTML='';$('#pcard').hidden=true;S.checked=false;
+  ['ax','ay','al'].forEach(id=>$('#'+id).value='');
+  setAM('one');
+  if(S.method==='graph') requestAnimationFrame(()=>drawGraph($('#cvG'),false));
+}
+function setAM(m){
+  S.am=m;
+  document.querySelectorAll('#amode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===m)));
+  $('#aOne').hidden=m!=='one';$('#aNone').hidden=m!=='none';$('#aInf').hidden=m!=='inf';
+}
+function show(n){
+  S.step=n;
+  ['s1','s2','s3'].forEach((id,i)=>$('#'+id).hidden=(i+1!==n));
+  if(n===1)renderS1();else if(n===2){renderS2();renderSteps();}else{renderS3();renderSteps();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- Prüfen ---------- */
+function check(){
+  const sys=S.sys,sol=sys.sol,fb=$('#fb');let ok=false,html='';
+  const box=(c,t)=>'<div class="fb '+c+'">'+t+'</div>';
+  const kind={one:'genau eine Lösung',none:'keine Lösung',inf:'unendlich viele Lösungen'};
+  if(S.am!==sol.type){
+    html=box('bad','<b>Nicht ganz.</b> Dieses System hat <b>'+kind[sol.type]+'</b>. Im Lösungsweg siehst du, woran man das erkennt.');
+  }else if(S.am==='none'){
+    ok=true;html=box('ok','<b>Richtig!</b> <span class="mono">L = { }</span>: Die Gleichungen widersprechen sich.');
+  }else if(S.am==='inf'){
+    let e=null;try{e=parseEq($('#al').value);}catch(x){}
+    if(!e){fb.innerHTML=box('info','Gib die Gleichung der Geraden ein, z. B. <span class="mono">y = 2x - 1</span>.');return;}
+    const a=sys.e1,eq=fIs0(fSub(fMul(e.a,a.b),fMul(e.b,a.a)))&&fIs0(fSub(fMul(e.a,a.c),fMul(e.c,a.a)))&&fIs0(fSub(fMul(e.b,a.c),fMul(e.c,a.b)));
+    if(eq){ok=true;html=box('ok','<b>Richtig!</b> <span class="mono">'+esc(LHTML(sys))+'</span>'.replace(esc(LHTML(sys)),LHTML(sys))+'<br>Beide Gleichungen beschreiben dieselbe Gerade.');}
+    else html=box('bad','<b>Nicht ganz.</b> Es gibt zwar unendlich viele Lösungen, aber diese Gleichung beschreibt nicht die Gerade der beiden Gleichungen. Prüfe sie mit einem Punkt.');
+  }else{
+    const x=parseConst($('#ax').value),y=parseConst($('#ay').value);
+    if(!x||!y){fb.innerHTML=box('info','Bitte gib <b>beide</b> Koordinaten als Zahl ein, z. B. 2, −1.5 oder 7/3.');return;}
+    const exact=fEq(x,sol.x)&&fEq(y,sol.y);
+    const tol=S.method==='graph'?Math.max(.15,winR()*.02):(isTerm(sol.x)&&isTerm(sol.y)?0:.0051);
+    const near=tol>0&&Math.abs(fNum(x)-fNum(sol.x))<=tol&&Math.abs(fNum(y)-fNum(sol.y))<=tol;
+    if(exact){ok=true;html=box('ok','<b>Richtig!</b> <span class="mono">'+LHTML(sys)+'</span>');}
+    else if(near){ok=true;html=box('ok','<b>'+(S.method==='graph'?'Gut abgelesen!':'Richtig gerundet!')+'</b> '+(S.method==='graph'?'Das ist ein Näherungswert. ':'')+'Exakt: <span class="mono">'+LHTML(sys)+'</span>');}
+    else{
+      const pr=probeRows(sys,x,y);let hint='';
+      if(fEq(x,sol.y)&&fEq(y,sol.x)&&!fEq(sol.x,sol.y)) hint='<p>Du hast <b>x und y vertauscht</b>: Die Lösung wird als (x; y) geschrieben.</p>';
+      else if(fEq(x,sol.x)||fEq(y,sol.y)) hint='<p>Eine der beiden Zahlen stimmt schon.</p>';
+      html=box('bad','<b>Leider nicht richtig.</b>'+hint+'<p>Probe mit deinen Zahlen:</p>'+rowsHTML(pr.map(r=>({h:r.h})))+'<p class="muted">Eine Lösung muss <b>beide</b> Gleichungen erfüllen.</p>');
+    }
+  }
+  fb.innerHTML=html;
+  const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):pathGraph(sys);
+  $('#path').innerHTML=stepsHTML(steps);$('#pcard').hidden=false;S.checked=true;
+  if(S.method==='graph') drawGraph($('#cvG'),true);
+  else requestAnimationFrame(()=>drawGraph($('#cvK'),true));
+}
+
+/* ---------- Ereignisse ---------- */
+function loadPreset(i){S.mode='eq';S.preset=i;S.src=PRESETS[i].e.slice();refreshSys();renderS1();}
+function init(){
+  refreshSys();renderS1();
+  $('#steps').addEventListener('click',e=>{const b=e.target.closest('.step');if(b&&!b.disabled)show(+b.dataset.p);});
+  $('#presets').addEventListener('click',e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.i);});
+  document.querySelectorAll('.rand button').forEach(b=>b.onclick=()=>{S.mode='eq';S.preset=-1;S.src=randomSys(+b.dataset.lvl);refreshSys();renderS1();});
+  [0,1].forEach(i=>{
+    $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();});
+    [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();}));
+  });
+  $('#mEq').onclick=()=>{
+    if(S.mode==='eq') return;
+    if(S.sys) S.src=[plainEq(S.sys.e1),plainEq(S.sys.e2)];
+    S.mode='eq';refreshSys();renderS1();
+  };
+  $('#mCo').onclick=()=>{
+    if(S.mode==='co') return;
+    if(S.sys) S.co=[[S.sys.e1.a,S.sys.e1.b,S.sys.e1.c],[S.sys.e2.a,S.sys.e2.b,S.sys.e2.c]].map(r=>r.map(coStr));
+    S.mode='co';refreshSys();renderS1();
+  };
+  $('#to2').onclick=()=>{if(S.sys)show(2);};
+  $('#back1').onclick=()=>show(1);
+  $('#methods').addEventListener('click',e=>{const b=e.target.closest('.method');if(b){S.method=b.dataset.m;show(3);}});
+  $('#amode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setAM(b.dataset.m);});
+  $('#check').onclick=check;
+  ['ax','ay','al'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')check();}));
+  $('#other').onclick=()=>show(2);
+  $('#again').onclick=()=>{S.method=null;show(1);};
+  hookHover($('#cvG'),$('#hovG'),()=>S.checked);
+  hookHover($('#cvK'),$('#hovK'),()=>true);
+  const redraw=()=>{if(S.step===3){if(S.method==='graph')drawGraph($('#cvG'),S.checked);else if(S.checked)drawGraph($('#cvK'),true);}};
+  new ResizeObserver(redraw).observe($('#s3'));
+  $('#kdet').addEventListener('toggle',redraw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
+  new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  window.LGS={parseEq,analyse,pathSub,pathAdd,pathGraph,rate,stepsHTML,randomSys,S};
+}
+init();
+})();
+</script>
+
+<p style="text-align:center;margin:24px 0"><a href="/" style="color:inherit;font:14px system-ui">← mathdrian</a></p></body></html>
