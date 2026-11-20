@@ -103,6 +103,25 @@ details[open]>summary .chev{transform:rotate(-135deg)}
 .kind{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin-right:8px}
 .none{padding:28px 4px;color:var(--muted)}
 
+/* Ansicht: Regler Kacheln, Kompakt, Liste */
+.viewbar{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
+.viewbar input{width:130px;accent-color:var(--accent)}
+.viewbar output{min-width:6.5ch;color:var(--ink);font-weight:500}
+.nr{font-family:var(--font-mono);font-size:12px;color:var(--teal)}
+.nr:empty{display:none}
+body[data-view="2"] .cards{grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:8px}
+body[data-view="2"] .card{padding:10px 12px;gap:4px}
+body[data-view="2"] .card h3{font-size:16px}
+body[data-view="2"] .card p,body[data-view="2"] .card .tags,body[data-view="2"] .card .open{display:none}
+body[data-view="3"] .cards{grid-template-columns:minmax(0,1fr);gap:0;padding:0 10px 8px}
+body[data-view="3"] .card{grid-template-columns:7ch minmax(0,1fr) auto;align-items:center;gap:10px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:7px 8px}
+body[data-view="3"] .card:last-child{border-bottom:0}
+body[data-view="3"] .card:hover{transform:none;background:var(--surface2)}
+body[data-view="3"] .card h3{font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-view="3"] .card p,body[data-view="3"] .card .open{display:none}
+body[data-view="3"] details.sub{margin:0 12px 8px}
+@media (max-width:560px){body[data-view="3"] .card .tags{display:none}body[data-view="3"] .card{grid-template-columns:6ch minmax(0,1fr)}}
+
 /* Unterkapitel */
 details.sub{margin:0 16px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 details.sub>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:600}
@@ -142,6 +161,7 @@ footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:v
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input type="search" id="q" placeholder="Werkzeug oder Thema suchen, zum Beispiel «Ableitung»" autocomplete="off" aria-label="Suchen"></label>
     <div class="chips" id="chips" role="group" aria-label="Kapitel filtern"></div>
+    <div class="viewbar"><label for="view">Ansicht</label><input type="range" id="view" min="1" max="3" step="1" value="1" aria-valuetext="Kacheln"><output id="viewOut" for="view">Kacheln</output></div>
   </section>
 
   <main class="chapters" id="list"></main>
@@ -160,6 +180,7 @@ footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:v
 /* =====================================================================
    NEUES WERKZEUG HINZUFÜGEN: eine Zeile in TOOLS ergänzen, Datei in den Ordner legen. Mehr nicht.
    k = Kapitel (1 bis 8), u = Unterordner wie im Ordner «Material» (z. B. '43 Polynomfunktionen'),
+   nr = Nummer wie im Ordner Material, z. B. '1401H' (H = HTML-Werkzeug, T = Theorie). Sortiert und durchsuchbar.
    typ = 'tool' (interaktives Werkzeug) oder 'pdf' (Blatt).
    ===================================================================== */
 const KAPITEL=[
@@ -167,20 +188,23 @@ const KAPITEL=[
   {n:5,t:'Vektorgeometrie'},{n:6,t:'Integralrechnung'},{n:7,t:'Stochastik'},{n:8,t:'Höhere Mathematik'}
 ];
 const TOOLS=[
-  {k:1,u:'14 Gleichungssysteme',typ:'tool',titel:'LGS-Werkstatt',
+  {k:1,u:'14 Gleichungssysteme',typ:'tool',nr:'1401H',titel:'LGS-Werkstatt',
    text:'Lineare Gleichungssysteme mit zwei Unbekannten: Methode wählen, Lösungsmenge eingeben und mit dem schnellsten Lösungsweg vergleichen.',
    tags:['Einsetzen','Addieren','Graphisch','Üben'],href:'1-algebra/14-gleichungssysteme/LGS_Werkstatt.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',titel:'Ableitungs-Reise',
+  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4301H',titel:'Ableitungs-Reise',
    text:'Als Wanderer die Steigung, als Autofahrer die Krümmung erleben. Ableitung und zweite Ableitung entstehen Punkt für Punkt.',
    tags:['Ableitung','Krümmung','Entdecken'],href:'4-differentialrechnung/43-polynomfunktionen/Ableitungsreise.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',titel:'Kurvenlabor',
+  {k:4,u:'43 Polynomfunktionen',typ:'pdf',nr:'4302T',titel:'Theorieblatt Extrema und Wendepunkte',
+   text:'Mögliche Extrempunkte, Hoch- und Tiefpunkte, Wende- und Sattelpunkte. Mit Definitionen, Beispielen und Rechenverfahren.',
+   tags:['Theorie','Extrema','Wendepunkte'],href:'4-differentialrechnung/43-polynomfunktionen/Extrema_Wendepunkte_Theorie.pdf'},
+  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4302H',titel:'Kurvenlabor',
    text:'Waagrechte Tangenten und Wendepunkte am Graphen markieren, Ableitungen selbst berechnen und die Eingabe prüfen lassen.',
    tags:['Extrema','Wendepunkte','Üben'],href:'4-differentialrechnung/43-polynomfunktionen/Kurvenlabor.html'},
-  {k:5,u:'51 Geraden',typ:'tool',titel:'Geradenlabor',
+  {k:5,u:'51 Geraden',typ:'tool',nr:'5101H',titel:'Geradenlabor',
    text:'Geradengleichungen aus zwei Punkten entwickeln, in 2D und 3D. Mit Aufgaben in drei Stufen, die sofort geprüft werden.',
    tags:['2D und 3D','Vektorform','Grundform','Üben'],href:'5-vektorgeometrie/Geradenlabor.html'}
   /* Beispiel für ein Blatt:
-  ,{k:5,u:'51 Geraden',typ:'pdf',titel:'Theorieblatt Geraden',text:'Parameterform, Steigung, Lage zweier Geraden.',tags:['Theorie'],href:'5-vektorgeometrie/261120_Geraden_Theorie.pdf'} */
+  ,{k:5,u:'51 Geraden',typ:'pdf',nr:'5101T',titel:'Theorieblatt Geraden',text:'Parameterform, Steigung, Lage zweier Geraden.',tags:['Theorie'],href:'5-vektorgeometrie/261120_Geraden_Theorie.pdf'} */
 ];
 
 const $=s=>document.querySelector(s);
@@ -191,7 +215,7 @@ function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ
 function matches(t){
   if(kapitel&&t.k!==kapitel) return false;
   if(!query) return true;
-  const hay=norm([t.titel,t.text,t.u,t.tags.join(' '),KAPITEL[t.k-1].t].join(' '));
+  const hay=norm([t.nr||'',t.titel,t.text,t.u,t.tags.join(' '),KAPITEL[t.k-1].t].join(' '));
   return query.split(/\s+/).every(w=>hay.includes(w));
 }
 function render(){
@@ -209,7 +233,7 @@ function render(){
       const subs={};items.forEach(t=>{(subs[t.u]=subs[t.u]||[]).push(t);});
       Object.keys(subs).sort((a,b)=>a.localeCompare(b,'de',{numeric:true})).forEach(u=>{
         const m=/^(\d+)\s+(.*)$/.exec(u),num=m?m[1]:'',name=m?m[2]:u,n=subs[u].length;
-        html+='<details class="sub" open><summary>'+(num?'<span class="sn">'+esc(num)+'</span>':'')+'<span>'+esc(name)+'</span><span class="count">'+n+(n===1?' Eintrag':' Einträge')+'</span><span class="chev" aria-hidden="true"></span></summary><div class="cards">'+subs[u].map(t=>'<a class="card" href="'+esc(t.href)+'"><h3>'+(t.typ==='pdf'?'<span class="kind">Blatt</span>':'')+esc(t.titel)+'</h3><p>'+esc(t.text)+'</p><span class="tags">'+t.tags.map(g=>'<span class="tag">'+esc(g)+'</span>').join('')+'</span><span class="open">Öffnen →</span></a>').join('')+'</div></details>';
+        html+='<details class="sub" open><summary>'+(num?'<span class="sn">'+esc(num)+'</span>':'')+'<span>'+esc(name)+'</span><span class="count">'+n+(n===1?' Eintrag':' Einträge')+'</span><span class="chev" aria-hidden="true"></span></summary><div class="cards">'+subs[u].slice().sort((a,b)=>(a.nr||'~').localeCompare(b.nr||'~')||a.titel.localeCompare(b.titel,'de')).map(t=>'<a class="card" href="'+esc(t.href)+'" title="'+esc(t.text)+'"><span class="nr">'+esc(t.nr||'')+'</span><h3>'+(t.typ==='pdf'?'<span class="kind">Blatt</span>':'')+esc(t.titel)+'</h3><p>'+esc(t.text)+'</p><span class="tags">'+t.tags.map(g=>'<span class="tag">'+esc(g)+'</span>').join('')+'</span><span class="open">Öffnen →</span></a>').join('')+'</div></details>';
       });
     }else html+='<p class="empty">Hier folgen Werkzeuge und Blätter.</p>';
     html+='</details>';
@@ -256,6 +280,11 @@ function init(){
   });
   $('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b) return;kapitel=+b.dataset.k;renderChips();render();});
   $('#q').addEventListener('input',e=>{query=norm(e.target.value.trim());render();});
+  const V=['Kacheln','Kompakt','Liste'];let v=1;
+  try{v=Math.min(3,Math.max(1,+localStorage.getItem('md-view')||1));}catch(e){}
+  const setV=n=>{v=n;document.body.dataset.view=n;$('#view').value=n;$('#view').setAttribute('aria-valuetext',V[n-1]);$('#viewOut').textContent=V[n-1];try{localStorage.setItem('md-view',n);}catch(e){}};
+  $('#view').addEventListener('input',e=>setV(+e.target.value));
+  setV(v);
   renderChips();render();
 }
 init();
