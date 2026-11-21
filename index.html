@@ -122,6 +122,20 @@ body[data-view="3"] .card p,body[data-view="3"] .card .open{display:none}
 body[data-view="3"] details.sub{margin:0 12px 8px}
 @media (max-width:560px){body[data-view="3"] .card .tags{display:none}body[data-view="3"] .card{grid-template-columns:6ch minmax(0,1fr)}}
 
+/* ZIP-Download pro Unterkapitel */
+.dl{padding:0 14px 8px}
+.dlbtn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 12px;font-size:13px;font-weight:500;color:var(--muted)}
+.dlbtn:hover{border-color:var(--accent);color:var(--ink)}
+.dlbtn:disabled{opacity:.6;cursor:default}
+
+/* Lösungen: erst nach Umschalter sichtbar */
+.solsw{display:inline-flex;align-items:center;gap:8px;margin-left:auto;cursor:pointer;color:var(--ink);font-weight:500}
+.solsw input{accent-color:var(--teal);width:16px;height:16px}
+.solbtn{display:inline-block;width:fit-content;font-size:13px;font-weight:600;color:var(--teal);border:1px solid var(--teal);border-radius:999px;padding:2px 12px;cursor:pointer;background:transparent}
+.solbtn:hover{background:var(--teal);color:var(--bg)}
+body[data-view="3"] .card{grid-template-columns:7ch minmax(0,1fr) auto auto}
+@media (max-width:560px){body[data-view="3"] .card{grid-template-columns:6ch minmax(0,1fr) auto}}
+
 /* Unterkapitel */
 details.sub{margin:0 16px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 details.sub>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-weight:600}
@@ -161,7 +175,7 @@ footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:v
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input type="search" id="q" placeholder="Werkzeug oder Thema suchen, zum Beispiel «Ableitung»" autocomplete="off" aria-label="Suchen"></label>
     <div class="chips" id="chips" role="group" aria-label="Kapitel filtern"></div>
-    <div class="viewbar"><label for="view">Ansicht</label><input type="range" id="view" min="1" max="3" step="1" value="1" aria-valuetext="Kacheln"><output id="viewOut" for="view">Kacheln</output></div>
+    <div class="viewbar"><label for="view">Ansicht</label><input type="range" id="view" min="1" max="3" step="1" value="1" aria-valuetext="Kacheln"><output id="viewOut" for="view">Kacheln</output><label class="solsw"><input type="checkbox" id="solChk"> Lösungen anzeigen</label></div>
   </section>
 
   <main class="chapters" id="list"></main>
@@ -181,6 +195,7 @@ footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:v
    NEUES WERKZEUG HINZUFÜGEN: eine Zeile in TOOLS ergänzen, Datei in den Ordner legen. Mehr nicht.
    k = Kapitel (1 bis 8), u = Unterordner wie im Ordner «Material» (z. B. '43 Polynomfunktionen'),
    nr = Nummer wie im Ordner Material, z. B. '1401H' (H = HTML-Werkzeug, T = Theorie). Sortiert und durchsuchbar.
+   loesung = (optional) Pfad zur Lösungsdatei. Sie erscheint erst, wenn «Lösungen anzeigen» angehakt ist.
    typ = 'tool' (interaktives Werkzeug) oder 'pdf' (Blatt).
    ===================================================================== */
 const KAPITEL=[
@@ -194,9 +209,10 @@ const TOOLS=[
   {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4301H',titel:'Ableitungs-Reise',
    text:'Als Wanderer die Steigung, als Autofahrer die Krümmung erleben. Ableitung und zweite Ableitung entstehen Punkt für Punkt.',
    tags:['Ableitung','Krümmung','Entdecken'],href:'4-differentialrechnung/43-polynomfunktionen/4301H_Ableitungsreise.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'pdf',nr:'4302T',titel:'Theorie Extrema und Wendepunkte',
+  {k:4,u:'43 Polynomfunktionen',typ:'pdf',nr:'4302T',titel:'Theorieblatt Extrema und Wendepunkte',
    text:'Mögliche Extrempunkte, Hoch- und Tiefpunkte, Wende- und Sattelpunkte. Mit Definitionen, Beispielen und Rechenverfahren.',
-   tags:['Theorie','Extrema','Wendepunkte'],href:'4-differentialrechnung/43-polynomfunktionen/4302T_Extrema_Wendepunkte.pdf'},
+   tags:['Theorie','Extrema','Wendepunkte'],loesung:'4-differentialrechnung/43-polynomfunktionen/4302T_Extrema_Wendepunkte_L.pdf',
+   href:'4-differentialrechnung/43-polynomfunktionen/4302T_Extrema_Wendepunkte.pdf'},
   {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4302H',titel:'Kurvenlabor',
    text:'Waagrechte Tangenten und Wendepunkte am Graphen markieren, Ableitungen selbst berechnen und die Eingabe prüfen lassen.',
    tags:['Extrema','Wendepunkte','Üben'],href:'4-differentialrechnung/43-polynomfunktionen/4302H_Kurvenlabor.html'},
@@ -209,7 +225,7 @@ const TOOLS=[
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let kapitel=0,query='';
+let kapitel=0,query='',showSol=false;
 
 function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ß/g,'ss');}
 function matches(t){
@@ -233,7 +249,7 @@ function render(){
       const subs={};items.forEach(t=>{(subs[t.u]=subs[t.u]||[]).push(t);});
       Object.keys(subs).sort((a,b)=>a.localeCompare(b,'de',{numeric:true})).forEach(u=>{
         const m=/^(\d+)\s+(.*)$/.exec(u),num=m?m[1]:'',name=m?m[2]:u,n=subs[u].length;
-        html+='<details class="sub" open><summary>'+(num?'<span class="sn">'+esc(num)+'</span>':'')+'<span>'+esc(name)+'</span><span class="count">'+n+(n===1?' Eintrag':' Einträge')+'</span><span class="chev" aria-hidden="true"></span></summary><div class="cards">'+subs[u].slice().sort((a,b)=>(a.nr||'~').localeCompare(b.nr||'~')||a.titel.localeCompare(b.titel,'de')).map(t=>'<a class="card" href="'+esc(t.href)+'" title="'+esc(t.text)+'"><span class="nr">'+esc(t.nr||'')+'</span><h3>'+(t.typ==='pdf'?'<span class="kind">Blatt</span>':'')+esc(t.titel)+'</h3><p>'+esc(t.text)+'</p><span class="tags">'+t.tags.map(g=>'<span class="tag">'+esc(g)+'</span>').join('')+'</span><span class="open">Öffnen →</span></a>').join('')+'</div></details>';
+        html+='<details class="sub" open><summary>'+(num?'<span class="sn">'+esc(num)+'</span>':'')+'<span>'+esc(name)+'</span><span class="count">'+n+(n===1?' Eintrag':' Einträge')+'</span><span class="chev" aria-hidden="true"></span></summary>'+(n>1?'<div class="dl"><button type="button" class="dlbtn" data-dl="'+esc(u)+'" data-k="'+c.n+'">⬇ Alle Dateien als ZIP laden</button></div>':'')+'<div class="cards">'+subs[u].slice().sort((a,b)=>(a.nr||'~').localeCompare(b.nr||'~')||a.titel.localeCompare(b.titel,'de')).map(t=>'<a class="card" href="'+esc(t.href)+'" title="'+esc(t.text)+'"><span class="nr">'+esc(t.nr||'')+'</span><h3>'+(t.typ==='pdf'?'<span class="kind">Blatt</span>':'')+esc(t.titel)+'</h3><p>'+esc(t.text)+'</p><span class="tags">'+t.tags.map(g=>'<span class="tag">'+esc(g)+'</span>').join('')+'</span><span class="open">Öffnen →</span>'+(showSol&&t.loesung?'<span class="solbtn" role="link" tabindex="0" data-sol="'+esc(t.loesung)+'">Lösung</span>':'')+'</a>').join('')+'</div></details>';
       });
     }else html+='<p class="empty">Hier folgen Werkzeuge und Blätter.</p>';
     html+='</details>';
@@ -271,6 +287,24 @@ function hero(){
    '<text class="fl" x="'+(X(4.3)-34)+'" y="'+(Yf(f(4.3))+22)+'">f(x)</text>'+
    '<text x="'+(X(4.3)-34)+'" y="'+(Yd(d(4.3))-10)+'">f′(x)</text>';
 }
+const loadZip=()=>window.JSZip?Promise.resolve():new Promise((ok,err)=>{const el=document.createElement('script');el.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';el.onload=ok;el.onerror=()=>err(new Error('lib'));document.head.appendChild(el);});
+async function dlSub(btn){
+  const u=btn.dataset.dl,k=+btn.dataset.k,label=btn.textContent;
+  const items=TOOLS.filter(t=>t.k===k&&t.u===u);
+  btn.disabled=true;btn.textContent='Wird vorbereitet …';
+  try{
+    await loadZip();
+    const zip=new JSZip(),dir=zip.folder(u.replace(/\s+/g,'_'));
+    for(const t of items){
+      const paths=[t.href].concat(showSol&&t.loesung?[t.loesung]:[]);
+      for(const p of paths){const r=await fetch(p);if(!r.ok)throw new Error(p);dir.file(p.split('/').pop(),await r.blob());}
+    }
+    const blob=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=u.replace(/\s+/g,'_')+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    btn.textContent='✓ Heruntergeladen';
+  }catch(e){btn.textContent='Download hier nicht möglich (nur auf der Webseite)';}
+  setTimeout(()=>{btn.disabled=false;btn.textContent=label;},3500);
+}
 function init(){
   hero();
   try{const th=localStorage.getItem('md-theme');if(th) document.documentElement.setAttribute('data-theme',th);}catch(e){}
@@ -284,6 +318,10 @@ function init(){
   try{v=Math.min(3,Math.max(1,+localStorage.getItem('md-view')||1));}catch(e){}
   const setV=n=>{v=n;document.body.dataset.view=n;$('#view').value=n;$('#view').setAttribute('aria-valuetext',V[n-1]);$('#viewOut').textContent=V[n-1];try{localStorage.setItem('md-view',n);}catch(e){}};
   $('#view').addEventListener('input',e=>setV(+e.target.value));
+  $('#solChk').addEventListener('change',e=>{showSol=e.target.checked;render();});
+  const openSol=el=>window.open(el.dataset.sol,'_blank','noopener');
+  $('#list').addEventListener('click',e=>{const d=e.target.closest('[data-dl]');if(d){dlSub(d);return;}const b=e.target.closest('[data-sol]');if(!b)return;e.preventDefault();e.stopPropagation();openSol(b);});
+  $('#list').addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const b=e.target.closest('[data-sol]');if(!b)return;e.preventDefault();openSol(b);});
   setV(v);
   renderChips();render();
 }
