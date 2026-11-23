@@ -1,5 +1,9 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Flächen-Labor</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
@@ -116,6 +120,8 @@ input[type=range]{width:100%;height:28px;accent-color:var(--accent)}
 .teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <header>
@@ -884,12 +890,12 @@ const PRESETS=[
   {n:'f(x) = x³ − 2x²   (Berührpunkt bei 0)',two:false,f:'x^3-2x^2',xmin:'-1',xmax:'3.5',a:'-1',b:'3',h:'Bei x = 0 berührt der Graph die x-Achse nur: Dort ändert sich das Vorzeichen nicht, die Fläche wird nicht geteilt.'},
   {n:'f(x) = x³',two:false,f:'x^3',xmin:'-3',xmax:'3',a:'-2',b:'2',h:'Punktsymmetrisch: Das Integral über ein symmetrisches Intervall ist 0.'},
   {n:'f(x) = e^x − 2',two:false,f:'exp(x)-2',xmin:'-1',xmax:'3',a:'0',b:'2',h:'Die Nullstelle ist x = ln 2 ≈ 0.693. Sie ist nicht ganzzahlig, die Rechnung wird numerisch.'},
-  {n:'f = x²   und   g = x + 2',two:true,f:'x^2',g:'x+2',xmin:'-3',xmax:'4',a:'-2',b:'3',h:'Die Parabel und die Gerade schliessen eine Fläche ein. Ausserhalb der Schnittstellen tauschen die Graphen die Rollen.'},
-  {n:'f = x²   und   g = −x² + 8',two:true,f:'x^2',g:'-x^2+8',xmin:'-4',xmax:'4',a:'-3',b:'3',h:'Zwei Parabeln, die einander einschliessen. Die Differenz d(x) = 2x² − 8 ist die Funktion, mit der gerechnet wird.'},
-  {n:'f = x³   und   g = x   (Bilanz 0)',two:true,f:'x^3',g:'x',xmin:'-2',xmax:'2',a:'-1.5',b:'1.5',h:'Drei Schnittstellen und zwei gleich grosse Flächen. Die Bilanz ist 0, die Fläche ist 1/2.'},
-  {n:'f = x² − 4x + 5   und   g = 1   (Berührpunkt)',two:true,f:'x^2-4x+5',g:'1',xmin:'-1',xmax:'5',a:'0',b:'4',h:'Die Parabel berührt die Gerade nur in x = 2. Es gibt keine eingeschlossene Fläche.'},
-  {n:'f = sin(x)   und   g = cos(x)',two:true,f:'sin(x)',g:'cos(x)',xmin:'-1',xmax:'7',a:'0',b:'2pi',h:'Schnittstellen bei π/4 und 5π/4. Dazwischen liegt f über g.'},
-  {n:'f = 2x   und   g = x²',two:true,f:'2x',g:'x^2',xmin:'-2',xmax:'4',a:'-1',b:'3',h:'Zwischen 0 und 2 liegt die Gerade über der Parabel, ausserhalb ist es umgekehrt.'}
+  {n:'f(x) = x²   und   g(x) = x + 2',two:true,f:'x^2',g:'x+2',xmin:'-3',xmax:'4',a:'-2',b:'3',h:'Die Parabel und die Gerade schliessen eine Fläche ein. Ausserhalb der Schnittstellen tauschen die Graphen die Rollen.'},
+  {n:'f(x) = x²   und   g(x) = −x² + 8',two:true,f:'x^2',g:'-x^2+8',xmin:'-4',xmax:'4',a:'-3',b:'3',h:'Zwei Parabeln, die einander einschliessen. Die Differenz d(x) = 2x² − 8 ist die Funktion, mit der gerechnet wird.'},
+  {n:'f(x) = x³   und   g(x) = x   (Bilanz 0)',two:true,f:'x^3',g:'x',xmin:'-2',xmax:'2',a:'-1.5',b:'1.5',h:'Drei Schnittstellen und zwei gleich grosse Flächen. Die Bilanz ist 0, die Fläche ist 1/2.'},
+  {n:'f(x) = x² − 4x + 5   und   g(x) = 1   (Berührpunkt)',two:true,f:'x^2-4x+5',g:'1',xmin:'-1',xmax:'5',a:'0',b:'4',h:'Die Parabel berührt die Gerade nur in x = 2. Es gibt keine eingeschlossene Fläche.'},
+  {n:'f(x) = sin(x)   und   g(x) = cos(x)',two:true,f:'sin(x)',g:'cos(x)',xmin:'-1',xmax:'7',a:'0',b:'2pi',h:'Schnittstellen bei π/4 und 5π/4. Dazwischen liegt f über g.'},
+  {n:'f(x) = 2x   und   g(x) = x²',two:true,f:'2x',g:'x^2',xmin:'-2',xmax:'4',a:'-1',b:'3',h:'Zwischen 0 und 2 liegt die Gerade über der Parabel, ausserhalb ist es umgekehrt.'}
 ];
 
 /* ===== Zustand ===== */
@@ -1124,3 +1130,6 @@ function init(){
 init();
 })();
 </script>
+
+</body>
+</html>
