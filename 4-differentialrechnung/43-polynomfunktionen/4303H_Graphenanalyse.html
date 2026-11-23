@@ -1,0 +1,1907 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Graphenanalyse</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Aufbau: oben der Fortschritt, links das Koordinatensystem (wächst mit jedem Schritt), rechts die Aufgabe des aktuellen Schritts.
+   Farbcode wie im Kurvenlabor: f = dunkles Blau, Nullstellen = Türkis, Extrempunkte = Orange (Hoch) / Blau (Tief), Wendepunkte = Violett. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --surface2:#eceff6; --ink:#18202f; --muted:#576277; --line:#d5dbe7; --grid:#e7ebf3; --axis:#8791a6;
+  --accent:#2d56e0; --accent-ink:#ffffff;
+  --f:#1b2a52; --f1:#0a8a8a; --f2:#7048e8; --left:#1c7ed6; --right:#e8590c; --ok:#2b8a3e; --bad:#d6303a; --sy:#c2255c;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-math:'STIX Two Text','Latin Modern Roman','Cambria Math','Times New Roman',serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+    --accent:#7f9fff; --accent-ink:#0c1226;
+    --f:#dbe4ff; --f1:#3cc9c9; --f2:#b39dfc; --left:#4dabf7; --right:#ff922b; --ok:#51cf66; --bad:#ff7b84; --sy:#f783ac;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+  --accent:#7f9fff; --accent-ink:#0c1226;
+  --f:#dbe4ff; --f1:#3cc9c9; --f2:#b39dfc; --left:#4dabf7; --right:#ff922b; --ok:#51cf66; --bad:#ff7b84; --sy:#f783ac;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.01em}
+h2{font-size:20px}
+h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.lead{max-width:64ch;color:var(--muted);margin-top:6px}
+header{margin-bottom:18px}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default;filter:none}
+.btn.small{padding:4px 9px;font-size:13px}
+.btn.link{border:0;background:transparent;color:var(--muted);text-decoration:underline;padding:4px 6px;font-weight:400;font-size:13px}
+
+/* Fortschritt */
+.steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 13px 4px 5px;font-weight:500;font-size:13.5px;cursor:pointer;color:inherit}
+.step[disabled]{opacity:.5;cursor:default}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:12px;font-weight:600}
+.step.done .n{background:color-mix(in srgb,var(--ok) 28%,var(--surface))}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:16px;align-items:start}
+@media (max-width:1020px){.layout{grid-template-columns:minmax(0,1fr)}}
+.left{display:grid;gap:10px;min-width:0;position:sticky;top:12px}
+@media (max-width:1020px){.left{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.panel canvas{display:block;width:100%;height:470px;touch-action:pan-y}
+@media (max-width:560px){.panel canvas{height:320px}}
+.legend{padding:7px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px}
+.legend span{white-space:nowrap}
+.sym{display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px}
+.sym.n{border-radius:50%;background:var(--f1)} .sym.h{background:var(--right);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.sym.t{background:var(--left);clip-path:polygon(0 0,100% 0,50% 100%)} .sym.s{background:var(--axis)}
+.sym.w{background:var(--f2);transform:rotate(45deg) scale(.82)} .sym.y{border-radius:50%;background:var(--sy)}
+
+/* Karten */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.stepcard{display:grid;gap:12px}
+.task-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.ask{background:var(--surface2);border-radius:8px;padding:9px 12px}
+.ask b{font-weight:600}
+.merke{border:1px solid color-mix(in srgb,var(--ok) 55%,var(--line));background:color-mix(in srgb,var(--ok) 9%,var(--surface));border-radius:8px;padding:9px 12px;font-size:14px}
+.merke b{font-family:var(--font-head)}
+.tipbox{border:1px dashed var(--line);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--muted)}
+.task-nav{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px;margin-top:2px}
+.task-nav .r{display:flex;gap:8px}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+input[type=text],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0}
+input.mono{font-family:var(--font-mono);font-size:15px}
+.fieldrow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+.fieldrow>label{margin:0;font-family:var(--font-mono);font-size:15px;color:var(--ink);white-space:nowrap}
+.fieldrow.three{grid-template-columns:auto 1fr auto}
+.read{font-size:14px;margin-top:6px;overflow-wrap:anywhere;min-height:22px}
+.msg{font-size:14px;overflow-wrap:anywhere}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)} .msg.info{color:var(--muted)}
+.fb{border-radius:8px;padding:9px 12px;font-size:14px;border:1px solid var(--line)}
+.fb.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 9%,var(--surface))}
+.fb.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--surface))}
+.fb b.t{display:block;margin-bottom:2px}
+.fb.ok b.t{color:var(--ok)} .fb.bad b.t{color:var(--bad)}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px}
+.opts{display:grid;gap:8px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opt{display:grid;gap:4px;justify-items:center;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 8px 9px;font-size:13px;font-weight:500;line-height:1.3}
+.opt:hover{background:var(--surface2)}
+.opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent);background:var(--surface2)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 11%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--surface))}
+.opt svg{width:100%;max-width:130px;height:auto}
+.opt svg .c{fill:none;stroke:var(--f);stroke-width:2.4;stroke-linecap:round}
+.opt svg .a{stroke:var(--axis);stroke-width:1;fill:none}
+.opt svg .d{stroke:var(--sy);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.opt.row{grid-template-columns:auto 1fr;justify-items:start;text-align:left;padding:8px 12px;gap:10px;align-items:center}
+.opt.row .sym{margin:0}
+details.inline{border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+details.inline>summary{cursor:pointer;padding:8px 12px;font-weight:500;font-size:14px}
+details.inline>.in{padding:2px 12px 12px;display:grid;gap:6px;font-size:14px}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-family:var(--font-mono);font-size:13px;background:var(--bg)}
+.chip.ok{border-color:var(--ok);color:var(--ok)} .chip.no{border-color:var(--bad);color:var(--bad)} .chip.miss{border-style:dashed;border-color:var(--right);color:var(--right)}
+.rows{display:grid;gap:8px}
+.prow{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:7px}
+.prow .ph{font-family:var(--font-mono);font-size:14px}
+.prow.ok{border-color:var(--ok)} .prow.bad{border-color:var(--bad)}
+.prow .why{font-size:13.5px}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg3 button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 4px;font-size:13px;font-weight:500;display:flex;gap:5px;align-items:center;justify-content:center;line-height:1.2;text-align:center}
+.seg3 button[aria-pressed="true"]{background:var(--surface2);border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg3 button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 11%,var(--surface))}
+.seg3 button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--surface))}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.pre{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-size:13px;display:grid;line-height:1.25;text-align:left}
+.pre small{color:var(--muted);font-size:11.5px}
+.pre:hover{background:var(--surface2)}
+.pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.pre b{font-family:var(--font-mono);font-weight:500;font-size:12.5px}
+.gen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gen button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;font-weight:600;display:grid;gap:1px;justify-items:center}
+.gen button small{font-weight:400;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.25}
+.gen button:hover{background:var(--surface2)}
+.big{font-size:17px;padding:10px 16px}
+
+/* Rechenweg */
+.calc{font-size:14.5px;overflow-x:auto}
+.calc .ln{padding:3px 0;line-height:1.9}
+.calc .sec{margin-top:8px;font-weight:600;font-family:var(--font-head);font-size:13.5px;color:var(--accent)}
+.cm{color:var(--muted);font-size:.9em}
+.pt{font-family:var(--font-mono);font-weight:500}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px;font-size:.92em}
+.fr>span:first-child{border-bottom:1.2px solid currentColor;padding:0 3px 1px}
+.fr>span:last-child{padding:1px 3px 0}
+.rad{display:inline-flex;align-items:stretch;vertical-align:middle;white-space:nowrap;margin:0 1px}
+.rad .rs{width:.72em;min-height:1.05em;flex:none;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.2px;stroke-linejoin:miter;stroke-linecap:butt;transform:translateY(.6px)}
+.rad .rs path{vector-effect:non-scaling-stroke}
+.rad .ix{font-size:.62em;align-self:flex-start;margin-right:-.5em;margin-top:.1em;position:relative;z-index:1}
+.rd{border-top:1.2px solid currentColor;padding:1px 2px 0 1px;display:inline-flex;align-items:center}
+.lim sub{font-size:.75em}
+table.pd{border-collapse:collapse;margin:4px 0 6px;font-variant-numeric:tabular-nums}
+table.pd td{padding:2px 9px;text-align:left;white-space:nowrap}
+table.pd td.lb{padding:2px 2px;color:var(--muted);text-align:right}
+table.pd tr.rl td:not(.lb){border-top:1.5px solid currentColor}
+.pdiv{margin:2px 0 4px}
+table.hz{border-collapse:collapse;margin:4px 0}
+table.hz td{padding:3px 9px;text-align:center;border:0;font-variant-numeric:tabular-nums}
+table.hz td.rr{border-right:1.5px solid currentColor;font-weight:600}
+table.hz tr.sm td{border-top:1.5px solid currentColor}
+table.hz td.rest{color:var(--ok);font-weight:600}
+.sum{width:100%;border-collapse:collapse;font-size:14px}
+.sum td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.sum td:first-child{color:var(--muted);width:38%;padding-right:10px}
+.score{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stars{letter-spacing:2px;font-size:18px;color:var(--right)}
+
+details.howto,.teacher{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-top:16px}
+details.howto summary,.teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
+details.howto .inner,.teacher .inner{padding:0 18px 14px;display:grid;gap:8px;max-width:80ch}
+details.howto ul,.teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
+code{font-family:var(--font-mono);font-size:.92em;background:var(--surface2);border-radius:5px;padding:1px 5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+[hidden]{display:none!important}
+.modes{display:inline-flex;margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.modes button{border:0;background:transparent;padding:7px 14px;font-weight:500;font-size:14px}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.fbar{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 18px;margin-bottom:14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;overflow-x:auto}
+.fbar .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fbar .f{font-size:clamp(20px,3.2vw,28px);font-family:var(--font-body);color:var(--f);font-weight:500;white-space:nowrap}
+.exc{border:1px solid var(--right);background:color-mix(in srgb,var(--right) 9%,var(--surface));border-radius:8px;padding:9px 12px;font-size:14px}
+.wip{text-align:center;padding:40px 20px;display:grid;gap:8px;justify-items:center}
+.wip .ic{font-size:34px}
+.mi{font-style:italic}
+.fbar .f,.calc .ln,.calc p,.ph,.sum td:last-child,.read b,.chip,.merke,.fb,.ask{font-family:var(--font-math);font-size-adjust:none}
+.fbar .f{font-size:clamp(22px,3.4vw,31px);font-weight:400}
+.calc .ln,.ph{font-size:1.06em}
+.cm,.fb b.t,.ask b,.merke b:first-child,.sum td:first-child,button,label,details>summary{font-family:var(--font-body)}
+.ask,.fb,.merke{font-family:var(--font-body)}
+.ask .mi,.fb .mi,.merke .mi{font-family:var(--font-math);font-size:1.07em}
+.rbtn{margin-left:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Analysis · Polynomfunktionen</p>
+    <h1>Graphenanalyse</h1>
+    <p class="lead">Untersuche eine Funktion Schritt für Schritt: vom Verhalten im Unendlichen bis zu den Wendepunkten. Dein Graph entsteht dabei von selbst im Koordinatensystem.</p>
+    <div class="modes" role="group" aria-label="Funktionstyp"><button data-a="mode" data-m="poly" aria-pressed="true">Polynomfunktionen</button><button data-a="mode" data-m="other" aria-pressed="false">Andere Funktionen</button></div>
+  </header>
+
+  <section class="card wip" id="wip" hidden><div class="ic" aria-hidden="true">🛠</div><h2>Noch in Arbeit</h2><p class="lead" style="margin:0">Die Graphenanalyse für andere Funktionstypen (z. B. gebrochenrationale, Exponential- oder trigonometrische Funktionen) ist noch in Arbeit. Bis dahin: Wechsle zurück zu den Polynomfunktionen.</p></section>
+
+  <div id="app">
+  <div class="fbar" id="fbar" hidden></div>
+  <ol class="steps" id="steps"></ol>
+
+  <main class="layout">
+    <div class="left">
+      <div class="panel">
+        <canvas id="cv" role="img" aria-label="Koordinatensystem mit dem Graphen der Funktion"></canvas>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+    <section class="card stepcard" id="card" aria-live="polite"></section>
+  </main>
+  </div>
+
+  <details class="howto">
+    <summary>Anleitung: So arbeitest du mit der Graphenanalyse</summary>
+    <div class="inner">
+      <p><b>Ablauf.</b> Du gehst sieben Schritte durch. Rechne jeweils zuerst selbst (auf Papier oder im Kopf), gib dann dein Ergebnis ein und lass es prüfen. Danach siehst du die Lösung, bei Bedarf mit dem ausführlichen Rechenweg.</p>
+      <ul>
+        <li><b>Funktion:</b> Wähle ein Beispiel, tippe eine eigene Funktion ein oder lass dir eine Übungsfunktion (leicht, mittel, schwer) erzeugen. Schreibweise: <code>x^3</code> für x³, <code>2x</code> oder <code>2*x</code>, <code>1/2*x^4</code> für ein halbes x⁴.</li>
+        <li><b>Zahlen eingeben:</b> Brüche als <code>1/2</code>, Wurzeln als <code>√5</code> oder <code>sqrt(5)</code>, Dezimalzahlen mit Punkt oder Komma. Mehrere Werte trennst du mit einem Strichpunkt: <code>-2; 2; 3</code>. Gibt es keine Lösung, schreibe <code>keine</code>.</li>
+        <li><b>Rechenweg:</b> Wer den Stoff schon kennt, kann Rechnungen eingeklappt lassen. Klappe sie auf, wenn du etwas nachlesen willst.</li>
+        <li><b>Zum Schluss</b> zeichnet die Graphenanalyse die ganze Funktion für dich und fasst alles in einem Steckbrief zusammen.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="teacher">
+    <summary>Hinweise für Lehrpersonen</summary>
+    <div class="inner">
+      <ul>
+        <li><b>Funktionen:</b> Die Übungsfunktionen sind so erzeugt, dass sich alle Gleichungen von Hand lösen lassen (Ausklammern, Mitternachtsformel, Substitution, rationales Probieren). Leicht: Grad 3 oder 4 mit lauter rationalen Lösungen. Mittel: Grad 3 bis 4, auch Wurzeln und Polynomdivision. Schwierig: Grad 4 bis 5, Brüche, Sattelpunkte, häufig Polynomdivision. Unter den Beispielen stehen drei Ausnahmefälle (Grad 5), bei denen sich Nullstellen, Extrem- bzw. Wendestellen nicht von Hand berechnen lassen. Dort werden die Werte angegeben und mit dem Taschenrechner bestimmt.</li>
+        <li><b>Eingaben:</b> Exakte Werte werden exakt verglichen (1/2 = 0.5 = 0,5). Wurzelwerte gelten als richtig, wenn sie auf 2 Nachkommastellen stimmen.</li>
+        <li><b>Rückmeldung:</b> Bei Auswahlaufgaben (Verhalten im Unendlichen, Symmetrie) sind zwei Versuche möglich. Bei Berechnungen wird nach der Prüfung immer die Lösung gezeigt. Am Ende steht, wie viele Schritte im ersten Versuch richtig waren.</li>
+        <li><b>Voraussetzungen:</b> Ableitungsregeln (Potenzregel). Grenzwerte sind nicht nötig, die Rechnung dazu ist optional.</li>
+      </ul>
+    </div>
+  </details>
+
+  <p style="text-align:center;margin:24px 0"><a href="/" style="color:inherit;font:14px system-ui">← mathdrian</a></p>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ============================================================
+   KERN: exakte Brüche, Polynome, Parser, Nullstellen, Analyse
+   (keine DOM-Zugriffe, in Node testbar)
+   ============================================================ */
+const MINUS = '−';
+
+/* ---------- Brüche (BigInt) ---------- */
+const babs = a => (a < 0n ? -a : a);
+const bgcd = (a, b) => { a = babs(a); b = babs(b); while (b) { const t = a % b; a = b; b = t; } return a; };
+class Fr {
+  constructor(n, d) {
+    n = BigInt(n); d = d === undefined ? 1n : BigInt(d);
+    if (d === 0n) throw new Error('Division durch 0');
+    if (d < 0n) { n = -n; d = -d; }
+    const g = bgcd(n, d) || 1n;
+    this.n = n / g; this.d = d / g;
+  }
+  static parse(s) {
+    const m = /^(\d*)\.?(\d*)$/.exec(s);
+    if (!m || (m[1] === '' && m[2] === '')) throw new Error('Zahl nicht lesbar');
+    const ip = m[1] || '0', fp = m[2] || '';
+    return new Fr(BigInt(ip + fp), 10n ** BigInt(fp.length));
+  }
+  add(o) { return new Fr(this.n * o.d + o.n * this.d, this.d * o.d); }
+  sub(o) { return new Fr(this.n * o.d - o.n * this.d, this.d * o.d); }
+  mul(o) { return new Fr(this.n * o.n, this.d * o.d); }
+  div(o) { return new Fr(this.n * o.d, this.d * o.n); }
+  neg() { return new Fr(-this.n, this.d); }
+  abs() { return new Fr(babs(this.n), this.d); }
+  pow(k) { let r = ONE; for (let i = 0; i < k; i++) r = r.mul(this); return r; }
+  get isInt() { return this.d === 1n; }
+  get isZero() { return this.n === 0n; }
+  get sign() { return this.n > 0n ? 1 : this.n < 0n ? -1 : 0; }
+  eq(o) { return this.n === o.n && this.d === o.d; }
+  cmp(o) { const l = this.n * o.d, r = o.n * this.d; return l < r ? -1 : l > r ? 1 : 0; }
+  num() { return Number(this.n) / Number(this.d); }
+}
+const ZERO = new Fr(0), ONE = new Fr(1);
+const fr = (n, d) => new Fr(n, d);
+
+function isqrtBig(n) {
+  if (n < 0n) throw new Error('neg');
+  if (n < 2n) return n;
+  let x = BigInt(Math.floor(Math.sqrt(Number(n))));
+  while (x * x > n) x--;
+  while ((x + 1n) * (x + 1n) <= n) x++;
+  return x;
+}
+function irootBig(n, m) { // ganzzahlige m-te Wurzel (n>=0), exakt falls Potenz sonst null
+  if (n < 2n) return n;
+  let x = BigInt(Math.round(Math.pow(Number(n), 1 / m)));
+  for (let t = -2n; t <= 2n; t++) { const c = x + t; if (c >= 0n && c ** BigInt(m) === n) return c; }
+  return null;
+}
+function sqrtFr(f) { // exakte Wurzel oder null
+  if (f.sign < 0) return null;
+  const a = isqrtBig(f.n), b = isqrtBig(f.d);
+  return (a * a === f.n && b * b === f.d) ? new Fr(a, b) : null;
+}
+function nrootFr(f, m) { // exakte m-te Wurzel von f>=0 oder null
+  const a = irootBig(f.n, m), b = irootBig(f.d, m);
+  return (a !== null && b !== null) ? new Fr(a, b) : null;
+}
+function sqFreeSplit(N) { // N = s^2 * m
+  let s = 1n, m = N;
+  if (N > 10n ** 12n) return { s, m };
+  for (let i = 2n; i * i <= m; i++) {
+    while (m % (i * i) === 0n) { m /= i * i; s *= i; }
+  }
+  return { s, m };
+}
+function terminating(f) { // endliche Dezimalzahl?
+  let d = f.d;
+  while (d % 2n === 0n) d /= 2n;
+  while (d % 5n === 0n) d /= 5n;
+  return d === 1n;
+}
+
+/* ---------- Polynome (Array von Fr, Index = Exponent) ---------- */
+const pTrim = p => { p = p.slice(); while (p.length > 1 && p[p.length - 1].isZero) p.pop(); return p; };
+const pDeg = p => (p.length === 1 && p[0].isZero ? -1 : p.length - 1);
+const pAdd = (a, b) => { const n = Math.max(a.length, b.length), r = []; for (let i = 0; i < n; i++) r.push((a[i] || ZERO).add(b[i] || ZERO)); return pTrim(r); };
+const pScale = (a, k) => pTrim(a.map(c => c.mul(k)));
+const pSub = (a, b) => pAdd(a, pScale(b, fr(-1)));
+const pMul = (a, b) => { const r = new Array(a.length + b.length - 1).fill(ZERO); a.forEach((x, i) => b.forEach((y, j) => { r[i + j] = r[i + j].add(x.mul(y)); })); return pTrim(r); };
+const pPow = (a, k) => { let r = [ONE]; for (let i = 0; i < k; i++) r = pMul(r, a); return r; };
+const pDer = p => (p.length <= 1 ? [ZERO] : pTrim(p.slice(1).map((c, i) => c.mul(fr(i + 1)))));
+const pEv = (p, x) => { let r = ZERO; for (let i = p.length - 1; i >= 0; i--) r = r.mul(x).add(p[i]); return r; };
+const pNums = p => p.map(c => c.num());
+const pEvN = (pn, x) => { let r = 0; for (let i = pn.length - 1; i >= 0; i--) r = r * x + pn[i]; return r; };
+const pEq = (a, b) => { a = pTrim(a); b = pTrim(b); return a.length === b.length && a.every((c, i) => c.eq(b[i])); };
+function pDivMod(a, b) {
+  a = pTrim(a); b = pTrim(b);
+  const db = b.length - 1; const r = a.slice();
+  const q = new Array(Math.max(a.length - b.length + 1, 1)).fill(ZERO);
+  for (let i = a.length - b.length; i >= 0; i--) {
+    const c = r[i + db].div(b[db]); q[i] = c;
+    for (let j = 0; j <= db; j++) r[i + j] = r[i + j].sub(c.mul(b[j]));
+  }
+  return { q: pTrim(q), r: pTrim(r.slice(0, Math.max(db, 1))) };
+}
+const monic = p => { p = pTrim(p); return pScale(p, ONE.div(p[p.length - 1])); };
+function pGcd(a, b) {
+  a = pTrim(a); b = pTrim(b);
+  while (pDeg(b) >= 0) { const r = pDivMod(a, b).r; a = b; b = r; }
+  return monic(a);
+}
+function intScale(p) { // ganzzahliges Vielfaches mit ggT 1
+  let l = 1n; p.forEach(c => { l = l * c.d / bgcd(l, c.d); });
+  let ints = p.map(c => c.n * (l / c.d)); let g = 0n;
+  ints.forEach(v => { g = bgcd(g, v); });
+  if (g > 1n) ints = ints.map(v => v / g);
+  return ints;
+}
+function divisors(n) {
+  n = babs(n); const r = [];
+  if (n === 0n || n > 10n ** 10n) return r;
+  for (let i = 1n; i * i <= n; i++) if (n % i === 0n) { r.push(i); if (i * i !== n) r.push(n / i); }
+  return r.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+function ratCandidates(p) { // p mit c0 != 0; Reihenfolge wie beim Probieren
+  const ints = intScale(p); const c0 = ints[0], an = ints[ints.length - 1];
+  const out = []; const seen = new Set();
+  divisors(c0).forEach(pn => divisors(an).forEach(qd => {
+    [1n, -1n].forEach(s => { const f = new Fr(s * pn, qd); const k = f.n + '/' + f.d; if (!seen.has(k)) { seen.add(k); out.push(f); } });
+  }));
+  out.sort((a, b) => {
+    const ai = a.isInt ? 0 : 1, bi = b.isInt ? 0 : 1; if (ai !== bi) return ai - bi;
+    const aa = a.abs().cmp(b.abs()); if (aa) return aa;
+    return b.sign - a.sign;
+  });
+  return out;
+}
+function horner(p, r) { // p aufsteigend; liefert Quotient (aufsteigend), Rest und Zeilen für die Tabelle
+  const n = p.length - 1; const co = []; for (let i = n; i >= 0; i--) co.push(p[i]);
+  const b = [co[0]]; const prod = [null];
+  for (let i = 1; i < co.length; i++) { const pr = b[i - 1].mul(r); prod.push(pr); b.push(co[i].add(pr)); }
+  const rest = b[b.length - 1]; const qd = b.slice(0, b.length - 1);
+  return { q: pTrim(qd.slice().reverse()), rest, co, prod, b };
+}
+
+/* ---------- reelle Nullstellen numerisch ---------- */
+function realRootsNum(p) { // p: Fr-Polynom; Rückgabe sortierte Zahlen (distinct)
+  p = pTrim(p); const n = pDeg(p); if (n < 1) return [];
+  const a = pNums(p);
+  if (n === 1) return [-a[0] / a[1]];
+  const f = x => pEvN(a, x);
+  const crit = realRootsNum(pDer(p));
+  const lead = a[n]; let bound = 1; for (let i = 0; i < n; i++) bound = Math.max(bound, 1 + Math.abs(a[i] / lead));
+  const scale = Math.max(...a.map(Math.abs)) || 1;
+  const pts = [-bound, ...crit, bound]; const roots = [];
+  crit.forEach(c => { if (Math.abs(f(c)) < 1e-9 * scale * Math.max(1, Math.pow(Math.abs(c), n))) roots.push(c); });
+  for (let i = 0; i < pts.length - 1; i++) {
+    let l = pts[i], r = pts[i + 1]; const fl = f(l), fr_ = f(r);
+    if (fl * fr_ < 0) {
+      let fl2 = fl;
+      for (let k = 0; k < 100; k++) { const m = (l + r) / 2, fm = f(m); if (fl2 * fm <= 0) { r = m; } else { l = m; fl2 = fm; } }
+      roots.push((l + r) / 2);
+    }
+  }
+  roots.sort((x, y) => x - y);
+  const out = []; roots.forEach(x => { if (!out.length || Math.abs(x - out[out.length - 1]) > 1e-7) out.push(x); });
+  return out;
+}
+
+/* ---------- Anzeige-Hilfen (HTML) ---------- */
+const frHTML = f => {
+  const s = f.sign < 0 ? MINUS : '';
+  if (f.isInt) return s + babs(f.n).toString();
+  return s + '<span class="fr"><span>' + babs(f.n) + '</span><span>' + f.d + '</span></span>';
+};
+const fracHTML = (nu, de) => '<span class="fr"><span>' + nu + '</span><span>' + de + '</span></span>';
+const RSVG = '<svg class="rs" viewBox="0 0 10 20" preserveAspectRatio="none" aria-hidden="true"><path d="M0.4 12 L2.4 10.6 L5 19 L9.6 0 H10"/></svg>';
+const radHTML = s => '<span class="rad">' + RSVG + '<span class="rd">' + s + '</span></span>';
+const supHTML = k => (k === 1 ? '' : '<sup>' + k + '</sup>');
+function polyHTML(p, v) {
+  v = v || 'x'; const parts = [];
+  for (let k = p.length - 1; k >= 0; k--) {
+    const c = p[k]; if (c.isZero) continue;
+    const a = c.abs(); let body;
+    if (k === 0) body = frHTML(a);
+    else body = (a.eq(ONE) ? '' : frHTML(a)) + v + supHTML(k);
+    parts.push({ neg: c.sign < 0, body });
+  }
+  if (!parts.length) return '0';
+  return parts.map((t, i) => (i === 0 ? (t.neg ? MINUS : '') + t.body : ' ' + (t.neg ? MINUS : '+') + ' ' + t.body)).join('');
+}
+const parenIf = f => ((f.sign < 0 || !f.isInt) ? '(' + frHTML(f) + ')' : frHTML(f));
+function substHTML(p, x, v) { // Term mit eingesetztem Wert
+  const xs = parenIf(x); const parts = [];
+  for (let k = p.length - 1; k >= 0; k--) {
+    const c = p[k]; if (c.isZero) continue;
+    const a = c.abs(); let body;
+    if (k === 0) body = frHTML(a);
+    else body = (a.eq(ONE) ? '' : frHTML(a) + '·') + xs + supHTML(k);
+    parts.push({ neg: c.sign < 0, body });
+  }
+  if (!parts.length) return '0';
+  return parts.map((t, i) => (i === 0 ? (t.neg ? MINUS : '') + t.body : ' ' + (t.neg ? MINUS : '+') + ' ' + t.body)).join('');
+}
+const dec = (v, d) => { d = d === undefined ? 3 : d; if (!isFinite(v)) return '–'; if (Math.abs(v) < 5 * Math.pow(10, -d - 1)) return '0'; return String(parseFloat(v.toFixed(d))).replace('-', MINUS); };
+const numText = f => { // einfacher Text (Canvas): Bruch als a/b
+  if (f.isInt) return (f.sign < 0 ? MINUS : '') + babs(f.n);
+  return (f.sign < 0 ? MINUS : '') + babs(f.n) + '/' + f.d;
+};
+const cm = s => '<span class="cm">' + s + '</span>';
+const ln = fn => fn; // Zeilen werden als Funktionen gesammelt (lazy)
+
+/* ---------- Wurzel-Darstellung eines Ergebnisses ---------- */
+let ROUND = false;
+function rootHTML(r, v) {
+  v = v || 'x';
+  if (r.x) return frHTML(r.x);
+  if (ROUND && r.form) return '≈ ' + dec(r.v);
+  if (r.form && r.form.type === 'quad') {
+    const { p, q, m } = r.form; const qa = q.abs(); const sg = q.sign < 0 ? MINUS : '+';
+    const sq = (qa.eq(ONE) ? '' : frHTML(qa)) + radHTML(m.toString());
+    if (p.isZero) return (q.sign < 0 ? MINUS : '') + sq;
+    return frHTML(p) + ' ' + sg + ' ' + sq;
+  }
+  if (r.form && r.form.type === 'nroot') {
+    const { m, r: rad, neg } = r.form;
+    return (neg ? MINUS : '') + '<span class="rad"><sup class="ix">' + m + '</sup>' + RSVG + '<span class="rd">' + frHTML(rad) + '</span></span>';
+  }
+  return '≈ ' + dec(r.v);
+}
+const rootText = r => (r.x ? numText(r.x) : dec(r.v));
+
+/* ---------- Gleichung lösen: Rezept + Lösungsweg ---------- */
+function normalizePoly(q) {
+  const ints = intScale(q); let g = ints.map(v => new Fr(v));
+  if (g[g.length - 1].sign < 0) g = g.map(c => c.neg());
+  return { g, k: q[q.length - 1].div(g[g.length - 1]) };
+}
+function kText(k) { // "| : 3", "| · 2"
+  if (k.isInt) return '| : ' + (k.sign < 0 ? '(' + MINUS + babs(k.n) + ')' : babs(k.n));
+  if (k.n === 1n || k.n === -1n) return '| · ' + (k.sign < 0 ? '(' + MINUS + k.d + ')' : k.d);
+  return '| : (' + frHTML(k) + ')';
+}
+function mkRoot(x, v, extra) { return Object.assign({ x: x || null, v: v === undefined ? (x ? x.num() : NaN) : v, mult: 1, form: null }, extra || {}); }
+function quadForm(a, b, c) { // a x^2 + b x + c, D>0 nicht Quadrat -> p ± q√m
+  const D = b.mul(b).sub(fr(4).mul(a).mul(c));
+  const N = D.n * D.d; const { s, m } = sqFreeSplit(N);
+  const two_a = fr(2).mul(a);
+  const p = b.neg().div(two_a);
+  const q = new Fr(s, D.d).div(two_a);
+  return { type: 'quad', p, q, m };
+}
+
+function go(q, v, lines, out) {
+  q = pTrim(q); const roots = [];
+  if (pDeg(q) < 1) return roots;
+  const nm = normalizePoly(q);
+  if (!nm.k.eq(ONE)) {
+    const g = nm.g, k = nm.k;
+    lines.push(() => polyHTML(g, v) + ' = 0 ' + cm(kText(k)));
+    q = g;
+  }
+  // x^k ausklammern
+  let k0 = 0; while (q[k0].isZero) k0++;
+  if (k0 > 0) {
+    const qq = q.slice(k0);
+    if (pDeg(qq) < 1) {
+      lines.push(() => v + supHTML(k0) + ' = 0 \u21D2 ' + v + ' = 0' + (k0 > 1 ? ' ' + cm('(' + k0 + '-fach)') : ''));
+    } else {
+      lines.push(() => v + supHTML(k0) + '\u00B7(' + polyHTML(qq, v) + ') = 0 ' + cm('| ' + v + (k0 > 1 ? '<sup>' + k0 + '</sup>' : '') + ' ausklammern'));
+      lines.push(() => cm('Satz vom Nullprodukt:') + ' ' + v + supHTML(k0) + ' = 0 \u21D2 ' + v + ' = 0' + (k0 > 1 ? ' ' + cm('(' + k0 + '-fach)') : '') + ' &nbsp;' + cm('oder') + ' &nbsp;' + polyHTML(qq, v) + ' = 0');
+    }
+    for (let i = 0; i < k0; i++) roots.push(mkRoot(ZERO));
+    q = qq;
+  }
+  const n = pDeg(q);
+  if (n < 1) return roots;
+  const a = q[n], c = q[0];
+  if (n === 1) {
+    const b = q[1];
+    lines.push(() => polyHTML(q, v) + ' = 0 ' + cm('| ' + (c.sign < 0 ? '+ ' : MINUS + ' ') + frHTML(c.abs())));
+    const x = c.neg().div(b);
+    if (!b.eq(ONE)) lines.push(() => frHTML(b) + v + ' = ' + frHTML(c.neg()) + ' ' + cm(kText(b)));
+    lines.push(() => '<b>' + v + ' = ' + frHTML(x) + '</b>');
+    roots.push(mkRoot(x));
+    return roots;
+  }
+  const middleZero = (() => { for (let i = 1; i < n; i++) if (!q[i].isZero) return false; return true; })();
+  if (n === 2 && !q[1].isZero) { // Mitternachtsformel
+    const b = q[1];
+    const D = b.mul(b).sub(fr(4).mul(a).mul(c));
+    lines.push(() => cm('Mitternachtsformel:') + ' ' + v + ' = ' + fracHTML(MINUS + 'b ± ' + radHTML('b<sup>2</sup> ' + MINUS + ' 4ac'), '2a') + ' &nbsp;' + cm('mit a = ' + frHTML(a) + ', b = ' + frHTML(b) + ', c = ' + frHTML(c)));
+    lines.push(() => 'D = ' + parenIf(b) + '<sup>2</sup> ' + MINUS + ' 4·' + parenIf(a) + '·' + parenIf(c) + ' = ' + frHTML(D));
+    if (D.sign < 0) { lines.push(() => 'D &lt; 0 ⇒ <b>keine reelle Lösung</b>'); return roots; }
+    const sq = sqrtFr(D);
+    if (D.isZero) {
+      const x = b.neg().div(fr(2).mul(a));
+      lines.push(() => 'D = 0 ⇒ genau eine (doppelte) Lösung: ' + v + ' = ' + fracHTML(frHTML(b.neg()), frHTML(fr(2).mul(a))) + ' = <b>' + frHTML(x) + '</b>');
+      roots.push(mkRoot(x), mkRoot(x)); return roots;
+    }
+    if (sq) {
+      const x1 = b.neg().add(sq).div(fr(2).mul(a)), x2 = b.neg().sub(sq).div(fr(2).mul(a));
+      lines.push(() => v + ' = ' + fracHTML(frHTML(b.neg()) + ' ± ' + radHTML(frHTML(D)), frHTML(fr(2).mul(a))) + ' = ' + fracHTML(frHTML(b.neg()) + ' ± ' + frHTML(sq), frHTML(fr(2).mul(a))));
+      const lo = x1.cmp(x2) < 0 ? x1 : x2, hi = x1.cmp(x2) < 0 ? x2 : x1;
+      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + frHTML(lo) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + frHTML(hi) + '</b>');
+      roots.push(mkRoot(lo), mkRoot(hi)); return roots;
+    }
+    const form = quadForm(a, b, c);
+    const vp = form.p.num() + form.q.num() * Math.sqrt(Number(form.m)), vm = form.p.num() - form.q.num() * Math.sqrt(Number(form.m));
+    lines.push(() => v + ' = ' + fracHTML(frHTML(b.neg()) + ' ± ' + radHTML(frHTML(D)), frHTML(fr(2).mul(a))) + ' ' + cm('(√ ist nicht ganzzahlig: Ergebnis als Wurzel oder gerundet)'));
+    const r1 = mkRoot(null, vm, { form: { type: 'quad', p: form.p, q: form.q.neg(), m: form.m } });
+    const r2 = mkRoot(null, vp, { form: { type: 'quad', p: form.p, q: form.q, m: form.m } });
+    const lo = vm < vp ? r1 : r2, hi = vm < vp ? r2 : r1;
+    lines.push(() => '<b>' + v + '<sub>1</sub> = ' + rootHTML(lo) + ' ≈ ' + dec(lo.v) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + rootHTML(hi) + ' ≈ ' + dec(hi.v) + '</b>');
+    roots.push(lo, hi); return roots;
+  }
+  if (middleZero) { // a x^n + c = 0
+    const r = c.neg().div(a);
+    lines.push(() => polyHTML(q, v) + ' = 0 ' + cm('| ' + (c.sign < 0 ? '+ ' : MINUS + ' ') + frHTML(c.abs())));
+    if (!a.eq(ONE)) lines.push(() => frHTML(a) + v + supHTML(n) + ' = ' + frHTML(c.neg()) + ' ' + cm(kText(a)));
+    lines.push(() => v + supHTML(n) + ' = ' + frHTML(r) + ' ' + cm('| ' + (n === 2 ? '\u221A' : '<sup>' + n + '</sup>\u221A')));
+    const even = n % 2 === 0;
+    if (even && r.sign < 0) { lines.push(() => 'Eine ' + (n === 2 ? 'Quadratzahl' : 'gerade Potenz') + ' ist nie negativ ⇒ <b>keine reelle Lösung</b>'); return roots; }
+    const ab = r.abs(); const ex = nrootFr(ab, n);
+    const mk = neg => {
+      if (ex) return mkRoot(neg ? ex.neg() : ex);
+      const val = Math.pow(ab.num(), 1 / n) * (neg ? -1 : 1);
+      if (n === 2) { const N = ab.n * ab.d; const { s, m } = sqFreeSplit(N); return mkRoot(null, val, { form: { type: 'quad', p: ZERO, q: new Fr(neg ? -s : s, ab.d), m } }); }
+      return mkRoot(null, val, { form: { type: 'nroot', m: n, r: ab, neg } });
+    };
+    if (even) {
+      const lo = mk(true), hi = mk(false);
+      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + rootHTML(lo) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + rootHTML(hi) + '</b>' + (ex ? '' : ' ' + cm('(≈ ' + dec(lo.v) + ' und ≈ ' + dec(hi.v) + ')')));
+      roots.push(lo, hi);
+    } else {
+      const rt = mk(r.sign < 0);
+      lines.push(() => '<b>' + v + ' = ' + rootHTML(rt) + '</b>' + (ex ? '' : ' ' + cm('≈ ' + dec(rt.v))));
+      roots.push(rt);
+    }
+    return roots;
+  }
+  const evenPoly = n % 2 === 0 && (() => { for (let i = 1; i <= n; i += 2) if (!q[i].isZero) return false; return true; })();
+  if (evenPoly && n >= 4) { // Substitution z = x^2
+    const zp = []; for (let i = 0; i <= n; i += 2) zp.push(q[i]);
+    lines.push(() => cm('Substitution') + ' z = ' + v + '<sup>2</sup>: &nbsp;' + polyHTML(zp, 'z') + ' = 0');
+    const zout = { hand: true }; const zr = merge(go(zp, 'z', lines, zout));
+    if (!zout.hand) out.hand = false;
+    zr.forEach(z => {
+      if (z.v < -1e-12) { lines.push(() => 'z = ' + rootHTML(z, 'z') + ' &lt; 0 \u21D2 ' + v + '<sup>2</sup> = ' + rootHTML(z, 'z') + ' hat <b>keine reelle L\u00F6sung</b>'); return; }
+      const sq = z.x ? sqrtFr(z.x) : null;
+      lines.push(() => cm('R\u00FCcksubstitution:') + ' ' + v + '<sup>2</sup> = ' + rootHTML(z, 'z') + ' \u21D2 ' + v + ' = \u00B1' + (sq ? frHTML(sq) : radHTML(rootHTML(z, 'z'))));
+      for (let t = 0; t < z.mult; t++) {
+        if (sq) roots.push(mkRoot(sq.neg()), mkRoot(sq));
+        else if (z.x) {
+          const N = z.x.n * z.x.d; const { s, m } = sqFreeSplit(N);
+          roots.push(mkRoot(null, -Math.sqrt(z.v), { form: { type: 'quad', p: ZERO, q: new Fr(-s, z.x.d), m } }), mkRoot(null, Math.sqrt(z.v), { form: { type: 'quad', p: ZERO, q: new Fr(s, z.x.d), m } }));
+        } else roots.push(mkRoot(null, -Math.sqrt(z.v)), mkRoot(null, Math.sqrt(z.v)));
+      }
+    });
+    return roots;
+  }
+  // allgemein: rationale Nullstelle durch Probieren
+  const cands = ratCandidates(q); let found = null; const tried = [];
+  for (const r of cands) { const val = pEv(q, r); if (val.isZero) { found = r; break; } tried.push({ r, val }); }
+  if (found) {
+    const hr = horner(q, found);
+    const shown = tried.slice(-3);
+    lines.push(() => cm('Probieren (Teiler des konstanten Glieds):') + ' ' + shown.map(t => v + ' = ' + frHTML(t.r) + ' \u21D2 ' + frHTML(t.val) + ' \u2260 0').join(' &nbsp;|&nbsp; ') + (shown.length ? ' &nbsp;|&nbsp; ' : '') + '<b>' + v + ' = ' + frHTML(found) + '</b> \u21D2 ' + substHTML(q, found, v) + ' = 0 \u2713');
+    lines.push(() => cm('Polynomdivision durch (' + v + ' ' + (found.sign < 0 ? '+ ' + frHTML(found.abs()) : MINUS + ' ' + frHTML(found)) + '):') + divTable(q, found, v));
+    lines.push(() => '(' + v + ' ' + (found.sign < 0 ? '+ ' + frHTML(found.abs()) : MINUS + ' ' + frHTML(found)) + ')·(' + polyHTML(hr.q, v) + ') = 0 ' + cm('⇒') + ' ' + v + ' = ' + frHTML(found) + ' ' + cm('oder') + ' ' + polyHTML(hr.q, v) + ' = 0');
+    roots.push(mkRoot(found));
+    roots.push(...go(hr.q, v, lines, out));
+    return roots;
+  }
+  // keine rationale Lösung: numerisch
+  out.hand = false;
+  const rr = realRootsNum(q);
+  if (!rr.length) lines.push(() => polyHTML(q, v) + ' = 0 hat <b>keine reelle Lösung</b>');
+  else lines.push(() => cm('Keine einfache Lösung durch Probieren: Näherung mit dem Taschenrechner (Solver/Graph):') + ' ' + rr.map((x, i) => '<b>' + v + '<sub>' + (i + 1) + '</sub> ≈ ' + dec(x) + '</b>').join(', '));
+  rr.forEach(x => roots.push(mkRoot(null, x)));
+  return roots;
+}
+function divTable(q, r, v) { // schriftliche Polynomdivision durch (v - r)
+  const m = q.length - 1; let R = q.slice(); const quo = new Array(m).fill(ZERO);
+  const cell = (co, k, first) => { if (co.isZero) return ''; const a = co.abs(); const t = (a.eq(ONE) && k > 0 ? '' : frHTML(a)) + (k > 0 ? v + supHTML(k) : ''); return first ? (co.sign < 0 ? MINUS : '') + t : (co.sign < 0 ? MINUS : '+') + ' ' + t; };
+  const steps = [];
+  for (let k = m; k >= 1; k--) {
+    const b = R[k]; quo[k - 1] = b; const t1 = b, t0 = b.mul(r).neg(); // b*x^k + (-b*r) x^(k-1)
+    const R2 = R.slice(); R2[k] = ZERO; R2[k - 1] = R[k - 1].sub(t0);
+    steps.push({ k, t1, t0, R: R2 }); R = R2;
+  }
+  const cols = m + 1;
+  const row = (arr, from, label, rule, close) => { // arr: Fr je Potenz, ab Potenz 'from'
+    let h = '<tr' + (rule ? ' class="rl"' : '') + '><td class="lb">' + (label || '') + '</td>'; let firstDone = false;
+    for (let k = m; k >= 0; k--) { const co = arr[k]; const has = k <= from && co && !co.isZero; h += '<td>' + (has ? cell(co, k, !firstDone) : '') + '</td>'; if (has) firstDone = true; }
+    return h + '<td class="lb">' + (close || '') + '</td></tr>';
+  };
+  const quoHTML = polyHTML(quo, v);
+  let t = '<div class="pdiv">(' + polyHTML(q, v) + ') : (' + v + ' ' + (r.sign < 0 ? '+ ' + frHTML(r.abs()) : MINUS + ' ' + frHTML(r)) + ') = <b>' + quoHTML + '</b></div><table class="pd">';
+  steps.forEach(s => { const sub = new Array(m + 1).fill(ZERO); sub[s.k] = s.t1; sub[s.k - 1] = s.t0.neg().neg(); sub[s.k - 1] = s.t0; t += row(sub, s.k, MINUS + '(', false, ')'); t += row(s.R, s.k - 1, '', true, ''); });
+  return t + '</table>';
+}
+function hornerTable(h, r) {
+  const n = h.co.length;
+  let t = '<table class="hz"><tr><td></td>' + h.co.map(c => '<td>' + frHTML(c) + '</td>').join('') + '</tr>';
+  t += '<tr><td class="rr">' + frHTML(r) + '</td><td></td>' + h.prod.slice(1).map(c => '<td>' + frHTML(c) + '</td>').join('') + '</tr>';
+  t += '<tr class="sm"><td></td>' + h.b.map((c, i) => '<td' + (i === n - 1 ? ' class="rest"' : '') + '>' + frHTML(c) + '</td>').join('') + '</tr></table>';
+  return t;
+}
+function merge(rs) {
+  rs = rs.slice().sort((a, b) => a.v - b.v); const out = [];
+  rs.forEach(r => {
+    const last = out[out.length - 1];
+    const same = last && ((last.x && r.x && last.x.eq(r.x)) || (!(last.x && r.x) && Math.abs(last.v - r.v) < 1e-7));
+    if (same) last.mult += r.mult; else out.push(Object.assign({}, r));
+  });
+  return out;
+}
+function solveZeros(p, v) {
+  v = v || 'x'; const lines = []; const out = { hand: true };
+  lines.push(() => polyHTML(p, v) + ' = 0');
+  const roots = merge(go(p, v, lines, out));
+  return { lines, roots, hand: out.hand };
+}
+
+/* ---------- Funktions-Parser ---------- */
+function prep(s) {
+  s = String(s).trim();
+  const eq = s.lastIndexOf('='); if (eq >= 0) s = s.slice(eq + 1);
+  const sup = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-' };
+  s = s.replace(/[⁰¹²³⁴-⁹⁻]+/g, m => '^(' + [...m].map(c => sup[c]).join('') + ')');
+  s = s.replace(/√\(/g, 'sqrt(').replace(/√(\d+[.,]?\d*|[.,]\d+)/g, 'sqrt($1)');
+  return s.replace(/[−–—]/g, '-').replace(/[·×⋅]/g, '*').replace(/÷/g, '/').replace(/,/g, '.').replace(/π/g, 'pi').replace(/\s+/g, '').toLowerCase();
+}
+const FNS = ['sqrt', 'sin', 'cos', 'tan', 'exp', 'abs', 'log', 'ln'];
+function tokenize(s) {
+  const t = []; let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (/[0-9.]/.test(c)) { const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i)); if (!m) throw new Error('Zahl nicht lesbar'); t.push({ k: 'num', v: parseFloat(m[0]), s: m[0] }); i += m[0].length; continue; }
+    if ('+-*/^()'.includes(c)) { t.push({ k: 'op', v: c }); i++; continue; }
+    const hit = FNS.find(f => s.startsWith(f, i));
+    if (hit) { t.push({ k: 'fn', v: hit }); i += hit.length; continue; }
+    if (s.startsWith('pi', i)) { t.push({ k: 'num', v: Math.PI, s: null }); i += 2; continue; }
+    if (c === 'x') { t.push({ k: 'x' }); i++; continue; }
+    if (c === 'e') { t.push({ k: 'num', v: Math.E, s: null }); i++; continue; }
+    throw new Error('Das Zeichen «' + c + '» kenne ich nicht');
+  }
+  return t;
+}
+function parse(tk) {
+  let p = 0; const peek = () => tk[p], next = () => tk[p++];
+  const isOp = (t, v) => t && t.k === 'op' && t.v === v;
+  const startsFactor = t => t && (t.k === 'num' || t.k === 'x' || t.k === 'fn' || isOp(t, '('));
+  function expr() { let a = term(); while (isOp(peek(), '+') || isOp(peek(), '-')) { const o = next().v; const b = term(); a = { t: o === '+' ? 'add' : 'sub', a, b }; } return a; }
+  function term() {
+    let a = unary();
+    for (;;) {
+      const t = peek(); if (!t) break;
+      if (isOp(t, '*') || isOp(t, '/')) { next(); const b = unary(); a = { t: t.v === '*' ? 'mul' : 'div', a, b }; }
+      else if (startsFactor(t)) { const b = power(); a = { t: 'mul', a, b }; }
+      else break;
+    }
+    return a;
+  }
+  function unary() { if (isOp(peek(), '-')) { next(); return { t: 'neg', a: unary() }; } if (isOp(peek(), '+')) { next(); return unary(); } return power(); }
+  function power() { const a = atom(); if (isOp(peek(), '^')) { next(); return { t: 'pow', a, b: unary() }; } return a; }
+  function atom() {
+    const t = next();
+    if (!t) throw new Error('Der Ausdruck ist unvollständig');
+    if (t.k === 'num') return { t: 'num', v: t.v, s: t.s };
+    if (t.k === 'x') return { t: 'x' };
+    if (t.k === 'fn') { if (!isOp(peek(), '(')) throw new Error('Nach «' + t.v + '» fehlt eine Klammer'); next(); const a = expr(); if (!isOp(next(), ')')) throw new Error('Eine Klammer fehlt'); return { t: 'fn', n: t.v, a }; }
+    if (isOp(t, '(')) { const a = expr(); if (!isOp(next(), ')')) throw new Error('Eine Klammer fehlt'); return a; }
+    throw new Error('Unerwartetes Zeichen «' + (t.v || '') + '»');
+  }
+  const ast = expr();
+  if (p < tk.length) throw new Error(isOp(tk[p], ')') ? 'Eine Klammer zu viel' : 'Unerwartetes Zeichen «' + (tk[p].v || 'x') + '»');
+  return ast;
+}
+function toPoly(n) {
+  switch (n.t) {
+    case 'num': if (n.s === null) throw new Error('Die Zahlen e und π sind hier nicht erlaubt'); return [Fr.parse(n.s)];
+    case 'x': return [ZERO, ONE];
+    case 'neg': return pScale(toPoly(n.a), fr(-1));
+    case 'add': return pAdd(toPoly(n.a), toPoly(n.b));
+    case 'sub': return pSub(toPoly(n.a), toPoly(n.b));
+    case 'mul': return pMul(toPoly(n.a), toPoly(n.b));
+    case 'div': { const b = toPoly(n.b); if (pDeg(b) !== 0) throw new Error('Durch x darf nicht geteilt werden (nur Polynomfunktionen)'); return pScale(toPoly(n.a), ONE.div(b[0])); }
+    case 'pow': {
+      const e = toPoly(n.b);
+      if (pDeg(e) > 0) throw new Error('Der Exponent darf kein x enthalten (nur Polynomfunktionen)');
+      const ev = e[0];
+      if (!ev.isInt || ev.sign < 0 || ev.n > 12n) throw new Error('Exponent: nur ganze Zahlen von 0 bis 12');
+      return pPow(toPoly(n.a), Number(ev.n));
+    }
+    case 'fn': throw new Error('Funktionen wie ' + n.n + ' gehören nicht zu Polynomfunktionen');
+  }
+}
+function parseFunction(src) {
+  if (!String(src).trim()) return { empty: true };
+  try {
+    const p = pTrim(toPoly(parse(tokenize(prep(src)))));
+    const n = pDeg(p);
+    if (n < 1) return { err: 'Das ist eine konstante Funktion. Gib ein Polynom vom Grad 1 bis 6 ein.' };
+    if (n > 6) return { err: 'Der Grad ist höher als 6. Die Analyse ist für Grad 1 bis 6 gedacht.' };
+    if (p.some(c => babs(c.n) > 10n ** 7n || c.d > 10n ** 5n)) return { err: 'Die Koeffizienten sind zu gross oder zu fein.' };
+    return { p };
+  } catch (e) { return { err: e.message }; }
+}
+function evalConst(ast) { // Zahl auswerten (ohne x)
+  const f = toFnAst(ast); return f(0);
+}
+function toFnAst(n) {
+  switch (n.t) {
+    case 'num': { const v = n.v; return () => v; }
+    case 'x': return x => x;
+    case 'neg': { const a = toFnAst(n.a); return x => -a(x); }
+    case 'add': { const a = toFnAst(n.a), b = toFnAst(n.b); return x => a(x) + b(x); }
+    case 'sub': { const a = toFnAst(n.a), b = toFnAst(n.b); return x => a(x) - b(x); }
+    case 'mul': { const a = toFnAst(n.a), b = toFnAst(n.b); return x => a(x) * b(x); }
+    case 'div': { const a = toFnAst(n.a), b = toFnAst(n.b); return x => a(x) / b(x); }
+    case 'pow': { const a = toFnAst(n.a), b = toFnAst(n.b); return x => Math.pow(a(x), b(x)); }
+    case 'fn': { const a = toFnAst(n.a); const m = { sqrt: Math.sqrt, sin: Math.sin, cos: Math.cos, tan: Math.tan, exp: Math.exp, abs: Math.abs, ln: Math.log, log: Math.log10 }[n.n]; return x => m(a(x)); }
+  }
+}
+const hasX = n => n.t === 'x' || (n.a && hasX(n.a)) || (n.b && hasX(n.b));
+function parseAnswer(src) { // einzelne Zahl: {v, exact}
+  const s = String(src).trim();
+  if (!s) return { empty: true };
+  try {
+    const ast = parse(tokenize(prep(s)));
+    if (hasX(ast)) return { err: 'Hier gehört eine Zahl hin, kein x.' };
+    const v = evalConst(ast);
+    if (!isFinite(v)) return { err: 'Das ist keine Zahl.' };
+    let exact = null; try { const p = toPoly(ast); if (pDeg(p) <= 0) exact = p[0]; } catch (e) { exact = null; }
+    return { v, exact };
+  } catch (e) { return { err: e.message }; }
+}
+function parsePolyInput(src) { // Ableitungs-Eingaben: Polynom oder leer
+  const r = parseFunction(src);
+  if (r.empty) return r;
+  if (r.err && /konstante/.test(r.err)) { try { return { p: pTrim(toPoly(parse(tokenize(prep(src))))) }; } catch (e) { return { err: e.message }; } }
+  return r;
+}
+function parsePolyAny(src) { // beliebiger Grad >= 0
+  if (!String(src).trim()) return { empty: true };
+  try { return { p: pTrim(toPoly(parse(tokenize(prep(src))))) }; } catch (e) { return { err: e.message }; }
+}
+
+/* ---------- Antworten vergleichen ---------- */
+function valueMatches(ans, truthFr, truthV) { // ans: parseAnswer-Ergebnis
+  if (ans.err || ans.empty) return false;
+  if (truthFr) {
+    if (ans.exact) return ans.exact.eq(truthFr);
+    const tol = terminating(truthFr) ? 1e-9 * (1 + Math.abs(truthV)) : 0.006;
+    return Math.abs(ans.v - truthV) <= tol;
+  }
+  return Math.abs(ans.v - truthV) <= Math.max(0.006, 0);
+}
+
+/* ---------- Analyse einer Polynomfunktion ---------- */
+function classifyAt(ders, r, from) { // erste nichtverschwindende Ableitung ab Ordnung 'from'
+  for (let k = from; k < ders.length; k++) {
+    if (r.x) { const val = pEv(ders[k], r.x); if (!val.isZero) return { k, sign: val.sign, val }; }
+    else {
+      const dn = pNums(ders[k]); const val = pEvN(dn, r.v); const scale = Math.max(1, ...dn.map(Math.abs));
+      if (Math.abs(val) > 1e-7 * scale * Math.max(1, Math.pow(Math.abs(r.v), ders.length))) return { k, sign: val > 0 ? 1 : -1, val: null, num: val };
+    }
+  }
+  return { k: ders.length, sign: 0, val: null };
+}
+function pointY(p, r) { return r.x ? { f: pEv(p, r.x), v: pEv(p, r.x).num() } : { f: null, v: pEvN(pNums(p), r.v) }; }
+
+function analyze(p) {
+  p = pTrim(p); const n = pDeg(p);
+  const T = { p, n, ders: [p] };
+  for (let i = 1; i <= n; i++) T.ders.push(pDer(T.ders[i - 1]));
+  T.fn = (() => { const pn = pNums(p); return x => pEvN(pn, x); })();
+  T.fn1 = (() => { const pn = pNums(T.ders[1]); return x => pEvN(pn, x); })();
+  T.fn2 = (() => { const pn = pNums(T.ders[Math.min(2, n)]); return n >= 2 ? (x => pEvN(pn, x)) : (() => 0); })();
+  const a = p[n];
+  const even = n % 2 === 0, pos = a.sign > 0;
+  T.lead = a; T.a0 = p[0];
+  T.rand = { n, a, even, pos, left: even ? pos : !pos, right: pos };
+  T.rand.key = (T.rand.left ? 'u' : 'd') + (T.rand.right ? 'u' : 'd');
+  let ev = true, od = true;
+  p.forEach((c, i) => { if (!c.isZero) { if (i % 2 === 0) od = false; else ev = false; } });
+  T.sym = ev ? 'y' : od ? 'o' : 'n';
+  T.yint = p[0];
+  const z = solveZeros(p, 'x');
+  T.zeros = z;
+  T.zerosRoots = z.roots.map(r => Object.assign({}, r));
+  // Extrempunkte (mögliche): f'(x)=0
+  T.stat = []; T.statSolve = null;
+  if (n >= 2) {
+    const s = solveZeros(T.ders[1], 'x'); T.statSolve = s;
+    s.roots.forEach(r => {
+      const cl = classifyAt(T.ders, r, 2); const y = pointY(p, r);
+      const type = (cl.k % 2 === 1) ? 'S' : (cl.sign < 0 ? 'H' : 'T');
+      T.stat.push({ x: r.x, v: r.v, y: y.f, yv: y.v, type, k: cl.k, sign: cl.sign, form: r.form, mult: r.mult, root: r });
+    });
+  }
+  // Wendepunkte (mögliche): f''(x)=0
+  T.infl = []; T.inflSolve = null;
+  if (n >= 3) {
+    const s = solveZeros(T.ders[2], 'x'); T.inflSolve = s;
+    s.roots.forEach(r => {
+      const cl = classifyAt(T.ders, r, 3); const y = pointY(p, r);
+      const m = r.x ? pEv(T.ders[1], r.x) : null; const mv = r.x ? m.num() : pEvN(pNums(T.ders[1]), r.v);
+      let type;
+      if (cl.k % 2 === 0) type = 'N';
+      else type = (m ? m.isZero : Math.abs(mv) < 1e-9) ? 'S' : 'W';
+      T.infl.push({ x: r.x, v: r.v, y: y.f, yv: y.v, type, k: cl.k, sign: cl.sign, slope: m, slopeV: mv, form: r.form, mult: r.mult, root: r });
+    });
+  }
+  nameAll(T);
+  T.view = viewFor(T);
+  T.hand = z.hand && (!T.statSolve || T.statSolve.hand) && (!T.inflSolve || T.inflSolve.hand);
+  return T;
+}
+function niceStep(range, target) {
+  const raw = range / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), nm = raw / mag;
+  return (nm < 1.5 ? 1 : nm < 3 ? 2 : nm < 7 ? 5 : 10) * mag;
+}
+function viewFor(T) {
+  const xs = [0], ys = [0, T.yint.num()];
+  T.zerosRoots.forEach(r => xs.push(r.v));
+  T.stat.forEach(r => { xs.push(r.v); ys.push(r.yv); });
+  T.infl.filter(r => r.type !== 'N').forEach(r => { xs.push(r.v); ys.push(r.yv); });
+  T.infl.filter(r => r.type === 'N').forEach(r => { xs.push(r.v); ys.push(r.yv); });
+  let lo = Math.min(...xs), hi = Math.max(...xs);
+  let span = Math.max(hi - lo, 3); const pad = Math.max(1, 0.4 * span);
+  let xmin = Math.floor(lo - pad), xmax = Math.ceil(hi + pad);
+  if (xmax - xmin < 6) { const c = (xmax + xmin) / 2; xmin = Math.floor(c - 3); xmax = Math.ceil(c + 3); }
+  if (T.sym !== 'n') { const m = Math.max(Math.abs(xmin), Math.abs(xmax)); xmin = -m; xmax = m; }
+  let ylo = Math.min(...ys), yhi = Math.max(...ys);
+  // Kurvenwerte an den Rändern berücksichtigen, aber begrenzt (damit das Fenster nicht explodiert)
+  const ySpan = Math.max(yhi - ylo, 2); const yp = Math.max(1, 0.35 * ySpan);
+  let ymin = Math.floor(ylo - yp), ymax = Math.ceil(yhi + yp);
+  if (ymax - ymin < 4) { ymin -= 1; ymax += 1; }
+  return { xmin, xmax, ymin, ymax };
+}
+
+/* ============================================================
+   ERKLÄRUNGEN: Texte und Rechenwege (HTML) für alle Schritte
+   ============================================================ */
+const SUBS = '₀₁₂₃₄₅₆₇₈₉';
+const subOf = i => String(i).split('').map(d => SUBS[+d]).join('');
+const DN = ['f', 'f′', 'f″', 'f‴', 'f⁴', 'f⁵', 'f⁶'];
+const dName = k => (k <= 3 ? DN[k] : 'f<sup>(' + k + ')</sup>');
+const dNameTxt = k => (k <= 3 ? DN[k] : 'f(' + k + ')');
+const TYPE_NAME = { H: 'Hochpunkt', T: 'Tiefpunkt', S: 'Sattelpunkt', W: 'Wendepunkt', N: 'kein Wendepunkt' };
+
+function nameAll(T) {
+  const nz = T.zerosRoots.length;
+  T.zerosRoots.forEach((r, i) => { r.name = 'N' + (nz > 1 ? subOf(i + 1) : ''); });
+  const cnt = {}; T.stat.forEach(r => { cnt[r.type] = (cnt[r.type] || 0) + 1; });
+  const idx = {}; T.stat.forEach(r => { idx[r.type] = (idx[r.type] || 0) + 1; r.name = r.type + (cnt[r.type] > 1 ? subOf(idx[r.type]) : ''); });
+  const wc = T.infl.filter(r => r.type === 'W').length; let wi = 0;
+  T.infl.forEach(r => {
+    if (r.type === 'W') { wi++; r.name = 'W' + (wc > 1 ? subOf(wi) : ''); }
+    else if (r.type === 'S') { const m = T.stat.find(s => Math.abs(s.v - r.v) < 1e-7); r.name = m ? m.name : 'S'; }
+    else r.name = '';
+  });
+}
+const sameX = (a, b) => (a.x && b.x ? a.x.eq(b.x) : Math.abs(a.v - b.v) < 1e-7);
+
+/* ---------- Punkt-Darstellung ---------- */
+const valHTML = (f, v) => (f ? frHTML(f) : '≈ ' + dec(v));
+function pointHTML(name, r) {
+  const xs = r.x ? frHTML(r.x) : (r.form ? rootHTML(r) : dec(r.v));
+  const ys = r.y ? frHTML(r.y) : dec(r.yv);
+  return '<b class="pt">' + name + '</b>(' + xs + ' | ' + ys + ')';
+}
+function pointText(name, r) {
+  const xs = r.x ? numText(r.x) : dec(r.v); const ys = r.y ? numText(r.y) : dec(r.yv);
+  return name + '(' + xs + '|' + ys + ')';
+}
+const xLabel = r => (r.x ? frHTML(r.x) : (r.form ? rootHTML(r) : dec(r.v)));
+
+const EXC = what => '<div class="exc"><b>Ausnahme:</b> Gleichungen vom Grad 3 und höher lassen sich im Normalfall nicht von Hand lösen. Bei dieser Funktion gibt es keinen gangbaren Weg (' + what + '). Deshalb stehen die Werte hier als Näherung, bestimmt mit dem Taschenrechner (Solver oder Graph).</div>';
+/* ---------- Schritt 1: Verhalten im Unendlichen ---------- */
+const RAND_TXT = { uu: 'von links oben nach rechts oben', dd: 'von links unten nach rechts unten', du: 'von links unten nach rechts oben', ud: 'von links oben nach rechts unten' };
+function leadTermHTML(T) { const a = T.lead; return (a.eq(ONE) ? '' : a.eq(fr(-1)) ? MINUS : frHTML(a)) + 'x' + supHTML(T.n); }
+function explainRand(T) {
+  const r = T.rand; const term = leadTermHTML(T);
+  const inf = pos => (pos ? '+∞' : MINUS + '∞');
+  const why = 'Entscheidend ist der Term mit dem höchsten Exponenten: <b>' + term + '</b>. ' +
+    'Der Grad <b>n = ' + r.n + '</b> ist ' + (r.even ? 'gerade: beide Enden des Graphen zeigen in dieselbe Richtung.' : 'ungerade: die Enden zeigen in entgegengesetzte Richtungen.') + ' ' +
+    'Der Faktor <b>' + frHTML(r.a) + '</b> ist ' + (r.pos ? 'positiv: rechts geht der Graph nach oben.' : 'negativ: rechts geht der Graph nach unten.');
+  const res = '<b>' + RAND_TXT[r.key] + '</b>: für x → ' + MINUS + '∞ gilt f(x) → ' + inf(r.left) + ', für x → +∞ gilt f(x) → ' + inf(r.right) + '.';
+  // Rechnung mit Grenzwert
+  const n = T.n; const br = [];
+  for (let k = n; k >= 0; k--) {
+    const c = T.p[k]; if (c.isZero) continue;
+    if (k === n) br.push({ neg: c.sign < 0, t: frHTML(c.abs()) });
+    else br.push({ neg: c.sign < 0, t: (c.abs().eq(ONE) ? '1' : frHTML(c.abs())) + '/x' + supHTML(n - k) });
+  }
+  const bracket = br.map((t, i) => (i === 0 ? (t.neg ? MINUS : '') + t.t : ' ' + (t.neg ? MINUS : '+') + ' ' + t.t)).join('');
+  const lim = (s) => '<span class="lim">lim<sub>x→' + s + '</sub></span>';
+  const line = s => lim(s) + ' f(x) = ' + lim(s) + ' x' + supHTML(n) + '·(' + bracket + ')';
+  const plusX = n % 2 === 0 || true;
+  const leftXn = r.even ? '+∞' : MINUS + '∞';
+  const calc =
+    '<div class="ln">' + line('+∞') + '</div>' +
+    '<div class="ln">Für x → +∞: x' + supHTML(n) + ' → +∞, die Klammer → ' + frHTML(r.a) + ' (alle Brüche mit x im Nenner → 0). Also: (+∞)·(' + frHTML(r.a) + ') = <b>' + inf(r.right) + '</b></div>' +
+    '<div class="ln">' + line(MINUS + '∞') + '</div>' +
+    '<div class="ln">Für x → ' + MINUS + '∞: x' + supHTML(n) + ' → ' + leftXn + ', die Klammer → ' + frHTML(r.a) + '. Also: (' + leftXn + ')·(' + frHTML(r.a) + ') = <b>' + inf(r.left) + '</b></div>';
+  return { why, res, calc };
+}
+
+/* ---------- Schritt 2: Symmetrie ---------- */
+function explainSym(T) {
+  const exps = []; T.p.forEach((c, i) => { if (!c.isZero) exps.push(i); });
+  const expTxt = exps.slice().reverse().map(i => '<b>' + i + '</b>').join(', ');
+  const fNeg = T.p.map((c, i) => (i % 2 ? c.neg() : c));
+  const fneg = polyHTML(fNeg), fpos = polyHTML(T.p);
+  let why, res, calc, use;
+  if (T.sym === 'y') {
+    why = 'Die Exponenten von x sind ' + expTxt + ': alle <b>gerade</b> (ein konstantes Glied zählt als x<sup>0</sup>, also auch gerade).';
+    res = '<b>Achsensymmetrisch zur y-Achse</b>, denn f(' + MINUS + 'x) = f(x).';
+    calc = '<div class="ln">f(' + MINUS + 'x) = ' + fneg + '</div><div class="ln">Gerade Exponenten: (' + MINUS + 'x)<sup>2k</sup> = x<sup>2k</sup>. Also f(' + MINUS + 'x) = <b>f(x)</b>.</div>';
+    use = 'Du musst nur die Stellen mit x ≥ 0 untersuchen: Nullstellen, Extrem- und Wendepunkte liegen spiegelbildlich auf der anderen Seite der y-Achse.';
+  } else if (T.sym === 'o') {
+    why = 'Die Exponenten von x sind ' + expTxt + ': alle <b>ungerade</b>, und es gibt kein konstantes Glied.';
+    res = '<b>Punktsymmetrisch zum Ursprung</b>, denn f(' + MINUS + 'x) = ' + MINUS + 'f(x).';
+    calc = '<div class="ln">f(' + MINUS + 'x) = ' + fneg + '</div><div class="ln">' + MINUS + 'f(x) = ' + MINUS + '(' + fpos + ') = ' + fneg + '</div><div class="ln">Ungerade Exponenten: (' + MINUS + 'x)<sup>2k+1</sup> = ' + MINUS + 'x<sup>2k+1</sup>. Also f(' + MINUS + 'x) = <b>' + MINUS + 'f(x)</b>.</div>';
+    use = 'Du musst nur die Stellen mit x ≥ 0 untersuchen: Was rechts vom Ursprung liegt, wird am Ursprung gespiegelt (180°-Drehung).';
+  } else {
+    const hasEven = exps.some(i => i % 2 === 0), hasOdd = exps.some(i => i % 2 === 1);
+    why = 'Die Exponenten von x sind ' + expTxt + ': Es kommen <b>gerade und ungerade</b> Exponenten vor' + (T.p[0].isZero ? '' : ' (das konstante Glied zählt als x<sup>0</sup>, also gerade)') + '.';
+    res = '<b>Weder noch</b>: keine Symmetrie zur y-Achse und keine zum Ursprung.';
+    let xv = 1; for (xv = 1; xv <= 6; xv++) { const a = pEv(T.p, fr(xv)), b = pEv(T.p, fr(-xv)); if (!a.eq(b) && !a.eq(b.neg())) break; }
+    const a = pEv(T.p, fr(xv)), b = pEv(T.p, fr(-xv));
+    calc = '<div class="ln">f(' + MINUS + 'x) = ' + fneg + '</div><div class="ln">Das ist weder f(x) = ' + fpos + ' noch ' + MINUS + 'f(x).</div>' +
+      '<div class="ln">Gegenbeispiel: f(' + xv + ') = ' + frHTML(a) + ' und f(' + MINUS + xv + ') = ' + frHTML(b) + '. Es gilt weder f(' + MINUS + xv + ') = f(' + xv + ') noch f(' + MINUS + xv + ') = ' + MINUS + 'f(' + xv + ').</div>';
+    use = 'Du musst den ganzen Bereich untersuchen (links und rechts von der y-Achse).';
+  }
+  return { why, res, calc, use };
+}
+
+/* ---------- Schritt 3: y-Achsenabschnitt ---------- */
+function explainY(T) {
+  const why = 'Der Graph schneidet die y-Achse dort, wo <b>x = 0</b> ist. Setze also 0 in die Funktion ein: Alle Terme mit x fallen weg, es bleibt das konstante Glied.';
+  const calc = '<div class="ln">f(0) = ' + substHTML(T.p, ZERO) + ' = <b>' + frHTML(T.yint) + '</b></div>';
+  const res = 'y-Achsenabschnitt <b>' + frHTML(T.yint) + '</b>, der Punkt ist <b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ').';
+  return { why, res, calc };
+}
+
+/* ---------- Schritt 4: Nullstellen ---------- */
+function mults(r) { return r.mult === 1 ? '' : r.mult === 2 ? ' (doppelt)' : r.mult === 3 ? ' (dreifach)' : ' (' + r.mult + '-fach)'; }
+function explainZeros(T) {
+  const rs = T.zerosRoots; const parts = [];
+  if (!T.zeros.hand) parts.push(EXC('Polynom zu hohen Grades, keine rationale Nullstelle zum Probieren'));
+  parts.push('<div class="ln">' + cm('Ansatz:') + ' f(x) = 0</div>');
+  T.zeros.lines.forEach(f => parts.push('<div class="ln">' + f() + '</div>'));
+  let res;
+  if (!rs.length) res = '<b>Keine Nullstellen</b>: Der Graph schneidet die x-Achse nie.';
+  else res = 'Nullstellen: ' + rs.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r)).join(', ') + '.';
+  let notes = '';
+  const mult = rs.filter(r => r.mult > 1);
+  if (mult.length) notes += '<p><b>Vielfachheit:</b> ' + mult.map(r => 'x = ' + xLabel(r) + mults(r)).join(', ') + '. ' +
+    (mult.some(r => r.mult % 2 === 0) ? 'Bei einer <b>geraden</b> Vielfachheit berührt der Graph die x-Achse nur (kein Vorzeichenwechsel). ' : '') +
+    (mult.some(r => r.mult % 2 === 1) ? 'Bei einer <b>ungeraden</b> Vielfachheit (3, 5, …) schneidet der Graph die Achse mit waagrechter Tangente (Sattelpunkt). ' : '') + '</p>';
+  const allRat = rs.length && rs.every(r => r.x) && rs.reduce((s, r) => s + r.mult, 0) === T.n;
+  if (allRat) {
+    const a = T.lead; let fac = (a.eq(ONE) ? '' : a.eq(fr(-1)) ? MINUS : frHTML(a) + '·');
+    fac += rs.map(r => { const x = r.x; const inner = x.isZero ? 'x' : 'x ' + (x.sign < 0 ? '+ ' + frHTML(x.abs()) : MINUS + ' ' + frHTML(x)); return x.isZero ? inner + supHTML(r.mult) : '(' + inner + ')' + supHTML(r.mult); }).join('');
+    notes += '<p><b>Faktorisiert:</b> f(x) = ' + fac + '</p>';
+  }
+  return { steps: parts.join(''), res, notes };
+}
+
+/* ---------- Ableitungen ---------- */
+function explainDeriv(T, k) { // Ableitung der Ordnung k aus der Ordnung k-1
+  const base = T.ders[k - 1], out = [];
+  const terms = [];
+  for (let i = base.length - 1; i >= 0; i--) {
+    const c = base[i]; if (c.isZero) continue;
+    const t = (c.abs().eq(ONE) && i > 0 ? '' : frHTML(c.abs())) + (i > 0 ? 'x' + supHTML(i) : '');
+    const sgn = c.sign < 0 ? MINUS : '';
+    const d = c.mul(fr(i)); const dp = [ZERO]; // Ableitung des Einzelterms
+    const dterm = i === 0 ? '0' : polyHTML((() => { const a = new Array(i).fill(ZERO); a[i - 1] = d; return a; })());
+    terms.push('(' + sgn + t + ')′ = ' + dterm);
+  }
+  const lead = '<div class="ln">' + cm('Potenzregel: (x<sup>n</sup>)′ = n·x<sup>n' + MINUS + '1</sup>, Konstanten fallen weg.') + '</div>';
+  const from = k === 1 ? 'f(x)' : dName(k - 1) + '(x)';
+  return lead + '<div class="ln">' + terms.join(' &nbsp;|&nbsp; ') + '</div><div class="ln">' + dName(k) + '(x) = <b>' + polyHTML(T.ders[k]) + '</b></div>';
+}
+
+/* ---------- Schritt 5: mögliche Extrempunkte ---------- */
+function derAt(T, k, r) { // Wert der k-ten Ableitung an der Stelle r (HTML) und Vorzeichen
+  if (r.x) { const v = pEv(T.ders[k], r.x); return { html: frHTML(v), sign: v.sign }; }
+  const v = pEvN(pNums(T.ders[k]), r.v); const sc = Math.max(1, ...pNums(T.ders[k]).map(Math.abs));
+  const z = Math.abs(v) < 1e-7 * sc * Math.max(1, Math.pow(Math.abs(r.v), 3));
+  return { html: z ? '0' : '≈ ' + dec(v), sign: z ? 0 : v > 0 ? 1 : -1 };
+}
+const eqs = d => (d.html.charAt(0) === '\u2248' ? ' ' : ' = ') + d.html;
+function yCalc(T, r) {
+  if (r.x) return '<div class="ln">f(' + frHTML(r.x) + ') = ' + substHTML(T.p, r.x) + ' = <b>' + frHTML(r.y) + '</b></div>';
+  return '<div class="ln">f(' + xLabel(r) + ') ≈ <b>' + dec(r.yv) + '</b> ' + cm('(Taschenrechner)') + '</div>';
+}
+
+/* Begründung je Punkt (auch für die Rückmeldung in der Oberfläche) */
+function statLine(T, r) {
+  let h = '<b>x = ' + xLabel(r) + ':</b> ';
+  const steps = [];
+  for (let k = 2; k <= r.k && k <= T.n; k++) {
+    const d = derAt(T, k, r);
+    steps.push(dName(k) + '(' + xLabel(r) + ')' + eqs(d) + (d.sign === 0 ? ' ⇒ keine Aussage, weiter ableiten' : ''));
+  }
+  h += steps.join(' &nbsp;→&nbsp; ');
+  if (r.k === 2) h += ' ⇒ ' + (r.sign < 0 ? '<b>Rechtskurve: Hochpunkt</b>' : '<b>Linkskurve: Tiefpunkt</b>');
+  else if (r.k % 2 === 1) h += ' ⇒ die erste Ableitung ungleich 0 ist ' + dName(r.k) + ' (ungerade Ordnung): f′ wechselt das Vorzeichen nicht ⇒ <b>Sattelpunkt</b>';
+  else h += ' ⇒ die erste Ableitung ungleich 0 ist ' + dName(r.k) + ' (gerade Ordnung): ' + dName(r.k) + (r.sign < 0 ? ' &lt; 0 ⇒ <b>Hochpunkt</b>' : ' &gt; 0 ⇒ <b>Tiefpunkt</b>');
+  return h;
+}
+function inflLine(T, r) {
+  let h = '<b>x = ' + xLabel(r) + ':</b> ';
+  const steps = [];
+  for (let k = 3; k <= r.k && k <= T.n; k++) { const d = derAt(T, k, r); steps.push(dName(k) + '(' + xLabel(r) + ')' + eqs(d) + (d.sign === 0 ? ' ⇒ weiter ableiten' : '')); }
+  h += steps.join(' &nbsp;→&nbsp; ');
+  if (r.k % 2 === 1) h += ' ⇒ ' + (r.k === 3 ? dName(3) + ' ≠ 0' : 'die erste Ableitung ungleich 0 ist ' + dName(r.k) + ' (ungerade Ordnung)') + ': die Krümmung wechselt ⇒ ' + (r.type === 'S' ? '<b>Wendestelle</b>, und weil f′ = 0 ist (waagrechte Tangente): <b>Sattelpunkt</b>' : '<b>Wendestelle</b>');
+  else h += ' ⇒ die erste Ableitung ungleich 0 ist ' + dName(r.k) + ' (gerade Ordnung): die Krümmung wechselt <b>nicht</b> ⇒ <b>kein Wendepunkt</b>';
+  return h;
+}
+function explainStat(T) {
+  const parts = [];
+  parts.push('<div class="sec">1. Ableitung bilden</div>' + explainDeriv(T, 1));
+  parts.push('<div class="sec">2. f′(x) = 0 lösen: mögliche Extremstellen</div>' + (T.statSolve.hand ? '' : EXC('f′ ist zu kompliziert')) + T.statSolve.lines.map(f => '<div class="ln">' + f() + '</div>').join(''));
+  if (!T.stat.length) {
+    parts.push('<div class="ln"><b>Keine</b> Stelle mit waagrechter Tangente ⇒ keine Extrempunkte.</div>');
+  } else {
+    parts.push('<div class="sec">3. y-Koordinaten (in f einsetzen, nicht in f′!)</div>' + T.stat.map(r => '<div class="ln">' + cm('x = ' + xLabel(r)) + '</div>' + yCalc(T, r)).join(''));
+    parts.push('<div class="sec">4. Art prüfen mit höheren Ableitungen</div>' + (T.n >= 2 ? '<div class="ln">' + dName(2) + '(x) = ' + polyHTML(T.ders[2]) + (T.n >= 3 ? ', &nbsp;' + dName(3) + '(x) = ' + polyHTML(T.ders[3]) : '') + '</div>' : '') + T.stat.map(r => '<div class="ln">' + statLine(T, r) + '</div>').join(''));
+  }
+  const res = T.stat.length ? T.stat.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type])).join('<br>') : '<b>Keine</b> möglichen Extrempunkte (f′(x) = 0 hat keine Lösung).';
+  return { steps: parts.join(''), res };
+}
+
+/* ---------- Schritt 6: Wendepunkte ---------- */
+function explainInfl(T) {
+  const parts = [];
+  if (T.n < 3) {
+    parts.push('<div class="ln">Die zweite Ableitung ' + dName(2) + '(x) = ' + polyHTML(T.ders[2]) + ' ist eine Konstante ungleich 0 ⇒ die Krümmung ändert sich nie ⇒ <b>keine Wendepunkte</b>.</div>');
+    return { steps: parts.join(''), res: '<b>Keine</b> Wendepunkte: Der Graph ist eine ' + (T.ders[2][0].sign > 0 ? 'Linkskurve' : 'Rechtskurve') + ' überall.' };
+  }
+  parts.push('<div class="sec">1. Ableitungen bilden</div>' + explainDeriv(T, 2).replace(/^<div class="ln"><span class="cm">.*?<\/span><\/div>/, '') + (T.n >= 3 ? explainDeriv(T, 3).replace(/^<div class="ln"><span class="cm">.*?<\/span><\/div>/, '') : ''));
+  parts.push('<div class="sec">2. f″(x) = 0 lösen: mögliche Wendestellen</div>' + (T.inflSolve.hand ? '' : EXC('f″ ist zu kompliziert')) + T.inflSolve.lines.map(f => '<div class="ln">' + f() + '</div>').join(''));
+  if (!T.infl.length) {
+    parts.push('<div class="ln"><b>Keine</b> Lösung ⇒ keine Wendepunkte.</div>');
+  } else {
+    parts.push('<div class="sec">3. Prüfen mit höheren Ableitungen: wechselt die Krümmung?</div>' + T.infl.map(r => '<div class="ln">' + inflLine(T, r) + '</div>').join(''));
+    const real = T.infl.filter(r => r.type !== 'N');
+    if (real.length) {
+      parts.push('<div class="sec">4. y-Koordinate und Steigung der Wendetangente</div>' + real.map(r => '<div class="ln">' + cm('x = ' + xLabel(r)) + '</div>' + yCalc(T, r) +
+        '<div class="ln">m = f′(' + xLabel(r) + ')' + (r.slope ? ' = <b>' + frHTML(r.slope) + '</b>' : ' ≈ <b>' + dec(r.slopeV) + '</b>') + (r.type === 'S' ? ' ⇒ waagrechte Wendetangente ⇒ <b>Sattelpunkt</b>' : '') + '</div>').join(''));
+    }
+  }
+  const real = T.infl.filter(r => r.type !== 'N');
+  let res = real.length ? real.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type] + (r.type === 'W' ? ', Steigung m = ' + (r.slope ? frHTML(r.slope) : dec(r.slopeV)) : ''))).join('<br>') : '<b>Keine</b> Wendepunkte.';
+  const fake = T.infl.filter(r => r.type === 'N');
+  if (fake.length) res += '<br>' + cm('Bei x = ' + fake.map(xLabel).join(', ') + ' gilt f″ = 0, aber die Krümmung wechselt nicht: kein Wendepunkt.');
+  return { steps: parts.join(''), res };
+}
+
+/* ---------- Steckbrief (Zusammenfassung) ---------- */
+function steckbrief(T) {
+  const rows = [];
+  rows.push(['Funktion', 'f(x) = ' + polyHTML(T.p)]);
+  rows.push(['Verhalten im Unendlichen', RAND_TXT[T.rand.key]]);
+  rows.push(['Symmetrie', T.sym === 'y' ? 'achsensymmetrisch zur y-Achse' : T.sym === 'o' ? 'punktsymmetrisch zum Ursprung' : 'keine Symmetrie']);
+  rows.push(['y-Achsenabschnitt', '<b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ')']);
+  rows.push(['Nullstellen', T.zerosRoots.length ? T.zerosRoots.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r)).join(', ') : 'keine']);
+  rows.push(['Extrempunkte', T.stat.length ? T.stat.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type])).join('<br>') : 'keine']);
+  const real = T.infl.filter(r => r.type !== 'N');
+  rows.push(['Wendepunkte', real.length ? real.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type])).join('<br>') : 'keine']);
+  return rows;
+}
+
+/* ============================================================
+   GENERATOR: Übungsfunktionen (leicht / mittel / schwer) + Vorgaben
+   ============================================================ */
+const rndInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pickOne = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rndInt(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* Polynom als Eingabetext (wird vom Parser wieder gelesen) */
+const isInt = f => f.isInt;
+function polySrc(p) {
+  let s = '';
+  for (let k = p.length - 1; k >= 0; k--) {
+    const c = p[k]; if (c.isZero) continue;
+    const a = c.abs(); const fs = a.isInt ? String(a.n) : '(' + a.n + '/' + a.d + ')';
+    let body;
+    if (k === 0) body = fs;
+    else body = (a.eq(ONE) ? '' : fs + (a.isInt ? '' : '*')) + 'x' + (k > 1 ? '^' + k : '');
+    s += (c.sign < 0 ? (s ? ' - ' : '-') : (s ? ' + ' : '')) + body;
+  }
+  return s || '0';
+}
+
+/* Polynom aus Faktoren bauen */
+const linFac = r => [r.neg(), ONE];                       // (x - r)
+function fromRoots(a, roots) { let p = [a]; roots.forEach(r => { p = pMul(p, linFac(r)); }); return pTrim(p); }
+const allInts = p => p.every(c => c.isInt);
+const maxDen = p => Math.max(...p.map(c => Number(c.d)));
+const maxCoef = p => Math.max(...p.map(c => Math.abs(c.num())));
+
+/* Prüfkriterien */
+const allRoots = T => T.zerosRoots.concat(T.stat, T.infl);
+const ratAll = T => allRoots(T).every(r => r.x);
+const ratZS = T => T.zerosRoots.concat(T.stat).every(r => r.x);
+function sizeOK(T, maxY, maxX) {
+  const pts = allRoots(T);
+  return pts.every(r => Math.abs(r.v) <= maxX && Math.abs(r.yv || 0) <= maxY) && Math.abs(T.yint.num()) <= maxY;
+}
+function pointCount(T) { return { z: T.zerosRoots.length, s: T.stat.length, w: T.infl.filter(r => r.type !== 'N').length }; }
+
+/* ---- schnelle Hilfstests (ohne volle Analyse) ---- */
+function divsOf(n) { n = Math.abs(n); const d = []; for (let i = 1; i * i <= n; i++) if (n % i === 0) { d.push(i); if (i * i !== n) d.push(n / i); } return d; }
+function ratRoot(p) { // rationale Nullstelle von p (p[0] != 0) oder null
+  let L = 1n; p.forEach(c => { L = L * c.d / bgcd(L, c.d); });
+  const ip = p.map(c => Number(c.n * L / c.d));
+  const a0 = ip[0], an = ip[ip.length - 1];
+  if (Math.abs(a0) > 1e5) return null;
+  for (const num of divsOf(a0)) for (const den of divsOf(an)) for (const sg of [1, -1]) {
+    const r = new Fr(BigInt(sg * num), BigInt(den));
+    if (pEv(p, r).isZero) return r;
+  }
+  return null;
+}
+function handable(p) { // lässt sich die Gleichung p=0 von Hand lösen (rationale Wurzel, dann Rest quadratisch)?
+  p = pTrim(p);
+  while (pDeg(p) > 0 && p[0].isZero) p = p.slice(1);
+  let guard = 0;
+  while (pDeg(p) > 2 && guard++ < 8) {
+    if (p.every((c, k) => k % 2 === 0 || c.isZero)) return pDeg(p) === 4;
+    const r = ratRoot(p); if (!r) return false;
+    p = pDivMod(p, [r.neg(), ONE]).q;
+  }
+  return true;
+}
+function fullyRational(p) { // alle Nullstellen rational
+  p = pTrim(p);
+  while (pDeg(p) > 0 && p[0].isZero) p = p.slice(1);
+  let guard = 0;
+  while (pDeg(p) > 2 && guard++ < 8) {
+    const r = ratRoot(p); if (!r) return pDeg(p) === 4 && p.every((c, k) => k % 2 === 0 || c.isZero) && biRat(p);
+    p = pDivMod(p, [r.neg(), ONE]).q;
+  }
+  if (pDeg(p) < 2) return true;
+  const D = p[1].mul(p[1]).sub(fr(4).mul(p[2]).mul(p[0]));
+  return D.sign < 0 || !!sqrtFr(D);
+}
+function biRat(p) { // a x^4 + b x^2 + c: z-Lösungen rationale Quadrate
+  const a = p[4], b = p[2], c = p[0]; const D = b.mul(b).sub(fr(4).mul(a).mul(c));
+  if (D.sign < 0) return true; const s = sqrtFr(D); if (!s) return false;
+  return [b.neg().add(s).div(fr(2).mul(a)), b.neg().sub(s).div(fr(2).mul(a))].every(z => z.sign < 0 || !!sqrtFr(z));
+}
+
+/* ---- Bausteine ---- */
+// f' = c * (x-s1)...(x-sm), f = Integral + d
+function fromDeriv(c, stats, d) {
+  const dp = fromRoots(c, stats.map(s => fr(s)));
+  const f = [fr(d)]; dp.forEach((co, k) => f.push(co.div(fr(k + 1))));
+  return pTrim(f);
+}
+
+const LEVELS = {
+  leicht: { name: 'leicht', desc: 'Grad 3 oder 4, alle Zahlen schön' },
+  mittel: { name: 'mittel', desc: 'Grad 3 bis 4, Wurzeln, Polynomdivision' },
+  schwer: { name: 'schwer', desc: 'Grad 4 bis 5, Brüche, Sattelpunkte' },
+};
+
+const LBL = { leicht: 'Leicht', mittel: 'Mittel', schwer: 'Schwierig' };
+function withZero(p, r) { const q = p.slice(); q[0] = q[0].sub(pEv(p, fr(r))); return pTrim(q); } // r wird Nullstelle
+function needsDiv(p) { if (p[0].isZero || pDeg(p) < 3) return false; if (p.every((c, k) => k % 2 === 0 || c.isZero)) return false; return !!ratRoot(p); }
+function candidate(level) {
+  const t = Math.random();
+  if (level === 'leicht') {
+    if (t < 0.78) {
+      const a = pickOne([1, 1, -1, -1, 2, -2]);
+      let s1 = rndInt(-3, 3), s2 = rndInt(-3, 3); if (s1 === s2) s2 = s1 + pickOne([1, 2, 3]);
+      return fromDeriv(fr(3 * a), [s1, s2], rndInt(-12, 12));
+    }
+    if (t < 0.86) { const k = rndInt(1, 3), a = pickOne([1, -1, 1]); const q = [fr(-k * k), ZERO, ONE]; return pTrim(pMul([fr(a)], pMul(q, q))); }
+    if (t < 0.94) { const b = rndInt(-4, 4) || 3; return fromRoots(fr(pickOne([1, -1, 2, -2])), [ZERO, ZERO, fr(b)]); }
+    return fromRoots(fr(pickOne([1, -1, 1, -1, 2])), [rndInt(-3, 3), rndInt(-3, 3), rndInt(-3, 3)].map(v => fr(v)));
+  }
+  if (level === 'mittel') {
+    if (t < 0.42) { // kubisch aus Extremstellen, d frei (Nullstellen oft per Mitternachtsformel)
+      const a = pickOne([1, -1, 2, -2, 1, -1]);
+      let s1 = rndInt(-4, 4), s2 = rndInt(-4, 4); if (s1 === s2) s2 = s1 + 2;
+      const q = fromDeriv(fr(3 * a), [s1, s2], 0); return Math.random() < 0.55 ? withZero(q, rndInt(-4, 4)) : withZero(q, 0).map((c, k) => k === 0 ? fr(rndInt(-15, 15)) : c);
+    }
+    if (t < 0.58) return pTrim([rndInt(-9, 9), rndInt(-9, 9), rndInt(-6, 6), pickOne([1, -1, 2, -2])].map(v => fr(v)));
+    if (t < 0.78) { // a(x^2-p)(x^2-q)
+      const p = pickOne([0, 1, 2, 3, 4, 5, 9]), q = pickOne([1, 4, 5, 8, 9, 16]);
+      if (p === q) return null;
+      return pTrim(pMul([fr(pickOne([1, -1, 1, 2]))], pMul([fr(-p), ZERO, ONE], [fr(-q), ZERO, ONE])));
+    }
+    if (t < 0.88) return pTrim([ZERO, fr(rndInt(-9, 9)), ZERO, fr(pickOne([1, -1, 2, -2]))]);
+    const s = [rndInt(-3, 3), rndInt(-3, 3), rndInt(-3, 3)];
+    const q = fromDeriv(fr(4 * pickOne([1, -1, 3, -3])), s, 0); return Math.random() < 0.5 ? withZero(q, rndInt(-3, 3)) : fromDeriv(fr(4 * pickOne([1, -1, 3, -3])), s, rndInt(-8, 8));
+  }
+  // schwer
+  if (t < 0.20) { // Grad 5 punktsymmetrisch: a x (x^2-p)(x^2-q)
+    const p = pickOne([1, 2, 3, 4, 5]), q = pickOne([0, 1, 4, 9]);
+    if (p === q) return null;
+    return pTrim(pMul([ZERO, fr(pickOne([1, -1, 1]))], pMul([fr(-p), ZERO, ONE], q === 0 ? [ONE] : [fr(-q), ZERO, ONE])));
+  }
+  if (t < 0.55) { // Grad 4 aus Extremstellen, auch Sattelpunkt (doppelte Stelle in f') und Brüche
+    const a = pickOne([fr(1), fr(-1), fr(1, 2), fr(-1, 2), fr(1, 4), fr(-1, 4), fr(3), fr(-3)]);
+    let s = [rndInt(-3, 3), rndInt(-3, 3), rndInt(-3, 3)]; if (Math.random() < 0.35) s[1] = s[0];
+    const q = fromDeriv(a.mul(fr(4)), s, 0); return Math.random() < 0.6 ? withZero(q, rndInt(-3, 3)) : fromDeriv(a.mul(fr(4)), s, rndInt(-12, 12));
+  }
+  if (t < 0.80) { // Grad 5 aus Extremstellen
+    const a = pickOne([fr(1), fr(-1), fr(1, 5), fr(-1, 5)]);
+    const s = [rndInt(-2, 2), rndInt(-2, 2), rndInt(-2, 2), rndInt(-2, 2)];
+    const q = fromDeriv(a.mul(fr(5)), s, 0); return Math.random() < 0.6 ? withZero(q, rndInt(-3, 3)) : fromDeriv(a.mul(fr(5)), s, rndInt(-10, 10));
+  }
+  // Grad 4 mit Mehrfach-Nullstelle
+  const r = rndInt(-3, 3), s = rndInt(-3, 3);
+  return fromRoots(pickOne([fr(1), fr(-1), fr(1, 2), fr(2)]), [r, r, r, s].map(v => fr(v)));
+}
+
+function acceptable(level, p) {
+  if (!p) return null;
+  p = pTrim(p); const n = pDeg(p);
+  const lo = 3, hi = level === 'leicht' ? 4 : level === 'mittel' ? 4 : 5;
+  if (n < lo || n > hi) return null;
+  if (level !== 'schwer' && !allInts(p)) return null;
+  if (maxDen(p) > 4) return null;
+  if (maxCoef(p) > (level === 'leicht' ? 24 : level === 'mittel' ? 40 : 60)) return null;
+  // billige Vorfilter
+  if (!handable(p) || !handable(pDer(p)) || !handable(pDer(pDer(p)))) return null;
+  if (level === 'leicht' && !(fullyRational(p) && fullyRational(pDer(p)) && (n === 4 || fullyRational(pDer(pDer(p)))))) return null;
+  if (level === 'mittel' && !fullyRational(pDer(p)) && Math.random() < 0.7) return null;
+  if (level === 'mittel' && Math.random() < 0.4 && !needsDiv(p)) return null;
+  if (level === 'schwer' && Math.random() < 0.55 && !needsDiv(p)) return null;
+  let T; try { T = analyze(p); } catch (e) { return null; }
+  if (!T.hand) return null;
+  const pc = pointCount(T);
+  if (level === 'leicht') {
+    if (!(n === 4 ? ratZS(T) : ratAll(T))) return null;
+    if (!sizeOK(T, 40, 5)) return null;
+    if (pc.z < 1 || pc.s < 1) return null;
+  } else if (level === 'mittel') {
+    if (!sizeOK(T, 100, 6)) return null;
+    if (pc.z < 1 && Math.random() < 0.85) return null;
+    if (pc.s < 1) return null;
+  } else {
+    if (!sizeOK(T, 300, 7)) return null;
+    if (pc.s + pc.w < 2) return null;
+  }
+  return T;
+}
+
+function generate(level, avoidSrc) {
+  for (let i = 0; i < 4000; i++) {
+    const T = acceptable(level, candidate(level));
+    if (!T) continue;
+    const src = polySrc(T.p);
+    if (avoidSrc && src === avoidSrc) continue;
+    return { src, p: T.p, level };
+  }
+  return { src: 'x^3 - 3x^2 - 4x + 12', p: parseFunction('x^3 - 3x^2 - 4x + 12').p, level };
+}
+
+/* ---- Vorgaben ---- */
+const PRESETS = [
+  { src: 'x^3 - 3x^2 - 4x + 12', tag: 'Standard', note: '3 Nullstellen, Hoch- und Tiefpunkt' },
+  { src: 'x^3 - 6x^2 + 9x', tag: 'Standard', note: 'Doppelte Nullstelle' },
+  { src: '-x^3 + 3x', tag: 'Punktsymmetrie', note: 'Wurzeln mit Taschenrechner' },
+  { src: 'x^4 - 2x^2 + 1', tag: 'Achsensymmetrie', note: 'Doppelte Nullstellen' },
+  { src: 'x^4 - 5x^2 + 4', tag: 'Achsensymmetrie', note: 'Substitution z = x²' },
+  { src: 'x^3 - 3x^2', tag: 'Standard', note: 'Ausklammern' },
+  { src: 'x^4 - 4x^3', tag: 'Sattelpunkt', note: 'Dreifache Nullstelle' },
+  { src: '-x^3 + 3x^2 + x - 3', tag: 'Standard', note: 'Negativer Leitkoeffizient' },
+  { src: 'x^4 - 2x^3 - 12x^2', tag: 'Zwei Wendepunkte', note: '' },
+  { src: 'x^5 - 5x^3 + 4x', tag: 'Grad 5', note: 'Punktsymmetrisch' },
+  { src: '1/4*x^4 - 2x^2', tag: 'Brüche', note: 'Achsensymmetrisch' },
+  { src: 'x^3', tag: 'Spezialfall', note: 'Sattelpunkt im Ursprung' },
+  { src: 'x^3 - 2x^2 - 5x + 6', tag: 'Polynomdivision', note: 'Nullstelle erraten' },
+  { src: 'x^4 - 2x^3 - 13x^2 + 14x + 24', tag: 'Polynomdivision', note: 'Zweimal dividieren' },
+  { src: 'x^5 - 3x + 1', tag: 'Ausnahme', note: 'Nullstellen nicht von Hand' },
+  { src: 'x^5 + 5x^4 - x^3 + 2x', tag: 'Ausnahme', note: 'Extremstellen nicht von Hand' },
+  { src: 'x^5 - 4x^3 + x^2 + 2', tag: 'Ausnahme', note: 'Auch Wendestellen nicht von Hand' },
+];
+
+/* ============================================================
+   OBERFLÄCHE
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const META = [
+  { pill: 'Funktion', title: 'Funktion wählen' },
+  { pill: 'Unendlich', title: 'Verhalten im Unendlichen' },
+  { pill: 'Symmetrie', title: 'Symmetrie' },
+  { pill: 'y-Achse', title: 'y-Achsenabschnitt' },
+  { pill: 'Nullstellen', title: 'Nullstellen' },
+  { pill: 'Extrempunkte', title: 'Mögliche Extrempunkte' },
+  { pill: 'Wendepunkte', title: 'Wendepunkte' },
+  { pill: 'Zeichnen', title: 'Funktion zeichnen' },
+];
+const UI = { step: 0, src: PRESETS[0].src, tip: {}, preset: 0, lastGen: null, raf: 0 };
+let S = null;
+
+function freshState(src) {
+  const T = analyze(parseFunction(src).p);
+  const ch = () => ({ sel: null, tries: 0, done: false, first: false, wrongs: [], msg: null });
+  const pts = () => ({ phase: 'x', val: '', res: null, sel: [], typeChecked: false, d: {}, revealed: false });
+  return {
+    src, T, maxStep: 1, score: {},
+    st: { rand: ch(), sym: ch(), y: { val: '', done: false, ok: false, revealed: false, msg: null },
+      zero: { val: '', done: false, res: null, revealed: false }, stat: pts(), infl: pts(), draw: { t: 0, done: false, played: false } },
+  };
+}
+const stepDone = i => !S ? false : [true, S.st.rand.done, S.st.sym.done, S.st.y.done, S.st.zero.done, S.st.stat.phase === 'done', S.st.infl.phase === 'done', S.st.draw.done][i];
+
+/* ---------- Hilfen ---------- */
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+function parseList(src) {
+  const s = String(src).trim();
+  if (!s) return { empty: true };
+  if (/^(keine?|keine\s+\w+|—|-|∅|\{\s*\})$/i.test(s)) return { none: true, vals: [] };
+  const parts = s.split(/;|\s+und\s+|,\s+/).map(t => t.trim()).filter(Boolean); const vals = [];
+  for (const p of parts) {
+    const t = p.replace(/^\s*x\s*[_₀-₉\d]*\s*=\s*/i, '');
+    const a = parseAnswer(t);
+    if (a.empty) continue; if (a.err) return { err: '«' + p + '»: ' + a.err };
+    vals.push({ text: p.replace(/^\s*x\s*[_₀-₉\d]*\s*=\s*/i, ''), ans: a });
+  }
+  if (!vals.length) return { empty: true };
+  return { vals };
+}
+function matchRoots(src, roots) {
+  const L = parseList(src); if (L.err || L.empty) return L;
+  const used = new Array(roots.length).fill(false); const items = [];
+  L.vals.forEach(a => {
+    let hit = -1; for (let i = 0; i < roots.length; i++) if (!used[i] && valueMatches(a.ans, roots[i].x, roots[i].v)) { hit = i; break; }
+    let dup = false; if (hit < 0) dup = roots.some(r => valueMatches(a.ans, r.x, r.v));
+    if (hit >= 0) used[hit] = true; items.push({ text: a.text, ok: hit >= 0, dup });
+  });
+  const nFound = used.filter(Boolean).length;
+  return { items, found: used, nFound, allOk: items.every(i => i.ok) && nFound === roots.length };
+}
+function ptName(kind, i, n) { return kind === 'P' ? 'P' + (n > 1 ? subOf(i + 1) : '') : ''; }
+
+/* ---------- Bauteile ---------- */
+const CURVE = {
+  uu: 'M14 10 Q60 90 106 10', dd: 'M14 66 Q60 -14 106 66', du: 'M14 64 C48 70 72 6 106 12', ud: 'M14 12 C48 6 72 70 106 64',
+  y: 'M14 12 Q60 92 106 12', o: 'M14 66 C40 70 48 38 60 38 C72 38 80 6 106 10', n: 'M14 60 C30 8 46 8 58 40 C70 72 88 62 106 14',
+};
+function svgCurve(k) {
+  const extra = k === 'y' ? '<path class="d" d="M60 2 V74"/>' : k === 'o' ? '<circle cx="60" cy="38" r="3.4" fill="var(--sy)"/>' : '';
+  return '<svg viewBox="0 0 120 76" aria-hidden="true"><path class="a" d="M4 38 H116 M60 4 V72"/>' + extra + '<path class="c" d="' + CURVE[k] + '"/></svg>';
+}
+function head(i) { return '<div class="task-head"><span class="badge">' + (i === 0 ? 'Start' : 'Schritt ' + i + ' von 7') + '</span><h2>' + META[i].title + '</h2></div>'; }
+function tipBlock(k, txt) {
+  const o = UI.tip[k];
+  return '<div><button class="btn small" data-a="tip" data-k="' + k + '" aria-expanded="' + !!o + '">' + (o ? 'Tipp verbergen' : 'Tipp anzeigen') + '</button></div>' + (o ? '<div class="tipbox">' + txt + '</div>' : '');
+}
+function detailsBlock(title, html, open) { return '<details class="inline"' + (open ? ' open' : '') + '><summary>' + title + '</summary><div class="in calc">' + html + '</div></details>'; }
+function nav(i, canNext, nextLabel) {
+  return '<div class="task-nav"><button class="btn" data-a="prev"' + (i === 0 ? ' disabled' : '') + '>← Zurück</button><div class="r">' +
+    (i < 7 ? '<button class="btn primary" data-a="next"' + (canNext ? '' : ' disabled') + '>' + (nextLabel || 'Weiter →') + '</button>' : '') + '</div></div>';
+}
+function fbBox(ok, title, txt) { return '<div class="fb ' + (ok ? 'ok' : 'bad') + '" role="status"><b class="t">' + title + '</b>' + txt + '</div>'; }
+const merkeBox = t => '<div class="merke"><b>Merke:</b> ' + t + '</div>';
+const inputHelp = '<details class="inline"><summary>Eingabehilfe</summary><div class="in"><p>Brüche: <code>1/2</code>, Wurzeln: <code>√5</code> oder <code>sqrt(5)</code>, Dezimalzahlen mit Punkt oder Komma. Mehrere Werte mit Strichpunkt trennen: <code>-2; 2; 3</code>. Keine Lösung: <code>keine</code>. Wurzelwerte dürfen auf 2 Nachkommastellen gerundet sein.</p></div></details>';
+
+/* ---------- Schritt 0: Funktion ---------- */
+function rFn() {
+  let h = head(0) + '<p class="ask"><b>Welche Funktion möchtest du untersuchen?</b> Wähle ein Beispiel, erzeuge eine Übungsfunktion oder tippe selbst eine ein.</p>';
+  h += '<div><label style="margin-top:0">Beispiele</label><div class="presets">' + PRESETS.map((p, i) => {
+    const pp = parseFunction(p.src).p; return '<button class="pre" data-a="preset" data-i="' + i + '" aria-pressed="' + (UI.preset === i) + '"><b>' + polyHTML(pp).replace(/<[^>]+>/g, m => m) + '</b><small>' + p.tag + '</small></button>';
+  }).join('') + '</div></div>';
+  h += '<div><label>Übungsfunktion erzeugen <span class="cm">(zum \u00DCben zu Hause)</span></label><div class="gen">' +
+    ['leicht', 'mittel', 'schwer'].map(l => '<button data-a="gen" data-l="' + l + '">' + LBL[l] + '<small>' + LEVELS[l].desc + '</small></button>').join('') + '</div></div>';
+  h += '<div><label for="fsrc">Oder eigene Funktion eingeben</label><div class="fieldrow"><label for="fsrc">f(x) =</label><input type="text" id="fsrc" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(UI.src) + '" data-enter="start"></div>' +
+    '<div class="read" id="fread"></div><p class="msg info" id="fnote"></p></div>';
+  h += '<div class="btnrow"><button class="btn primary big" id="startBtn" data-a="start">' + (S ? 'Neu starten' : 'Analyse starten') + ' →</button>' + (S ? '<button class="btn" data-a="back">Zurück zur laufenden Analyse</button>' : '') + '</div>';
+  return h;
+}
+let fnTimer = 0;
+function updateFnPreview() {
+  const r = parseFunction(UI.src), rd = $('#fread'), nt = $('#fnote'), sb = $('#startBtn'); if (!rd) return;
+  if (r.empty) { rd.innerHTML = ''; nt.textContent = ''; sb.disabled = true; return; }
+  if (r.err) { rd.innerHTML = '<span class="msg bad">' + esc(r.err) + '</span>'; nt.textContent = ''; sb.disabled = true; return; }
+  if (pDeg(r.p) < 2) { rd.innerHTML = '<span class="msg bad">Eine Gerade hat keine Extrem- oder Wendepunkte. Wähle mindestens Grad 2.</span>'; nt.textContent = ''; sb.disabled = true; return; }
+  rd.innerHTML = 'f(x) = <b>' + polyHTML(r.p) + '</b> &nbsp;<span class="cm">Grad ' + pDeg(r.p) + '</span>'; sb.disabled = false;
+  clearTimeout(fnTimer); nt.textContent = '';
+  fnTimer = setTimeout(() => { try { const T = analyze(r.p); nt.textContent = T.hand ? '' : 'Hinweis: Bei dieser Funktion lassen sich nicht alle Gleichungen schön von Hand lösen. Du brauchst den Taschenrechner (Solver).'; } catch (e) { } }, 250);
+}
+
+/* ---------- Schritt 1 und 2: Auswahlaufgaben ---------- */
+const RAND_OPTS = ['uu', 'dd', 'du', 'ud'];
+function choiceStep(key, i, asktxt, opts, labels, truth, tip, ex, merke, cols) {
+  const s = S.st[key]; let h = head(i) + '<p class="ask">' + asktxt + '</p>';
+  h += '<div class="opts ' + (cols === 3 ? '' : 'two') + '" style="' + (cols === 3 ? 'grid-template-columns:repeat(3,1fr)' : '') + '">' + opts.map(o => {
+    let cls = ''; if (s.done) cls = o === truth ? 'right' : (o === s.sel ? 'wrong' : ''); else if (s.wrongs.includes(o)) cls = 'wrong';
+    return '<button class="opt ' + cls + '" data-a="pick" data-k="' + key + '" data-v="' + o + '" aria-pressed="' + (s.sel === o) + '"' + (s.done || s.wrongs.includes(o) ? ' disabled' : '') + '>' + svgCurve(o) + '<span>' + labels[o] + '</span></button>';
+  }).join('') + '</div>';
+  if (!s.done) {
+    h += '<div class="btnrow"><button class="btn primary" data-a="check" data-k="' + key + '"' + (s.sel && !s.wrongs.includes(s.sel) ? '' : ' disabled') + '>Prüfen</button></div>';
+    if (s.msg) h += fbBox(false, 'Nicht ganz.', s.msg);
+    h += tipBlock(key, tip);
+  } else {
+    h += s.first ? fbBox(true, 'Richtig!', 'Im ersten Versuch.') : (s.sel === truth ? fbBox(true, 'Richtig!', 'Jetzt stimmt es.') : fbBox(false, 'Nicht ganz.', 'Die Lösung siehst du unten.'));
+    h += '<div class="merke"><b>Ergebnis:</b> ' + ex.res + '</div><div class="calc"><p>' + ex.why + (ex.use ? '</p><p style="margin-top:6px">' + ex.use : '') + '</p></div>';
+    h += detailsBlock(key === 'rand' ? 'Rechnung mit Grenzwerten (für alle, die Grenzwerte kennen)' : 'Rechnung zur Symmetrie', ex.calc, false);
+    h += merkeBox(merke);
+  }
+  return h + nav(i, s.done);
+}
+function rRand() {
+  const T = S.T, ex = explainRand(T);
+  const labels = { uu: 'von links oben<br>nach rechts oben', dd: 'von links unten<br>nach rechts unten', du: 'von links unten<br>nach rechts oben', ud: 'von links oben<br>nach rechts unten' };
+  return choiceStep('rand', 1, '<b>Wie verhält sich der Graph ganz links (x → −∞) und ganz rechts (x → +∞)?</b> Wähle den passenden Verlauf.', RAND_OPTS, labels, T.rand.key,
+    'Betrachte nur den Summanden mit der <b>höchsten Hochzahl</b>, die anderen fallen für sehr grosse |x| nicht ins Gewicht. Ist die Hochzahl gerade oder ungerade? Ist der Faktor davor positiv oder negativ?', ex,
+    'Gerader Grad: beide Enden zeigen in dieselbe Richtung. Ungerader Grad: die Enden zeigen in entgegengesetzte Richtungen. Das Vorzeichen des Leitkoeffizienten legt fest, ob es rechts nach oben (+) oder unten (−) geht.');
+}
+function rSym() {
+  const T = S.T, ex = explainSym(T);
+  const labels = { y: 'achsensymmetrisch<br>zur y-Achse', o: 'punktsymmetrisch<br>zum Ursprung', n: 'weder noch' };
+  return choiceStep('sym', 2, '<b>Hat der Graph eine Symmetrie?</b> Es geht nur um die y-Achse und den Ursprung.', ['y', 'o', 'n'], labels, T.sym,
+    'Schau dir die <b>Hochzahlen</b> von x an (das konstante Glied zählt als x⁰, also gerade). Lauter gerade, lauter ungerade oder gemischt? Prüfe zur Sicherheit f(−x) im Vergleich zu f(x) und −f(x).', ex,
+    'f(−x) = f(x): achsensymmetrisch zur y-Achse (nur gerade Hochzahlen). f(−x) = −f(x): punktsymmetrisch zum Ursprung (nur ungerade Hochzahlen). Bei Symmetrie genügt die halbe Untersuchung.', 3);
+}
+
+/* ---------- Schritt 3: y-Achsenabschnitt ---------- */
+function rY() {
+  const T = S.T, s = S.st.y, ex = explainY(T); let h = head(3);
+  h += '<p class="ask"><b>Berechne den y-Achsenabschnitt</b>, also den Punkt, in dem der Graph die y-Achse schneidet.</p>';
+  h += '<div class="fieldrow"><label for="yin">y =</label><input type="text" id="yin" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(s.val) + '"' + (s.done ? ' disabled' : '') + ' data-enter="chkY"></div>';
+  if (!s.done) {
+    h += '<p class="msg info" id="ymsg">' + (s.msg ? esc(s.msg) : '') + '</p><div class="btnrow"><button class="btn primary" id="chkY" data-a="chkY">Prüfen</button><button class="btn link" data-a="revY">Lösung zeigen</button></div>' + inputHelp + tipBlock('y', 'Auf der y-Achse ist <b>x = 0</b>. Setze 0 in f(x) ein.');
+  } else {
+    h += s.ok ? fbBox(true, 'Richtig!', 'Der Punkt ist im Koordinatensystem eingetragen.') : fbBox(false, s.revealed ? 'Lösung:' : 'Nicht ganz.', 'Der richtige Punkt ist im Koordinatensystem eingetragen.');
+    h += '<div class="merke"><b>Ergebnis:</b> ' + ex.res + '</div><p>' + ex.why + '</p>' + detailsBlock('Rechnung', ex.calc, !s.ok) + merkeBox('Der y-Achsenabschnitt ist f(0). Er entspricht dem konstanten Glied der Funktion.');
+  }
+  return h + nav(3, s.done);
+}
+
+/* ---------- Schritt 4: Nullstellen ---------- */
+function chipsHTML(m, trueRoots) {
+  if (!m) return '';
+  let h = '<ul class="chips">' + m.items.map(it => '<li class="chip ' + (it.ok ? 'ok' : 'no') + '">' + (it.ok ? '✓ ' : '✗ ') + esc(it.text) + (it.dup ? ' <span class="cm">(doppelt oder schon genannt)</span>' : '') + '</li>').join('');
+  trueRoots.forEach((r, i) => { if (!m.found[i]) h += '<li class="chip miss">fehlt: ' + xLabel(r) + '</li>'; });
+  return h + '</ul>';
+}
+function rZero() {
+  const T = S.T, s = S.st.zero, ex = explainZeros(T); let h = head(4);
+  h += '<p class="ask"><b>Berechne die Nullstellen</b> der Funktion, also alle Stellen mit f(x) = 0.</p>';
+  h += '<div class="fieldrow"><label for="zin">x =</label><input type="text" id="zin" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="z.B. -2; 2; 3  oder  keine" value="' + esc(s.val) + '"' + (s.done ? ' disabled' : '') + ' data-enter="chkZ"></div>';
+  if (!s.done && !T.zeros.hand) {
+    h = head(4) + '<p class="ask"><b>Nullstellen:</b> Ausnahmefall</p>' + EXC('Polynom zu hohen Grades') + '<p>N\u00E4herungswerte (Taschenrechner): ' + (T.zerosRoots.length ? T.zerosRoots.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)').join(', ') : 'keine Nullstellen') + '</p><div class="btnrow"><button class="btn primary" data-a="givenZ">In das Koordinatensystem eintragen</button></div>';
+    return h + nav(4, false);
+  }
+  if (!s.done) {
+    h += '<p class="msg info" id="zmsg"></p><div class="btnrow"><button class="btn primary" id="chkZ" data-a="chkZ">Prüfen</button><button class="btn link" data-a="revZ">Lösung zeigen</button></div>' + inputHelp;
+    let tip = 'Setze f(x) = 0. Welche Methode passt? '; const p = T.p;
+    if (p[0].isZero) tip += 'Es gibt kein konstantes Glied: <b>x ausklammern</b>, dann Satz vom Nullprodukt.';
+    else if (T.n === 4 && p.every((c, k) => k % 2 === 0 || c.isZero)) tip += 'Es kommen nur gerade Hochzahlen vor: <b>Substitution</b> z = x² und danach die Mitternachtsformel.';
+    else if (T.n === 2) tip += 'Quadratische Gleichung: Mitternachtsformel.';
+    else tip += 'Probiere kleine ganze Zahlen, die das konstante Glied teilen. Hast du eine Nullstelle, hilft die <b>Polynomdivision</b> (oder das Horner-Schema).';
+    h += tipBlock('zero', tip);
+  } else {
+    const m = s.res; const all = m && m.allOk;
+    if (s.given) h += fbBox(true, 'Eingetragen.', 'Ausnahmefall: Die N\u00E4herungswerte stammen vom Taschenrechner.');
+    else if (s.revealed) h += fbBox(false, 'L\u00F6sung:', 'Die Nullstellen sind im Koordinatensystem eingetragen.');
+    else h += all ? fbBox(true, 'Richtig!', (T.zerosRoots.length ? 'Alle ' + T.zerosRoots.length + ' Nullstelle' + (T.zerosRoots.length > 1 ? 'n' : '') + ' gefunden.' : 'Es gibt keine Nullstellen.')) :
+      fbBox(false, 'Noch nicht ganz.', (m.nFound + ' von ' + T.zerosRoots.length + ' richtig. ') + chipsHTML(m, T.zerosRoots));
+    h += '<div class="merke"><b>Ergebnis:</b> ' + ex.res + '</div>';
+    h += detailsBlock('Rechenweg', ex.steps + (ex.notes ? '<div style="margin-top:8px">' + ex.notes + '</div>' : ''), !all);
+    h += merkeBox('Nullstellen findest du mit f(x) = 0. Bei einer doppelten Nullstelle berührt der Graph die x-Achse nur.');
+  }
+  return h + nav(4, s.done);
+}
+
+/* ---------- Schritt 5 und 6: Punkte (Extrema / Wendepunkte) ---------- */
+const PCFG = {
+  stat: {
+    i: 5, items: T => T.stat, ex: T => explainStat(T), line: statLine, ders: T => [1, 2],
+    ask: '<b>Bestimme die möglichen Extrempunkte.</b> Zuerst: An welchen Stellen ist die Tangente waagrecht, also f′(x) = 0?',
+    label: 'f′(x) = 0 ⇒ x =', typeAsk: 'Welche Art von Punkt liegt an jeder Stelle vor?',
+    types: [{ k: 'H', t: 'Hochpunkt', c: 'h' }, { k: 'T', t: 'Tiefpunkt', c: 't' }, { k: 'S', t: 'Sattelpunkt', c: 's' }],
+    tip: 'Leite f ab und setze f′(x) = 0. Die Art bestimmst du mit der 2. Ableitung: f″ &lt; 0 (Rechtskurve) Hochpunkt, f″ &gt; 0 (Linkskurve) Tiefpunkt. Ist f″ = 0, musst du weiter prüfen.',
+    merke: 'Notwendig: f′(x) = 0. Hinreichend: f″(x) ≠ 0 (&lt; 0 Hochpunkt, &gt; 0 Tiefpunkt). Bei f″(x) = 0 weiter ableiten: Ist die erste Ableitung ungleich 0 von ungerader Ordnung, liegt ein Sattelpunkt vor.',
+    none: 'Es gibt keine Stelle mit waagrechter Tangente, also auch keine Extrempunkte.',
+  },
+  infl: {
+    i: 6, items: T => T.infl, ex: T => explainInfl(T), line: inflLine, ders: T => [2, 3].filter(k => k <= T.n),
+    ask: '<b>Bestimme die Wendepunkte.</b> Zuerst: An welchen Stellen kann sich die Krümmung ändern, also f″(x) = 0?',
+    label: 'f″(x) = 0 ⇒ x =', typeAsk: 'Wechselt die Krümmung wirklich? Was liegt an jeder Stelle vor?',
+    types: [{ k: 'W', t: 'Wendepunkt', c: 'w' }, { k: 'S', t: 'Sattelpunkt', c: 's' }, { k: 'N', t: 'kein Wendepunkt', c: '' }],
+    tip: 'Setze die 2. Ableitung gleich 0. Dann prüfst du mit der 3. Ableitung: f‴(x) ≠ 0 bedeutet Wendestelle. Ist zusätzlich f′(x) = 0, ist es ein Sattelpunkt (waagrechte Wendetangente).',
+    merke: 'Notwendig: f″(x) = 0. Hinreichend: f‴(x) ≠ 0. Ein Sattelpunkt ist ein Wendepunkt mit waagrechter Tangente (f′ = 0). Bleibt f″ nach der Nullstelle gleich, ist es kein Wendepunkt.',
+    none: 'Die zweite Ableitung hat keine Nullstelle, also gibt es keine Wendepunkte.',
+  },
+};
+function derivBlock(kind) {
+  const C = PCFG[kind], T = S.T, s = S.st[kind];
+  const rows = C.ders(T).map(k => {
+    const d = s.d[k] || { val: '', res: null }; const nm = dName(k);
+    let msg = '';
+    if (d.res === 'ok') msg = '<span class="msg ok">✓ Richtig.</span>';
+    else if (d.res === 'bad') msg = '<span class="msg bad">✗ Nicht ganz. So geht es:</span>';
+    else if (d.res === 'err') msg = '<span class="msg bad">' + esc(d.err) + '</span>';
+    const path = d.res === 'ok' || d.res === 'bad' ? '<div class="calc">' + explainDeriv(T, k) + '</div>' : '';
+    return '<div><div class="fieldrow three"><label for="d' + k + kind + '">' + nm + '(x) =</label><input type="text" class="mono" id="d' + k + kind + '" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(d.val) + '" data-enter="chkD' + k + kind + '"><button class="btn small" id="chkD' + k + kind + '" data-a="chkD" data-k="' + k + '" data-kind="' + kind + '">Prüfen</button></div><div style="margin-top:4px">' + msg + '</div>' + path + '</div>';
+  });
+  const any = C.ders(T).some(k => s.d[k] && s.d[k].res);
+  return '<details class="inline"' + (any ? ' open' : '') + '><summary>Kontrolle: Ableitungen (freiwillig)</summary><div class="in">' + '<p class="cm">Rechne die Ableitungen auf Papier und kontrolliere sie hier. Du siehst danach den Rechenweg.</p>' + rows.join('') + '</div></details>';
+}
+function rPts(kind) {
+  const C = PCFG[kind], T = S.T, s = S.st[kind], items = C.items(T), ex = C.ex(T); const solv = kind === 'stat' ? T.statSolve : T.inflSolve;
+  if (s.phase === 'x' && solv && !solv.hand) {
+    const hh = head(C.i) + '<p class="ask">' + C.ask + '</p>' + derivBlock(kind) + EXC(kind === 'stat' ? 'f\u2032 ist zu kompliziert' : 'f\u2033 ist zu kompliziert') + '<p>N\u00E4herungswerte: x \u2248 ' + (items.length ? items.map(r => xLabel(r)).join('; ') : 'keine L\u00F6sung') + '</p><div class="btnrow"><button class="btn primary" data-a="givenP" data-kind="' + kind + '">Stellen \u00FCbernehmen</button></div>';
+    return hh + nav(C.i, false);
+  }
+  let h = head(C.i) + '<p class="ask">' + C.ask + '</p>' + derivBlock(kind);
+  h += '<div class="fieldrow"><label for="pin">' + C.label + '</label><input type="text" id="pin" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="z.B. 0; 2  oder  keine" value="' + esc(s.val) + '"' + (s.phase !== 'x' ? ' disabled' : '') + ' data-enter="chkP"></div>';
+  if (s.phase === 'x') {
+    h += '<p class="msg info" id="pmsg"></p><div class="btnrow"><button class="btn primary" id="chkP" data-a="chkP" data-kind="' + kind + '">Stellen prüfen</button><button class="btn link" data-a="revP" data-kind="' + kind + '">Lösung zeigen</button></div>' + inputHelp + tipBlock(kind, C.tip);
+    return h + nav(C.i, false);
+  }
+  const m = s.res;
+  if (s.given) h += fbBox(true, 'Eingetragen.', 'Ausnahmefall: Die N\u00E4herungswerte stammen vom Taschenrechner.');
+  else if (s.revealed) h += fbBox(false, 'L\u00F6sung:', 'Die Stellen sind eingetragen.');
+  else if (m && m.allOk) h += fbBox(true, 'Richtig!', items.length ? 'Alle ' + items.length + ' Stelle' + (items.length > 1 ? 'n' : '') + ' gefunden.' : C.none);
+  else h += fbBox(false, 'Noch nicht ganz.', m.nFound + ' von ' + items.length + ' richtig. ' + chipsHTML(m, items));
+  if (!items.length) {
+    h += '<div class="merke"><b>Ergebnis:</b> ' + ex.res + '</div>' + detailsBlock('Rechenweg', ex.steps, !(m && m.allOk)) + merkeBox(C.merke);
+    return h + nav(C.i, true, kind === 'infl' ? 'Weiter zum Zeichnen →' : undefined);
+  }
+  // Art bestimmen
+  h += '<div><label style="margin-top:4px">' + C.typeAsk + '</label><div class="rows">' + items.map((r, idx) => {
+    const sel = s.sel[idx], nm = s.typeChecked ? r.name || 'P' : ptName('P', idx, items.length);
+    const ok = s.typeChecked ? sel === r.type : null;
+    const head2 = '<div class="ph">' + (s.typeChecked && r.type === 'N' ? 'x = ' + xLabel(r) : pointHTML(nm, r)) + '</div>';
+    const btns = '<div class="seg3">' + C.types.map(t => {
+      let cls = ''; if (s.typeChecked) cls = t.k === r.type ? 'right' : (t.k === sel ? 'wrong' : '');
+      return '<button class="' + cls + '" data-a="type" data-kind="' + kind + '" data-i="' + idx + '" data-k="' + t.k + '" aria-pressed="' + (sel === t.k) + '"' + (s.typeChecked ? ' disabled' : '') + '>' + (t.c ? '<span class="sym ' + t.c + '" style="margin:0"></span>' : '') + t.t + '</button>';
+    }).join('') + '</div>';
+    const why = s.typeChecked ? '<div class="why calc">' + C.line(T, r) + '</div>' : '';
+    return '<div class="prow ' + (ok === null ? '' : ok ? 'ok' : 'bad') + '">' + head2 + btns + why + '</div>';
+  }).join('') + '</div></div>';
+  if (!s.typeChecked) {
+    const all = items.every((r, i) => s.sel[i]);
+    h += '<div class="btnrow"><button class="btn primary" data-a="chkT" data-kind="' + kind + '"' + (all ? '' : ' disabled') + '>Art prüfen</button></div>';
+    return h + nav(C.i, false);
+  }
+  const nOk = items.filter((r, i) => s.sel[i] === r.type).length;
+  h += nOk === items.length ? fbBox(true, 'Richtig!', 'Alle Punkte richtig bestimmt.') : fbBox(false, nOk + ' von ' + items.length + ' richtig.', 'Die Begründungen siehst du bei jedem Punkt.');
+  h += '<div class="merke"><b>Ergebnis:</b> ' + ex.res + '</div>' + detailsBlock('Ganzer Rechenweg (Ableiten, Gleichung lösen, y-Werte, Art)', ex.steps, false) + merkeBox(C.merke);
+  return h + nav(C.i, true, kind === 'infl' ? 'Weiter zum Zeichnen →' : undefined);
+}
+
+/* ---------- Schritt 7: Zeichnen ---------- */
+function scoreInfo() {
+  const sc = S.score, keys = ['rand', 'sym', 'y', 'zero', 'statX', 'statT', 'inflX', 'inflT'];
+  const rel = keys.filter(k => !(k === 'zero' && !S.T.zeros.hand) && !(k === 'statX' && S.T.statSolve && !S.T.statSolve.hand) && !(k === 'inflX' && S.T.inflSolve && !S.T.inflSolve.hand) && !(k === 'statT' && !S.T.stat.length) && !(k === 'inflT' && !S.T.infl.length));
+  const n = rel.filter(k => sc[k]).length; return { n, m: rel.length };
+}
+function rDraw() {
+  const T = S.T, s = S.st.draw; let h = head(7);
+  if (!s.done) {
+    h += '<p class="ask"><b>Alle wichtigen Punkte sind eingetragen.</b> Jetzt fehlt nur noch der Verlauf. Zeichne die Funktion und beobachte, wie sie durch deine Punkte läuft.</p>';
+    h += '<div class="btnrow"><button class="btn primary big" data-a="draw"' + (s.played ? ' disabled' : '') + '>Funktion zeichnen ✎</button></div>';
+    return h + nav(7, false);
+  }
+  const sc = scoreInfo(), stars = '★'.repeat(Math.round(sc.n / sc.m * 5)) + '☆'.repeat(5 - Math.round(sc.n / sc.m * 5));
+  h += '<p class="ask"><b>So sieht die ganze Funktion aus.</b> Das ist dein Steckbrief:</p><table class="sum">' + steckbrief(T).map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>';
+  h += '<div class="score"><span class="stars" aria-hidden="true">' + stars + '</span><span><b>' + sc.n + ' von ' + sc.m + '</b> Teilaufgaben im ersten Versuch richtig.</span></div>';
+  h += '<div class="btnrow"><button class="btn" data-a="draw">Nochmals zeichnen</button><button class="btn" data-a="copy" id="copyBtn">Steckbrief kopieren</button></div>';
+  h += '<div><label>Neue Funktion zum Üben</label><div class="gen">' + ['leicht', 'mittel', 'schwer'].map(l => '<button data-a="genstart" data-l="' + l + '">' + LBL[l] + '</button>').join('') + '</div></div>';
+  h += '<div class="btnrow"><button class="btn link" data-a="newfn">Andere Funktion wählen</button></div>';
+  return h + nav(7, false);
+}
+
+/* ---------- Rendering ---------- */
+const MI_SEL = '.fbar .f,.calc,.ph,.sum td:last-child,.read,.chip,.merke,.fb,.ask,.why,.prow,.msg';
+function mathItalic(root) {
+  root.querySelectorAll(MI_SEL).forEach(el => {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const list = []; let n;
+    while ((n = w.nextNode())) { if (n.parentElement.closest('.cm,input,button,.mi,details>summary,code')) continue; if (/(^|[^A-Za-zÄÖÜäöüß])[A-Za-z](?![A-Za-zÄÖÜäöüß])/.test(n.nodeValue)) list.push(n); }
+    list.forEach(t => {
+      const f = document.createDocumentFragment(); const re = /(^|[^A-Za-zÄÖÜäöüß])([A-Za-z])(?![A-Za-zÄÖÜäöüß])/g; let last = 0, m, txt = t.nodeValue;
+      while ((m = re.exec(txt))) { const i = m.index + m[1].length; f.append(txt.slice(last, i)); const s = document.createElement('i'); s.className = 'mi'; s.textContent = m[2]; f.append(s); last = i + 1; }
+      f.append(txt.slice(last)); t.replaceWith(f);
+    });
+  });
+}
+function renderFbar() {
+  const fb = $('#fbar'); if (!S || UI.step < 1) { fb.hidden = true; return; }
+  fb.hidden = false; fb.innerHTML = '<span class="l">Deine Funktion</span><span class="f">f(x) = ' + polyHTML(S.T.p) + '</span><button class="btn small rbtn" data-a="round" aria-pressed="' + ROUND + '" title="Wurzelwerte exakt oder gerundet anzeigen">Wurzeln: ' + (ROUND ? 'gerundet \u2248' : 'exakt \u221A') + '</button>';
+}
+function renderSteps() {
+  $('#steps').innerHTML = META.map((m, i) => {
+    const reach = i === 0 || (S && i <= S.maxStep); const cur = i === UI.step;
+    return '<li><button class="step ' + (S && stepDone(i) && i > 0 ? 'done' : '') + '" data-a="goto" data-i="' + i + '"' + (cur ? ' aria-current="step"' : '') + (reach ? '' : ' disabled') + '><span class="n">' + (S && stepDone(i) && i > 0 ? '✓' : i === 0 ? '✎' : i) + '</span>' + m.pill + '</button></li>';
+  }).join('');
+}
+function render(keepFocus) {
+  const f = document.activeElement && document.activeElement.id;
+  const r = [rFn, rRand, rSym, rY, rZero, () => rPts('stat'), () => rPts('infl'), rDraw][UI.step];
+  $('#card').innerHTML = r().replace(/=\s*(<b>)?\s*≈/g, '$1≈'); renderSteps(); renderFbar(); mathItalic($('#card')); mathItalic($('#fbar'));
+  if (UI.step === 0) updateFnPreview();
+  if (keepFocus && f) { const el = document.getElementById(f); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') { const l = el.value.length; try { el.setSelectionRange(l, l); } catch (e) { } } } }
+  draw(); renderLegend();
+}
+function renderLegend() {
+  $('#legend').innerHTML = '<span><i class="sym y"></i>y-Achsenabschnitt</span><span><i class="sym n"></i>Nullstelle</span><span><i class="sym h"></i>Hochpunkt</span><span><i class="sym t"></i>Tiefpunkt</span><span><i class="sym s"></i>Sattelpunkt</span><span><i class="sym w"></i>Wendepunkt</span>';
+}
+function gotoStep(i) { UI.step = i; render(); const c = $('#card'); if (c.getBoundingClientRect().top < 0) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+function advance() { if (UI.step < 7) { S.maxStep = Math.max(S.maxStep, UI.step + 1); gotoStep(UI.step + 1); } }
+
+/* ---------- Aktionen ---------- */
+function startSession(src) {
+  cancelAnimationFrame(UI.raf); UI.src = src; UI.tip = {};
+  S = freshState(src); UI.step = 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function checkChoice(key) {
+  const s = S.st[key], T = S.T, truth = key === 'rand' ? T.rand.key : T.sym;
+  if (!s.sel) return; s.tries++;
+  if (s.sel === truth) { s.done = true; s.first = s.tries === 1; S.score[key] = s.first; s.msg = null; return; }
+  if (s.tries >= 2) { s.done = true; s.first = false; s.msg = null; return; }
+  s.wrongs.push(s.sel);
+  let m = 'Das passt noch nicht. Prüfe nochmals, du hast einen zweiten Versuch.';
+  if (key === 'rand') {
+    const g = s.sel, t = truth; const leftOk = g[0] === t[0], rightOk = g[1] === t[1];
+    m = leftOk ? 'Das linke Ende stimmt, das rechte nicht. Schau nochmals auf das Vorzeichen des Leitkoeffizienten.' : rightOk ? 'Das rechte Ende stimmt, das linke nicht. Ist die Hochzahl gerade oder ungerade?' : 'Beide Enden passen nicht. Beachte die Hochzahl und das Vorzeichen des Leitkoeffizienten.';
+  } else m = 'Das passt nicht. Welche Hochzahlen kommen vor, gerade, ungerade oder beide? Prüfe im Zweifel f(−x).';
+  s.msg = m; s.sel = null;
+}
+function checkY() {
+  const s = S.st.y, el = $('#yin'), a = parseAnswer(el.value); s.val = el.value;
+  if (a.empty) { $('#ymsg').textContent = 'Gib eine Zahl ein.'; $('#ymsg').className = 'msg bad'; return; }
+  if (a.err) { $('#ymsg').textContent = a.err; $('#ymsg').className = 'msg bad'; return; }
+  s.ok = valueMatches(a, S.T.yint, S.T.yint.num()); s.done = true; S.score.y = s.ok; render();
+}
+function checkZero() {
+  const s = S.st.zero, el = $('#zin'); s.val = el.value; const m = matchRoots(el.value, S.T.zerosRoots);
+  const msg = $('#zmsg');
+  if (m.empty) { msg.textContent = 'Gib die Nullstellen ein oder schreibe «keine».'; msg.className = 'msg bad'; return; }
+  if (m.err) { msg.textContent = m.err; msg.className = 'msg bad'; return; }
+  s.res = m; s.done = true; S.score.zero = m.allOk; render();
+}
+function checkPts(kind) {
+  const C = PCFG[kind], s = S.st[kind], el = $('#pin'); s.val = el.value; const items = C.items(S.T);
+  const m = matchRoots(el.value, items); const msg = $('#pmsg');
+  if (m.empty) { msg.textContent = 'Gib die Stellen ein oder schreibe «keine».'; msg.className = 'msg bad'; return; }
+  if (m.err) { msg.textContent = m.err; msg.className = 'msg bad'; return; }
+  s.res = m; S.score[kind + 'X'] = m.allOk; s.phase = items.length ? 'type' : 'done'; render();
+}
+function revealPts(kind) {
+  const C = PCFG[kind], s = S.st[kind], items = C.items(S.T);
+  s.res = { items: [], found: items.map(() => false), nFound: 0, allOk: false }; s.revealed = true; S.score[kind + 'X'] = false; s.phase = items.length ? 'type' : 'done'; render();
+}
+function checkTypes(kind) {
+  const C = PCFG[kind], s = S.st[kind], items = C.items(S.T);
+  s.typeChecked = true; s.phase = 'done'; S.score[kind + 'T'] = items.every((r, i) => s.sel[i] === r.type); render();
+}
+function checkDeriv(kind, k) {
+  const s = S.st[kind], el = document.getElementById('d' + k + kind), T = S.T; const d = s.d[k] = { val: el.value, res: null };
+  const r = parsePolyAny(el.value);
+  if (r.empty) { d.res = 'err'; d.err = 'Gib den Term ein.'; }
+  else if (r.err) { d.res = 'err'; d.err = r.err; }
+  else d.res = pEq(r.p, T.ders[k]) ? 'ok' : 'bad';
+  render(true);
+}
+
+/* ---------- Zeichen-Animation ---------- */
+function playCurve() {
+  const s = S.st.draw; cancelAnimationFrame(UI.raf); s.played = true; s.done = false; s.t = 0;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dur = 4800, t0 = performance.now(); render();
+  if (reduce) { s.t = 1; s.done = true; render(); return; }
+  const tick = now => {
+    s.t = Math.min(1, (now - t0) / dur); draw();
+    if (s.t < 1) UI.raf = requestAnimationFrame(tick); else { s.done = true; render(); }
+  };
+  UI.raf = requestAnimationFrame(tick);
+}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; const a = b.dataset.a;
+  if (a === 'mode') { const o = b.dataset.m === 'other'; $('#app').hidden = o; $('#wip').hidden = !o; document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); if (!o) draw(); return; }
+  if (a === 'givenZ') { const s = S.st.zero; s.res = { items: [], found: S.T.zerosRoots.map(() => true), nFound: S.T.zerosRoots.length, allOk: true }; s.done = true; s.given = true; render(); return; }
+  if (a === 'givenP') { const k = b.dataset.kind, s = S.st[k], n = PCFG[k].items(S.T).length; s.res = { items: [], found: new Array(n).fill(true), nFound: n, allOk: true }; s.given = true; s.phase = n ? 'type' : 'done'; render(); return; }
+  if (a === 'round') { ROUND = !ROUND; render(true); return; }
+  if (a === 'goto') { gotoStep(+b.dataset.i); return; }
+  if (a === 'prev') { gotoStep(UI.step - 1); return; }
+  if (a === 'next') { advance(); return; }
+  if (a === 'back') { gotoStep(S.maxStep); return; }
+  if (a === 'tip') { UI.tip[b.dataset.k] = !UI.tip[b.dataset.k]; render(true); return; }
+  if (a === 'preset') { UI.preset = +b.dataset.i; UI.src = PRESETS[UI.preset].src; render(); return; }
+  if (a === 'gen') { const g = generate(b.dataset.l, UI.src); UI.src = g.src; UI.preset = -1; render(); return; }
+  if (a === 'start') { const r = parseFunction(UI.src); if (r.p && pDeg(r.p) >= 2) startSession(UI.src); return; }
+  if (a === 'genstart') { const g = generate(b.dataset.l, S && S.src); startSession(g.src); UI.preset = -1; return; }
+  if (a === 'newfn') { UI.step = 0; render(); return; }
+  if (a === 'pick') { S.st[b.dataset.k].sel = b.dataset.v; render(); return; }
+  if (a === 'check') { checkChoice(b.dataset.k); render(); return; }
+  if (a === 'chkY') { checkY(); return; }
+  if (a === 'revY') { const s = S.st.y; s.done = true; s.ok = false; s.revealed = true; S.score.y = false; render(); return; }
+  if (a === 'chkZ') { checkZero(); return; }
+  if (a === 'revZ') { const s = S.st.zero; s.res = { items: [], found: S.T.zerosRoots.map(() => false), nFound: 0, allOk: false }; s.done = true; s.revealed = true; S.score.zero = false; render(); return; }
+  if (a === 'chkP') { checkPts(b.dataset.kind); return; }
+  if (a === 'revP') { revealPts(b.dataset.kind); return; }
+  if (a === 'type') { const s = S.st[b.dataset.kind]; s.sel[+b.dataset.i] = b.dataset.k; render(); return; }
+  if (a === 'chkT') { checkTypes(b.dataset.kind); return; }
+  if (a === 'chkD') { checkDeriv(b.dataset.kind, +b.dataset.k); return; }
+  if (a === 'draw') { playCurve(); return; }
+  if (a === 'copy') {
+    const txt = steckbrief(S.T).map(r => plain(r[0]) + ': ' + plain(r[1])).join('\n');
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { b.textContent = 'Kopiert ✓'; }, () => { b.textContent = 'Kopieren nicht möglich'; });
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'fsrc') { UI.src = t.value; UI.preset = -1; document.querySelectorAll('.pre[aria-pressed="true"]').forEach(x => x.setAttribute('aria-pressed', 'false')); updateFnPreview(); }
+  else if (t.id === 'yin') S.st.y.val = t.value;
+  else if (t.id === 'zin') S.st.zero.val = t.value;
+  else if (t.id === 'pin') (UI.step === 5 ? S.st.stat : S.st.infl).val = t.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return; const t = e.target; if (!t.dataset || !t.dataset.enter) return;
+  e.preventDefault(); const id = t.dataset.enter; const btn = document.getElementById(id) || (id === 'start' ? document.getElementById('startBtn') : null); if (btn && !btn.disabled) btn.click();
+});
+
+/* ---------- Koordinatensystem ---------- */
+function cssv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function marker(g, kind, x, y, col, hollow, surf) {
+  g.save(); g.lineWidth = 2; g.strokeStyle = col; g.fillStyle = hollow ? surf : col;
+  const r = 6.5; g.beginPath();
+  if (kind === 'H') { g.moveTo(x, y - r - 1); g.lineTo(x + r + 1, y + r - 1); g.lineTo(x - r - 1, y + r - 1); g.closePath(); }
+  else if (kind === 'T') { g.moveTo(x, y + r + 1); g.lineTo(x + r + 1, y - r + 1); g.lineTo(x - r - 1, y - r + 1); g.closePath(); }
+  else if (kind === 'S') { g.rect(x - r + 1, y - r + 1, 2 * r - 2, 2 * r - 2); }
+  else if (kind === 'W') { g.moveTo(x, y - r - 1); g.lineTo(x + r + 1, y); g.lineTo(x, y + r + 1); g.lineTo(x - r - 1, y); g.closePath(); }
+  else g.arc(x, y, r - 0.5, 0, 6.2832);
+  g.fill(); g.stroke(); g.restore();
+}
+function visiblePoints() {
+  const T = S.T, st = S.st, out = [];
+  if (st.y.done) out.push({ kind: 'Y', name: 'Sy', x: 0, y: T.yint.num(), txt: 'Sy(0|' + numText(T.yint) + ')', hollow: false });
+  if (st.zero.done) T.zerosRoots.forEach((r, i) => out.push({ kind: 'N', name: r.name, x: r.v, y: 0, txt: pointText(r.name, Object.assign({}, r, { y: ZERO, yv: 0 })), hollow: !(st.zero.res && st.zero.res.found[i]) }));
+  [['stat', T.stat], ['infl', T.infl]].forEach(([k, arr]) => {
+    const s = st[k]; if (s.phase === 'x') return; const n = arr.length;
+    arr.forEach((r, i) => {
+      const found = s.res && s.res.found[i]; if (k === 'infl' && s.typeChecked && r.type === 'N') return;
+      const gen = !s.typeChecked; const kind = gen ? 'P' : (r.type === 'N' ? 'P' : r.type);
+      if (k === 'infl' && gen && false) return;
+      const name = gen ? ptName('P', i, n) : r.name; out.push({ kind, name, x: r.v, y: r.yv, txt: pointText(name || 'P', r), hollow: !found && !s.typeChecked ? true : false, cand: gen, src: k, r });
+    });
+  });
+  return out;
+}
+function colOf(kind, C) { return kind === 'Y' ? C.sy : kind === 'N' ? C.f1 : kind === 'H' ? C.right : kind === 'T' ? C.left : kind === 'W' ? C.f2 : kind === 'S' ? C.axis : C.accent; }
+function draw() {
+  const c = $('#cv'); if (!c) return; const dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
+  c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const C = { surf: cssv('--surface'), ink: cssv('--ink'), muted: cssv('--muted'), grid: cssv('--grid'), axis: cssv('--axis'), f: cssv('--f'), f1: cssv('--f1'), f2: cssv('--f2'), left: cssv('--left'), right: cssv('--right'), sy: cssv('--sy'), accent: cssv('--accent') };
+  g.fillStyle = C.surf; g.fillRect(0, 0, W, H);
+  const T = S && UI.step > 0 || (S && UI.step === 0) ? S && S.T : null;
+  const v = T ? T.view : { xmin: -5, xmax: 5, ymin: -5, ymax: 5 };
+  const L = 40, R = 16, Tp = 14, B = 28; const pw = W - L - R, ph = H - Tp - B;
+  const X = x => L + (x - v.xmin) / (v.xmax - v.xmin) * pw, Y = y => Tp + (v.ymax - y) / (v.ymax - v.ymin) * ph;
+  g.font = '11.5px ' + cssv('--font-mono'); g.textBaseline = 'middle';
+  // Raster
+  const sx = niceStep(v.xmax - v.xmin, 10), sy = niceStep(v.ymax - v.ymin, 7);
+  g.lineWidth = 1; g.strokeStyle = C.grid; g.fillStyle = C.muted; g.textAlign = 'center';
+  for (let x = Math.ceil(v.xmin / sx) * sx; x <= v.xmax + 1e-9; x += sx) { const px = Math.round(X(x)) + 0.5; g.beginPath(); g.moveTo(px, Tp); g.lineTo(px, Tp + ph); g.stroke(); if (Math.abs(x) > 1e-9) g.fillText(String(+x.toFixed(6)).replace('-', '−'), px, Tp + ph + 14); }
+  g.textAlign = 'right';
+  for (let y = Math.ceil(v.ymin / sy) * sy; y <= v.ymax + 1e-9; y += sy) { const py = Math.round(Y(y)) + 0.5; g.beginPath(); g.moveTo(L, py); g.lineTo(L + pw, py); g.stroke(); if (Math.abs(y) > 1e-9) g.fillText(String(+y.toFixed(6)).replace('-', '−'), L - 6, py); }
+  // Achsen
+  g.strokeStyle = C.axis; g.lineWidth = 1.4; g.beginPath(); const ax = X(0), ay = Y(0);
+  g.moveTo(L, ay); g.lineTo(L + pw, ay); g.moveTo(ax, Tp); g.lineTo(ax, Tp + ph); g.stroke();
+  g.fillStyle = C.axis; g.beginPath(); g.moveTo(L + pw, ay); g.lineTo(L + pw - 7, ay - 3.5); g.lineTo(L + pw - 7, ay + 3.5); g.fill();
+  g.beginPath(); g.moveTo(ax, Tp); g.lineTo(ax - 3.5, Tp + 7); g.lineTo(ax + 3.5, Tp + 7); g.fill();
+  g.fillStyle = C.muted; g.textAlign = 'left'; g.fillText('x', L + pw - 12, ay - 12); g.fillText('y', ax + 8, Tp + 8);
+  g.save(); g.beginPath(); g.rect(L, Tp, pw, ph); g.clip();
+  if (!T || !S || UI.step === 0 && !S) { g.restore(); g.fillStyle = C.muted; g.textAlign = 'center'; g.font = '14px ' + cssv('--font-body'); g.fillText('Wähle rechts eine Funktion. Hier wächst dann dein Graph.', L + pw / 2, Tp + ph / 2); return; }
+  const st = S.st;
+  // Symmetrie
+  if (st.sym.done) {
+    if (T.sym === 'y') { g.strokeStyle = C.sy; g.lineWidth = 1.6; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(ax, Tp); g.lineTo(ax, Tp + ph); g.stroke(); g.setLineDash([]); }
+    else if (T.sym === 'o') { g.strokeStyle = C.sy; g.lineWidth = 1.6; g.beginPath(); g.arc(ax, ay, 11, 0, 6.2832); g.stroke(); }
+  }
+  // Verhalten im Unendlichen
+  if (st.rand.done) {
+    const arrow = (px, up, label, align) => {
+      g.save(); g.strokeStyle = C.accent; g.fillStyle = C.accent; g.lineWidth = 2.4; g.lineCap = 'round';
+      const y1 = up ? Tp + 54 : Tp + ph - 54, y0 = up ? Tp + 20 : Tp + ph - 20; const tipY = y0, baseY = y1;
+      g.beginPath(); g.moveTo(px, baseY); g.lineTo(px, tipY + (up ? 4 : -4)); g.stroke();
+      g.beginPath(); g.moveTo(px, tipY); g.lineTo(px - 6, tipY + (up ? 10 : -10)); g.lineTo(px + 6, tipY + (up ? 10 : -10)); g.closePath(); g.fill();
+      g.font = '12px ' + cssv('--font-mono'); g.textAlign = align; g.textBaseline = 'middle'; g.fillText(label, px + (align === 'left' ? 11 : -11), (tipY + baseY) / 2); g.restore();
+    };
+    arrow(L + 24, T.rand.left, 'x→−∞', 'left'); arrow(L + pw - 24, T.rand.right, 'x→+∞', 'right');
+  }
+  // Kurve
+  const dr = st.draw;
+  if (dr.t > 0) {
+    const xe = v.xmin + (v.xmax - v.xmin) * dr.t; g.strokeStyle = C.f; g.lineWidth = 3; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
+    const N = 900; let first = true, lx = 0, ly = 0;
+    for (let i = 0; i <= N; i++) { const x = v.xmin + (v.xmax - v.xmin) * i / N; if (x > xe) break; const y = T.fn(x); const px = X(x), py = Y(y); if (first) { g.moveTo(px, py); first = false; } else g.lineTo(px, py); lx = px; ly = py; }
+    g.stroke();
+    if (dr.t < 1) { g.fillStyle = C.f; g.beginPath(); g.arc(lx, ly, 4.5, 0, 6.2832); g.fill(); }
+  }
+  g.restore();
+  // Punkte und Beschriftung
+  const pts = visiblePoints(); const placed = []; g.font = '12px ' + cssv('--font-mono'); g.textAlign = 'left';
+  pts.forEach(p => { const mx = X(p.x), my = Y(p.y); placed.push({ x: mx - 9, y: my - 9 - 8 + 8, w: 18, h: 18, m: 1 }); });
+  const groups = {}; pts.forEach(p => { const k = Math.round(X(p.x)) + ',' + Math.round(Y(p.y)); (groups[k] = groups[k] || []).push(p); });
+  Object.values(groups).forEach(gr => {
+    const p = gr.find(q => q.kind !== 'P' && q.kind !== 'N' && q.kind !== 'Y') || gr[0];
+    gr.sort((a, b) => ['S', 'H', 'T', 'W'].indexOf(b.kind) - ['S', 'H', 'T', 'W'].indexOf(a.kind));
+    const px = X(p.x), py = Y(p.y); if (px < L - 2 || px > L + pw + 2 || py < Tp - 2 || py > Tp + ph + 2) return;
+    gr.slice().reverse().forEach((q, qi) => { const k = q.kind; marker(g, k, px, py, colOf(k, C), q.hollow, C.surf); });
+    const names = gr.map(q => q.name).filter(Boolean).filter((n, i, a) => a.indexOf(n) === i);
+    const rep = gr.find(q => q.kind === 'H' || q.kind === 'T' || q.kind === 'W' || q.kind === 'S') || gr.find(q => q.kind === 'P') || gr[0];
+    const coord = rep.txt.slice(rep.txt.indexOf('('));
+    const label = names.join(' / ') + coord; const w = g.measureText(label).width;
+    const cand = [[9, -12], [9, 15], [-w - 9, -12], [-w - 9, 15], [9, -28], [-w - 9, -28], [9, 31], [-w - 9, 31]];
+    let best = cand[0];
+    for (const [dx, dy] of cand) {
+      const bx = px + dx, by = py + dy - 8; if (bx < L + 2 || bx + w > L + pw - 2 || by < Tp || by + 16 > Tp + ph) continue;
+      if (placed.some(b => bx < b.x + b.w && bx + w > b.x && by < b.y + (b.h || 16) && by + 16 > b.y)) continue; best = [dx, dy]; break;
+    }
+    const bx = px + best[0], by = py + best[1] - 8; placed.push({ x: bx, y: by, w });
+    g.fillStyle = C.surf; g.globalAlpha = 0.8; g.fillRect(bx - 2, by, w + 4, 16); g.globalAlpha = 1; g.fillStyle = C.ink; g.fillText(label, bx, by + 8);
+  });
+  const al = $('#cv'); al.setAttribute('aria-label', 'Koordinatensystem. Eingetragen: ' + (pts.length ? pts.map(p => p.txt).join(', ') : 'noch nichts') + (dr.t >= 1 ? '. Der Graph ist gezeichnet.' : ''));
+}
+
+/* ---------- Start ---------- */
+window.addEventListener('resize', draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener && matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+render();
+
+
+
+})();
+</script>
+</body></html>
