@@ -126,6 +126,12 @@ ol.path p.verdict{color:var(--ink);font-weight:500;margin-top:6px}
 table{border-collapse:collapse;font-size:14px}
 th,td{padding:5px 12px;border-bottom:1px solid var(--line);text-align:left}
 th{font-size:12px;color:var(--muted);font-weight:600}
+details.musterl>summary{cursor:pointer;font-weight:700;font-size:1.05rem;list-style:none;display:flex;align-items:center;gap:8px}
+details.musterl>summary::-webkit-details-marker{display:none}
+details.musterl>summary::before{content:'▸';transition:transform .15s}
+details.musterl[open]>summary::before{transform:rotate(90deg)}
+details.musterl .when-open{display:none}details.musterl[open] .when-open{display:inline}details.musterl[open] .when-closed{display:none}
+details.musterl>h2{margin-top:12px}
 details.k{margin-top:14px}
 details.k summary{cursor:pointer;font-weight:600}
 .teacher{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
@@ -209,8 +215,11 @@ details.k summary{cursor:pointer;font-weight:600}
       <div id="fb" aria-live="polite"></div>
     </div>
     <div class="card" id="pcard" hidden>
-      <h2>Der schnellste Lösungsweg</h2>
-      <div id="path"></div>
+      <details class="musterl" id="pdet">
+        <summary><span class="when-closed">Musterlösung anzeigen</span><span class="when-open">Musterlösung ausblenden</span></summary>
+        <h2>Der schnellste Lösungsweg</h2>
+        <div id="path"></div>
+      </details>
       <details class="k" id="kdet"><summary>Kontrollbild im Koordinatensystem</summary>
         <canvas class="g" id="cvK" aria-label="Kontrollbild" style="margin-top:10px"></canvas><p class="hover" id="hovK"></p></details>
     </div>
@@ -978,7 +987,7 @@ function renderS3(){
   $('#gcard').hidden=S.method!=='graph';
   $('#kdet').hidden=S.method==='graph';
   $('#ahint').innerHTML='Zahlen als ganze Zahl, Dezimalzahl oder Bruch, z. B. '+KT('2')+', '+KT('-1.5')+' oder '+KT('\\tfrac{7}{3}')+' (Bruch mit Schrägstrich <b>/</b> tippen).'+(S.method==='graph'?' Beim Ablesen genügt ein Näherungswert.':'');
-  $('#fb').innerHTML='';$('#pcard').hidden=true;S.checked=false;
+  $('#fb').innerHTML='';$('#pcard').hidden=true;$('#pdet').open=false;S.checked=false;
   ['ax','ay','al'].forEach(id=>$('#'+id).value='');
   setAM('one');
   if(S.method==='graph') requestAnimationFrame(()=>drawGraph($('#cvG'),false));
@@ -1027,7 +1036,7 @@ function check(){
   }
   fb.innerHTML=mathify(html);
   const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):pathGraph(sys);
-  $('#path').innerHTML=stepsHTML(steps);$('#pcard').hidden=false;S.checked=true;
+  $('#path').innerHTML=stepsHTML(steps);$('#pdet').open=false;$('#pcard').hidden=false;S.checked=true;
   if(S.method==='graph') drawGraph($('#cvG'),true);
   else requestAnimationFrame(()=>drawGraph($('#cvK'),true));
 }

@@ -89,6 +89,12 @@ button{cursor:pointer}
 .fb ul{margin:4px 0 0 18px;padding:0}
 .sol{margin-top:14px}
 .sol h3{margin-bottom:8px}
+details.musterl>summary{cursor:pointer;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px;padding:2px 0}
+details.musterl>summary::-webkit-details-marker{display:none}
+details.musterl>summary::before{content:'▸';transition:transform .15s}
+details.musterl[open]>summary::before{transform:rotate(90deg)}
+details.musterl .w-o{display:none}details.musterl[open] .w-o{display:inline}details.musterl[open] .w-c{display:none}
+details.musterl>.steps{margin-top:10px}
 .steps{list-style:none;margin:0;padding:0;counter-reset:s}
 .step{position:relative;padding:8px 12px 8px 42px;margin:6px 0;border-radius:8px;background:var(--surface2);border:1px solid var(--line)}
 .step:before{counter-increment:s;content:counter(s);position:absolute;left:10px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--line);font:600 12px var(--font-body);display:grid;place-items:center}
@@ -3542,9 +3548,11 @@ function livePrev() {
   el.innerHTML = p.ok ? kx(p.tex) : esc(p.err);
 }
 
-function solutionHtml(t, label) {
-  const first = { tex: t.qTex, why: '' };
-  return `<div class="sol"><h3>${label || 'Musterlösung'}</h3><ol class="steps">${stepHtml({ tex: t.qTex, why: 'Aufgabe' }, 'start')}${t.steps.map((s, i) => stepHtml(s, i === t.steps.length - 1 ? 'last' : '')).join('')}</ol></div>`;
+function solDetails(title, inner, open) {
+  return `<details class="sol musterl"${open ? ' open' : ''}><summary><span class="w-c">${title} anzeigen</span><span class="w-o">${title} ausblenden</span></summary>${inner}</details>`;
+}
+function solutionHtml(t, label, open) {
+  return solDetails(label || 'Musterlösung', `<ol class="steps">${stepHtml({ tex: t.qTex, why: 'Aufgabe' }, 'start')}${t.steps.map((s, i) => stepHtml(s, i === t.steps.length - 1 ? 'last' : '')).join('')}</ol>`, open);
 }
 function commonHtml(t, trapMsg) {
   const items = (t.common || []).filter(c => c && c !== trapMsg);
@@ -3556,7 +3564,7 @@ function showSolution(afterCheck, res) {
   const out = $('#out');
   let html = out.innerHTML;
   if (!afterCheck) { S.stats[t.level][1]++; saveStats(); renderScore(); html += `<div class="fb form"><h3>Hier ist die Musterlösung</h3>Lies die Schritte durch und probiere dann eine neue Aufgabe.</div>`; }
-  html += solutionHtml(t) + commonHtml(t, res && res.trap);
+  html += solutionHtml(t, null, !afterCheck) + commonHtml(t, res && res.trap);
   out.innerHTML = html; $('#skip').disabled = true; $('#check').textContent = 'Nochmal prüfen'; $('#next').textContent = 'Nächste Aufgabe';
   renderKatexLate();
 }
@@ -3619,10 +3627,10 @@ function pickLine(i) {
   rows.forEach((r, k) => { r.disabled = true; if (k === i) r.classList.add('wrong'); });
   let html = `<div class="fb ok"><h3>${S.tries === 1 ? 'Fehler gefunden!' : 'Gefunden!'}</h3>${S.tries === 1 ? 'Gleich beim ersten Tipp – gutes Auge.' : 'Jetzt weisst du, worauf du achten musst.'}</div>`;
   html += `<div class="fb bad" style="margin-top:10px"><h3>Was ist hier schiefgelaufen?</h3>${rich(t.explain)}</div>`;
-  html += `<div class="sol"><h3>So wäre es richtig</h3><ol class="steps">`;
+  html += `<details class="sol musterl"><summary><span class="w-c">Lösung anzeigen</span><span class="w-o">Lösung ausblenden</span></summary><ol class="steps">`;
   if (t.solution) { html += stepHtml({ tex: t.startTex, why: 'Aufgabe' }, 'start') + t.solution.map((s, k) => stepHtml(s, k === t.solution.length - 1 ? 'last' : '')).join(''); }
   else { html += stepHtml({ tex: t.startTex, why: 'Aufgabe' }, 'start'); if (t.fixTex) html += stepHtml({ tex: t.fixTex, why: t.fixWhy }); if (t.resultTex) html += stepHtml({ tex: t.resultTex, why: 'Ergebnis' }, 'last'); }
-  html += `</ol></div>`;
+  html += `</ol></details>`;
   out.innerHTML = html; $('#hintb').disabled = true;
   if (S.tries === 1) FX.play(t.level, rows[i]);
 }
@@ -3649,6 +3657,5 @@ function init() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
 </script>
-<script src="../../feedback.js" defer></script>
 </body>
 </html>
