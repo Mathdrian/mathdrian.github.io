@@ -82,6 +82,7 @@ input[type=text]{width:100%;border:1px solid var(--line);background:var(--bg);bo
 .read.bad{color:var(--bad)}
 .sysbox{display:flex;align-items:center;gap:12px;font-size:17px;margin:12px 0}
 .brace{font-size:54px;font-weight:300;line-height:.9;color:var(--muted);font-family:var(--font-body)}
+.sysbox{flex-wrap:wrap;gap:12px 28px;margin-top:28px!important}.sysblock{display:flex;align-items:center;gap:12px;position:relative}.blab{position:absolute;top:-16px;left:0;font-size:12px;color:var(--muted)}.gbtn{align-self:center}
 .sysbox .lines{display:grid;gap:12px}
 .sysline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .nav{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
@@ -864,7 +865,7 @@ function specialSys(lvl){
   return Math.random()<.5?[e1,e2]:[e2,e1];
 }
 /* ---------- Zustand ---------- */
-const S={step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
+const S={showG:false,step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
 function refreshSys(){
   const eqs=[],errs=[null,null];
   for(let i=0;i<2;i++){
@@ -886,8 +887,27 @@ function plainEq(e){
 const coStr=f=>f.d===1?String(f.n):isTerm(f)?(f.n<0?'-':'')+decStr(f):f.n+'/'+f.d;
 
 /* ---------- Rendering ---------- */
+const prettyRaw=s=>slashFr(esc(String(s).trim()).replace(/-/g,MINUS).replace(/\*/g,'·'));
+function sysBlock(l1,l2){return '<span class="sysblock"><span class="brace">{</span><span class="lines"><span>'+mathify(nm(0)+' '+l1)+'</span><span>'+mathify(nm(1)+' '+l2)+'</span></span></span>';}
+
+/* Grundform als ausgerichtetes Feld: x, y, = und Zahl stehen untereinander */
+function gridBlock(sys){
+  const cs=getComputedStyle(document.documentElement),col=[cs.getPropertyValue('--e1').trim(),cs.getPropertyValue('--e2').trim()];
+  const K=c=>'\\kern-.15em '+c+'\\kern-.15em ';
+  const row=(e,i)=>{
+    const t=(k,v)=>{if(fIs0(k))return null;const neg=k.n<0,a=neg?fNeg(k):k;return {neg,b:(fEq(a,ONE)?'':toTex(numHTML(a,true)))+v};};
+    const X=t(e.a,'x'),Y=t(e.b,'y');
+    const xc=X?(X.neg?'-':'')+X.b:'',op=Y?(Y.neg?'-':(X?'+':'')):'',yc=Y?Y.b:'';
+    return '\\textcolor{'+col[i]+'}{\\small\\textbf{('+(i?'II':'I')+')}}&'+K(xc)+'&'+K(op)+'&'+K(yc)+'&'+K('=')+'&'+K(toTex(numHTML(e.c)));
+  };
+  const tex='\\left\\{\\begin{array}{lrcrcr}'+row(sys.e1,0)+'\\\\[0.9em]'+row(sys.e2,1)+'\\end{array}\\right.';
+  return '<span class="sysblock"><span class="mj mjf">'+KT(tex)+'</span></span>';
+}
 function sysHTML(sys){
-  return '<span class="brace">{</span><span class="lines"><span>'+mathify(nm(0)+' '+eqStr(sys.e1.a,sys.e1.b,sys.e1.c))+'</span><span>'+mathify(nm(1)+' '+eqStr(sys.e2.a,sys.e2.b,sys.e2.c))+'</span></span>';
+  const g=gridBlock(sys);
+  if(!sys.e1.orig||!sys.e2.orig) return g;
+  const o=sysBlock(prettyRaw(sys.e1.orig),prettyRaw(sys.e2.orig));
+  return o+(S.showG?g.replace('<span class="sysblock">','<span class="sysblock"><span class="blab">in Grundform</span>'):'')+'<button class="btn small gbtn" type="button" aria-pressed="'+!!S.showG+'">'+(S.showG?'Grundform ausblenden':'Grundform einblenden')+'</button>';
 }
 function renderSteps(){
   const names=['Gleichungssystem','Methode','Lösen'];
@@ -976,7 +996,7 @@ function check(){
 }
 
 /* ---------- Ereignisse ---------- */
-function loadPreset(i){S.mode='eq';S.preset=i;S.src=PRESETS[i].e.slice();refreshSys();renderS1();}
+function loadPreset(i){S.showG=false;S.mode='eq';S.preset=i;S.src=PRESETS[i].e.slice();refreshSys();renderS1();}
 function init(){
   document.querySelectorAll('[data-tex]').forEach(el=>{el.innerHTML=KT(el.dataset.tex);});
   if(document.fonts){['italic 14px KaTeX_Math','14px KaTeX_Main'].forEach(f=>document.fonts.load(f).then(()=>{if(S.step===3)redrawAll();}).catch(()=>{}));}
@@ -985,7 +1005,7 @@ function init(){
   $('#presets').addEventListener('click',e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.i);});
   let withSpecial=false;
   $('#special').onclick=e=>{withSpecial=!withSpecial;e.currentTarget.setAttribute('aria-pressed',String(withSpecial));};
-  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.lvl;S.mode='eq';S.preset=-1;S.src=(withSpecial&&Math.random()<.3)?specialSys(l):randomSys(l);refreshSys();renderS1();});
+  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.lvl;S.showG=false;S.mode='eq';S.preset=-1;S.src=(withSpecial&&Math.random()<.3)?specialSys(l):randomSys(l);refreshSys();renderS1();});
   [0,1].forEach(i=>{
     $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();});
     [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();}));
@@ -1004,6 +1024,8 @@ function init(){
     document.querySelectorAll('#numseg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
     if(S.step===1)renderS1();else if(S.step===2)renderS2();else{$('#rec3').innerHTML=sysHTML(S.sys);if(S.checked){check();}}
   });
+  document.addEventListener('click',e=>{const b=e.target.closest('.gbtn');if(!b)return;S.showG=!S.showG;
+    if(S.sys){$('#sysPrev').innerHTML=sysHTML(S.sys);$('#rec2').innerHTML=sysHTML(S.sys);$('#rec3').innerHTML=sysHTML(S.sys);}});
   $('#to2').onclick=()=>{if(S.sys)show(2);};
   $('#back1').onclick=()=>show(1);
   $('#methods').addEventListener('click',e=>{const b=e.target.closest('.method');if(b){S.method=b.dataset.m;show(3);}});
@@ -1011,7 +1033,7 @@ function init(){
   $('#check').onclick=check;
   ['ax','ay','al'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')check();}));
   $('#other').onclick=()=>show(2);
-  $('#again').onclick=()=>{S.method=null;show(1);};
+  $('#again').onclick=()=>{S.showG=false;S.method=null;show(1);};
   hookHover($('#cvG'),$('#hovG'),()=>S.checked);
   hookHover($('#cvK'),$('#hovK'),()=>true);
   const redrawAll=()=>redraw();

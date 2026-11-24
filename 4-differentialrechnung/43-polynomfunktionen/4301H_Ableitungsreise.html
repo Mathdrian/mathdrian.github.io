@@ -3,7 +3,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
 <style>
 /* Layout: Schrittleiste, Aufgabenkarte, links die Bühne (Graph f oben, Skizze von f′ oder f″ darunter), rechts Funktion und Optionen.
    Farbcode: bergauf = Türkis, bergab = Himbeere, Linkskurve = Blau, Rechtskurve = Orange. */
@@ -14,6 +14,7 @@
   --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
   --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --font-math:'STIX Two Text','Latin Modern Roman','Cambria Math','Times New Roman',serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -84,9 +85,11 @@ button{cursor:pointer}
 .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
 .status .txt{font-size:14px;overflow-wrap:anywhere}
 .mono{font-family:var(--font-mono);font-size:.92em}
+.mx{font-family:var(--font-math);font-size:1.1em;font-variant-ligatures:none}
+.mx i{font-style:italic}
 .controls{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px}
 .sliderrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
-.sliderrow .xval{font-family:var(--font-mono);font-size:14px;min-width:7.5ch;text-align:right}
+.sliderrow .xval{font-family:var(--font-body);font-size:14px;min-width:8.5ch;text-align:right}
 input[type=range]{width:100%;height:30px;accent-color:var(--accent)}
 .btnrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .opts{display:flex;flex-wrap:wrap;gap:6px 18px}
@@ -104,7 +107,7 @@ input.mono{font-size:15px}
 .note{margin-top:10px;border:1px solid color-mix(in srgb,var(--note) 70%,var(--line));background:color-mix(in srgb,var(--note) 10%,var(--surface));border-radius:8px;padding:8px 10px;font-size:13px}
 .note b{color:var(--note);text-transform:uppercase;letter-spacing:.05em;font-size:12px;margin-right:4px}
 .calc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px;display:grid;gap:6px}
-.calc .row{font-family:var(--font-mono);font-size:14px;overflow-wrap:anywhere}
+.calc .row{font-family:var(--font-math);font-size:16px;overflow-wrap:anywhere}
 .calc .row.res{font-weight:500}
 .calc .why{font-family:var(--font-body);font-size:14px;color:var(--muted)}
 .calc small{color:var(--muted);font-size:13px}
@@ -166,7 +169,8 @@ th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-t
           <button class="btn small" id="calcBtn" aria-expanded="false" aria-controls="calc">Berechnung anzeigen</button>
         </div>
         <div class="opts">
-          <label class="chk" id="lblTan"><input type="checkbox" id="chkTan" checked> Tangente zeigen</label>
+          <label class="chk" id="lblTan"><input type="checkbox" id="chkTan" checked> Tangente mit Steigungsdreieck zeigen</label>
+          <label class="chk" id="lblD1"><input type="checkbox" id="chkD1"> Ableitung f′ blass mit einblenden</label>
           <label class="chk"><input type="checkbox" id="chkFull"> Ganze Kurve vorab zeigen</label>
           <label class="chk"><input type="checkbox" id="chkSpec"> Besondere Punkte vorab zeigen</label>
         </div>
@@ -201,7 +205,7 @@ th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-t
           <div><label class="l" for="xmin">x von</label><input type="number" id="xmin" step="any"></div>
           <div><label class="l" for="xmax">x bis</label><input type="number" id="xmax" step="any"></div>
         </div>
-        <p class="read">Schreibweise: <span class="mono">x^3</span>, <span class="mono">2x</span>, <span class="mono">(1/3)x^3</span>, <span class="mono">sin(x)</span>.</p>
+        <p class="read">Schreibweise: <span class="mono raw">x^3</span>, <span class="mono raw">2x</span>, <span class="mono raw">(1/3)x^3</span>, <span class="mono raw">sin(x)</span>.</p>
       </section>
     </aside>
   </main>
@@ -214,6 +218,7 @@ th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-t
         <li><b>Spaziergang:</b> Lasst den Wanderer ▶ laufen und nur den Graphen von f′ beobachten. Frage: Wann sitzt er? Was ist dort mit f′?</li>
         <li><b>Autofahrt:</b> Lasst die Lernenden vorhersagen, wo das Lenkrad durch die Mitte geht, bevor sie fahren (Wendepunkt).</li>
         <li><b>Sonderfälle:</b> Der Sattelpunkt (x³ − 3x² + 3x + 1) lässt den Wanderer kurz anhalten, obwohl es danach weiter bergauf geht. Bei x⁴ − 4x³ + 6x² berührt das Lenkrad die Mitte, ohne dass es ein Wendepunkt ist.</li>
+        <li><b>Steigung sichtbar machen:</b> Beim Spaziergang zeigt die Tangente ein Steigungsdreieck mit Δx und Δy. Lasst die Lernenden m = Δy/Δx selbst nachrechnen und mit f′(x) vergleichen. Bei der Autofahrt lässt sich f′ blass einblenden: Wo f′ ihren Hoch- oder Tiefpunkt hat, ist f″ = 0.</li>
         <li><b>Berechnung:</b> Mit dem Knopf «Berechnung anzeigen» sehen die Lernenden, wie f′(x) und f″(x) an der aktuellen Stelle berechnet werden.</li>
       </ul>
     </div>
@@ -224,6 +229,61 @@ th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-t
 (function(){
 'use strict';
 const $=s=>document.querySelector(s);
+/* ---------- Mathe-Modus: Ausdrücke in LaTeX-ähnlicher Schrift ---------- */
+const MATH=(function(){
+  const L='A-Za-zÄÖÜäöüß';
+  const fn='(?:sin|cos|tan|exp|ln|log|abs)';
+  const letter='(?<!['+L+'])(?<!z\\.\\s)[A-Za-z](?!['+L+'])(?!\\.\\s?[A-Za-z]\\.)';
+  const num='(?:\\d+(?:[.,]\\d+)?)';
+  const sym='[′″‴⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾₀₁₂₃₄₅₆₇₈₉()|^±Δ√π]';
+  const atom='(?:(?<!['+L+'])'+fn+'(?!['+L+'])|'+letter+'|'+num+'|'+sym+')';
+  const term='(?:[−]|-(?=\\d))?'+atom+'+';
+  const op=' ?[+−=<>≤≥≠≈→⇒·/*|] ?';
+  const RE=new RegExp(term+'(?:'+op+term+')*','g');
+  const NEED=new RegExp('(?:'+letter+')|[′″‴≤≥≠≈⇒→Δπ√]');
+  const SPLIT=/(sin|cos|tan|exp|ln|log|abs)/;
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const SKIP='script,style,code,input,textarea,button,select,option,svg,canvas,.mx,.raw,pre';
+  function html(tok){
+    return tok.split(SPLIT).map(p=>SPLIT.test(p)?esc(p):[...p].map(c=>/[A-Za-z]/.test(c)?'<i>'+c+'</i>':esc(c)).join('')).join('');
+  }
+  function apply(root,sel){
+    (sel?root.querySelectorAll(sel):[root]).forEach(el=>{
+      const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),list=[];let n;
+      while((n=w.nextNode())){if(n.parentElement.closest(SKIP))continue;if(/[A-Za-z′″‴≤≥≠≈⇒→Δπ√]/.test(n.nodeValue))list.push(n);}
+      list.forEach(t=>{
+        const txt=t.nodeValue,f=document.createDocumentFragment();let last=0,m,hit=false;RE.lastIndex=0;
+        while((m=RE.exec(txt))){
+          if(!m[0]||!NEED.test(m[0]))continue;
+          f.append(txt.slice(last,m.index));
+          const s=document.createElement('span');s.className='mx';s.innerHTML=html(m[0]);f.append(s);
+          last=m.index+m[0].length;hit=true;
+        }
+        if(hit){f.append(txt.slice(last));t.replaceWith(f);}
+      });
+    });
+  }
+  /* Canvas: Text mit Mathe-Ausdrücken in Mathe-Schrift (Variablen kursiv) */
+  function text(g,str,x,y,size,weight,align){
+    const cs=getComputedStyle(document.documentElement),FM=cs.getPropertyValue('--font-math').trim(),FB=cs.getPropertyValue('--font-body').trim();
+    const segs=[],push=(s,math)=>{
+      if(!s)return;
+      if(!math){segs.push([s,(weight||400)+' '+size+'px '+FB]);return;}
+      s.split(SPLIT).forEach(p=>{if(!p)return;if(SPLIT.test(p)){segs.push([p,(weight||400)+' '+(size*1.08)+'px '+FM]);}
+        else [...p].forEach(ch=>segs.push([ch,(/[A-Za-z]/.test(ch)?'italic ':'')+(weight||400)+' '+(size*1.08)+'px '+FM]));});
+    };
+    let last=0,m;RE.lastIndex=0;
+    while((m=RE.exec(str))){if(!m[0]||!NEED.test(m[0]))continue;push(str.slice(last,m.index),false);push(m[0],true);last=m.index+m[0].length;}
+    push(str.slice(last),false);
+    let tw=0;segs.forEach(s=>{g.font=s[1];s.w=g.measureText(s[0]).width;tw+=s.w;});
+    const al=align||g.textAlign;let px=al==='center'?x-tw/2:al==='right'?x-tw:x;
+    const keep=g.textAlign;g.textAlign='left';
+    segs.forEach(s=>{g.font=s[1];g.fillText(s[0],px,y);px+=s.w;});
+    g.textAlign=keep;
+  }
+  return {apply,text,RE};
+})();
+
 
 /* ---------- Parser (wie im Kurvenlabor) ---------- */
 const FNS=['sqrt','sin','cos','tan','exp','abs','log','ln'];
@@ -471,7 +531,7 @@ const PRESETS=[
   {n:'sin(x)',s:'sin(x)',x:[0,6.5]}
 ];
 const S={step:1,preset:0,src:PRESETS[0].s,xmin:PRESETS[0].x[0],xmax:PRESETS[0].x[1],x:PRESETS[0].x[0],
-  playing:false,tan:true,full:false,spec:false,calc:false};
+  playing:false,tan:true,full:false,spec:false,calc:false,d1:false};
 let T=null,lastF=null,hold=0;
 const cv={A:$('#cvA'),B:$('#cvB'),C:$('#cvC'),W:$('#cvW')};
 
@@ -511,7 +571,7 @@ function frame(c,yr,title,titleColor){
   const C=colors(),L={ml:48,mr:14,mt:12,mb:22},pw=W-L.ml-L.mr,ph=H-L.mt-L.mb;
   const X=x=>L.ml+(x-S.xmin)/(S.xmax-S.xmin)*pw,Y=y=>L.mt+(yr[1]-y)/(yr[1]-yr[0])*ph;
   g.fillStyle=C.surface;g.fillRect(0,0,W,H);
-  g.font='11px Inter, system-ui, sans-serif';
+  g.font='12px '+getComputedStyle(document.documentElement).getPropertyValue('--font-math');
   const sx=niceStep(S.xmax-S.xmin,Math.max(4,pw/80)),sy=niceStep(yr[1]-yr[0],Math.max(3,ph/42));
   g.lineWidth=1;g.strokeStyle=C.grid;g.fillStyle=C.muted;g.textAlign='center';g.textBaseline='top';g.beginPath();
   for(let x=Math.ceil(S.xmin/sx)*sx;x<=S.xmax+1e-9;x+=sx){const px=Math.round(X(x))+.5;g.moveTo(px,L.mt);g.lineTo(px,L.mt+ph);}
@@ -525,7 +585,7 @@ function frame(c,yr,title,titleColor){
   if(S.xmin<=0&&S.xmax>=0){g.moveTo(X(0),L.mt);g.lineTo(X(0),L.mt+ph);}
   g.stroke();
   g.strokeStyle=C.line;g.lineWidth=1;g.strokeRect(L.ml+.5,L.mt+.5,pw,ph);
-  g.textAlign='left';g.textBaseline='top';g.font='600 13px Inter, system-ui, sans-serif';g.fillStyle=titleColor||C.ink;g.fillText(title,L.ml+8,L.mt+6);
+  g.textAlign='left';g.textBaseline='top';g.fillStyle=titleColor||C.ink;MATH.text(g,title,L.ml+8,L.mt+6,13,600,'left');
   return {g,X,Y,L,pw,ph,W,H,C,yr};
 }
 const clipTo=(F)=>{F.g.save();F.g.beginPath();F.g.rect(F.L.ml,F.L.mt,F.pw,F.ph);F.g.clip();};
@@ -579,11 +639,31 @@ function mark(F,x,y,kind,label){
   if(kind==='S'||kind==='F'){g.fillStyle=C.surface;g.fill();g.lineWidth=3;g.strokeStyle=col;g.stroke();}
   else{g.fillStyle=col;g.fill();g.lineWidth=2.4;g.strokeStyle=C.surface;g.stroke();}
   g.restore();
-  if(label){g.save();g.font='600 11px Inter, system-ui, sans-serif';g.fillStyle=C.ink;g.textAlign='center';g.textBaseline='bottom';g.fillText(label,px,py-10);g.restore();}
+  if(label){g.save();g.fillStyle=C.ink;g.textAlign='center';g.textBaseline='bottom';MATH.text(g,label,px,py-10,12,600,'center');g.restore();}
 }
 const KIND={H:'Hochpunkt',T:'Tiefpunkt',S:'Sattelpunkt',W:'Wendepunkt',F:'f″ = 0, kein Wendepunkt'};
 const KSHORT={H:'H',T:'T',S:'S',W:'W',F:'f″=0'};
 function rr(g,x,y,w,h,r){if(g.roundRect){g.beginPath();g.roundRect(x,y,w,h,r);}else{g.beginPath();g.rect(x,y,w,h);}}
+
+/* Steigungsdreieck an der Tangente: Δx waagrecht, Δy senkrecht */
+function slopeTriangle(F,x,y0,m,C){
+  if(!isFinite(m)||Math.abs(m)<1e-9) return;
+  const g=F.g,a=S.xmin,b=S.xmax,yrr=T.yr0[1]-T.yr0[0];
+  let dx=niceStep(b-a,10);
+  for(let k=0;k<8&&Math.abs(m)*dx>0.3*yrr;k++){const e=Math.pow(10,Math.floor(Math.log10(dx))),d=Math.round(dx/e);dx=d>=5?2*e:d>=2?e:0.5*e;}
+  const dir=(x+dx<=b+1e-9)?1:-1,xs=x+dir*dx,ys=y0+m*dir*dx;
+  const p0=[F.X(x),F.Y(y0)],p1=[F.X(xs),F.Y(y0)],p2=[F.X(xs),F.Y(ys)];
+  g.save();g.beginPath();g.rect(F.L.ml,F.L.mt,F.pw,F.ph);g.clip();
+  g.fillStyle=C.accent;g.globalAlpha=.12;g.beginPath();g.moveTo(p0[0],p0[1]);g.lineTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.closePath();g.fill();g.globalAlpha=1;
+  g.strokeStyle=C.accent;g.lineWidth=1.8;g.setLineDash([5,4]);g.beginPath();g.moveTo(p0[0],p0[1]);g.lineTo(p1[0],p1[1]);g.lineTo(p2[0],p2[1]);g.stroke();g.setLineDash([]);
+  g.fillStyle=C.accent;
+  const up=ys>y0;
+  g.textAlign='center';g.textBaseline=up?'top':'bottom';
+  MATH.text(g,'Δx = '+fmt(dir*dx),(p0[0]+p1[0])/2,p0[1]+(up?5:-5),12,600,'center');
+  g.textBaseline='middle';
+  MATH.text(g,'Δy = '+fmt(m*dir*dx),p1[0]+(dir>0?6:-6),(p1[1]+p2[1])/2,12,600,dir>0?'left':'right');
+  g.restore();
+}
 function drawHiker(g,px,py,tilt,pose,phase,C){
   g.save();g.translate(px,py);g.rotate(tilt);g.scale(1.4,1.4);g.lineCap='round';g.lineJoin='round';g.strokeStyle=C.ink;g.fillStyle=C.ink;g.lineWidth=2.6;
   if(pose==='ski'){
@@ -707,6 +787,7 @@ function draw(){
           if(S.tan){
             const hw=(b-a)*0.12;F.g.save();F.g.beginPath();F.g.rect(F.L.ml,F.L.mt,F.pw,F.ph);F.g.clip();
             F.g.strokeStyle=C.accent;F.g.lineWidth=2;F.g.beginPath();F.g.moveTo(F.X(x-hw),F.Y(y0-m*hw));F.g.lineTo(F.X(x+hw),F.Y(y0+m*hw));F.g.stroke();F.g.restore();
+            slopeTriangle(F,x,y0,m,C);
           }
           const sit=!!(near&&T.cp.includes(near));
           const ski=!sit&&m<0;
@@ -733,9 +814,12 @@ function draw(){
   }
   /* C: Skizze von f'' */
   if(!$('#panC').hidden){
-    const F=frame(cv.C,T.yr2,'f″(x)  Krümmung von f',C.ink);
+    const ov=S.step===3&&S.d1;
+    const yr2=ov?[Math.min(T.yr1[0],T.yr2[0]),Math.max(T.yr1[1],T.yr2[1])]:T.yr2;
+    const F=frame(cv.C,yr2,'f″(x)  Krümmung von f',C.ink);
     if(F){
       clipTo(F);
+      if(ov) plain(F,T.f1,C.ink,2.8,.28);
       if(S.step===3){
         if(S.full) plain(F,T.f2,C.axis,2,.55,[5,5]);
         stroke(F,T.f2,a,x,T.f2,C.lc,C.rc,C.ok,3.4,1);
@@ -743,6 +827,7 @@ function draw(){
       F.g.restore();
       T.wp.forEach(s=>{if(S.step===4||S.spec||s.x<=x+1e-9) mark(F,s.x,0,s.kind,null);});
       vline(F,x,C.accent,.4);
+      if(ov){dot(F,x,T.f1(x),C.axis,4.5);F.g.fillStyle=C.muted;F.g.textAlign='right';F.g.textBaseline='top';MATH.text(F.g,'blasse Kurve: f′(x)',F.L.ml+F.pw-8,F.L.mt+6,12,500,'right');}
       dot(F,x,T.f2(x),C.accent,5.5);
     }
   }
@@ -809,7 +894,7 @@ function calcHTML(){
 const P=[null,
  {t:'Funktion wählen',x:'Wähle ein Beispiel (die Sonderfälle sind mit ★ markiert) oder gib rechts eine eigene Funktion ein. Danach geht die Reise los: Zuerst wanderst du über den Graphen, dann fährst du auf ihm Auto.',a:'<b>Überlege:</b> Wo steigt der Graph, wo fällt er? Wo hat er eine waagrechte Tangente? Wo wechselt er die Kurvenrichtung?'},
  {t:'Spaziergang: Steigung und Ableitung',x:'Bewege den Regler oder drücke ▶. Der Wanderer läuft auf dem Graphen von links nach rechts. Bergab fährt er Ski. Unten entsteht Punkt für Punkt der Graph der Ableitung f′: Seine Höhe ist die Steigung des Weges.',a:'<b>Beobachte:</b> Was ist mit f′, wenn es bergauf geht? Und bergab? Was gilt, wenn sich der Wanderer hinsetzt?'},
- {t:'Autofahrt: Krümmung und zweite Ableitung',x:'Du siehst von oben auf die Strasse, die dem Graphen folgt, und fährst von links nach rechts. Das Lenkrad zeigt, wie du lenken musst. Unten entsteht der Graph der zweiten Ableitung f″: Positiv heisst nach links lenken, negativ nach rechts.',a:'<b>Beobachte:</b> Was gilt für f″, wenn du nach links lenkst? Nach rechts? Was passiert mit dem Lenkrad am Wendepunkt?'},
+ {t:'Autofahrt: Krümmung und zweite Ableitung',x:'Du siehst von oben auf die Strasse, die dem Graphen folgt, und fährst von links nach rechts. Das Lenkrad zeigt, wie du lenken musst. Unten entsteht der Graph der zweiten Ableitung f″: Positiv heisst nach links lenken, negativ nach rechts. Mit dem Häkchen unter dem Regler blendest du die Ableitung f′ blass dazu ein.',a:'<b>Beobachte:</b> Was gilt für f″, wenn du nach links lenkst? Nach rechts? Was passiert mit dem Lenkrad am Wendepunkt? Und was ist dort mit der blassen Kurve f′ (Hoch- oder Tiefpunkt)?'},
  {t:'Zusammenschau',x:'Hier siehst du alle drei Graphen untereinander und kannst den Regler über alle gleichzeitig schieben. Die Tabelle fasst zusammen, was du gesehen hast.',a:'<b>Aufgabe:</b> Wo hat f einen Hochpunkt? Woran erkennst du ihn in f′, woran in f″? Und woran einen Wendepunkt?'}
 ];
 
@@ -826,7 +911,7 @@ function render(){
   $('#rowA').style.gridTemplateColumns=S.step===3?'':'minmax(0,1fr)';
   $('#controls').hidden=S.step===1;$('#legend').hidden=S.step===1;
   $('#summary').hidden=S.step!==4;
-  $('#lblTan').hidden=S.step!==2;
+  $('#lblTan').hidden=S.step!==2;$('#lblD1').hidden=S.step!==3;
   $('#calc').hidden=!(S.calc&&S.step>1);
   $('#calcBtn').setAttribute('aria-expanded',String(S.calc));$('#calcBtn').textContent=S.calc?'Berechnung ausblenden':'Berechnung anzeigen';
   $('#play').textContent=S.playing?'❚❚ Pause':'▶ Abspielen';
@@ -838,6 +923,7 @@ function render(){
   $('#fnote').hidden=!(pr&&pr.note);$('#fnote').innerHTML=(pr&&pr.note)?'<b>Sonderfall</b>'+pr.note:'';
   ['xmin','xmax'].forEach(k=>{const el=$('#'+k);if(document.activeElement!==el)el.value=+S[k].toFixed(4);});
   updateDyn();
+  MATH.apply(document,'.lead,.eyebrow,#tText,#tAsk,#fread,#fnote,.legend span,#summary h3,#summary td,#summary th,.opts label,.card .read,.teacher .inner p,.teacher .inner li');
   draw();
 }
 function updateDyn(){
@@ -850,6 +936,7 @@ function updateDyn(){
     $('#wcap').textContent=Math.abs(r)<0.015?'Lenkrad gerade':(r>0?'Lenkrad nach links':'Lenkrad nach rechts');
   }
   if(S.calc&&S.step>1) $('#calc').innerHTML=calcHTML();
+  MATH.apply(document,'#status,#calc,#xval,#wcap');
 }
 function setX(x,snap){
   const a=S.xmin,b=S.xmax;
@@ -857,7 +944,7 @@ function setX(x,snap){
   if(snap&&T){const all=specials();for(const r of all){if(Math.abs(r-x)<(b-a)*0.008){x=r;break;}}}
   S.x=x;updateDyn();draw();
 }
-function go(p){S.step=Math.min(4,Math.max(1,p));S.playing=false;render();}
+function go(p){const np=Math.min(4,Math.max(1,p));if(np!==S.step){S.x=S.xmin;hold=0;}S.step=np;S.playing=false;render();}
 function setPreset(i){
   const p=PRESETS[i];S.preset=i;S.src=p.s;S.xmin=p.x[0];S.xmax=p.x[1];S.x=p.x[0];S.playing=false;
   $('#fsrc').value=p.s;
@@ -906,6 +993,7 @@ function init(){
   $('#sp').onclick=()=>jump(-1);$('#sn').onclick=()=>jump(1);
   $('#calcBtn').onclick=()=>{S.calc=!S.calc;render();};
   $('#chkTan').onchange=e=>{S.tan=e.target.checked;draw();};
+  $('#chkD1').onchange=e=>{S.d1=e.target.checked;draw();};
   $('#chkFull').onchange=e=>{S.full=e.target.checked;draw();};
   $('#chkSpec').onchange=e=>{S.spec=e.target.checked;draw();};
   new ResizeObserver(()=>draw()).observe($('#stage'));

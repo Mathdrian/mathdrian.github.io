@@ -93,7 +93,7 @@ label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
 input[type=text],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0}
 input.mono{font-family:var(--font-mono);font-size:15px}
 .fieldrow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
-.fieldrow>label{margin:0;font-family:var(--font-mono);font-size:15px;color:var(--ink);white-space:nowrap}
+.fieldrow>label{margin:0;font-family:var(--font-math);font-size:17px;color:var(--ink);white-space:nowrap}
 .fieldrow.three{grid-template-columns:auto 1fr auto}
 .read{font-size:14px;margin-top:6px;overflow-wrap:anywhere;min-height:22px}
 .msg{font-size:14px;overflow-wrap:anywhere}
@@ -138,7 +138,7 @@ details.inline>.in{padding:2px 12px 12px;display:grid;gap:6px;font-size:14px}
 .pre small{color:var(--muted);font-size:11.5px}
 .pre:hover{background:var(--surface2)}
 .pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
-.pre b{font-family:var(--font-mono);font-weight:500;font-size:12.5px}
+.pre b{font-family:var(--font-math);font-weight:400;font-size:14px}
 .gen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .gen button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;font-weight:600;display:grid;gap:1px;justify-items:center}
 .gen button small{font-weight:400;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.25}
@@ -1448,7 +1448,7 @@ function updateFnPreview() {
   if (r.empty) { rd.innerHTML = ''; nt.textContent = ''; sb.disabled = true; return; }
   if (r.err) { rd.innerHTML = '<span class="msg bad">' + esc(r.err) + '</span>'; nt.textContent = ''; sb.disabled = true; return; }
   if (pDeg(r.p) < 2) { rd.innerHTML = '<span class="msg bad">Eine Gerade hat keine Extrem- oder Wendepunkte. Wähle mindestens Grad 2.</span>'; nt.textContent = ''; sb.disabled = true; return; }
-  rd.innerHTML = 'f(x) = <b>' + polyHTML(r.p) + '</b> &nbsp;<span class="cm">Grad ' + pDeg(r.p) + '</span>'; sb.disabled = false;
+  rd.innerHTML = 'f(x) = <b>' + polyHTML(r.p) + '</b> &nbsp;<span class="cm">Grad ' + pDeg(r.p) + '</span>'; sb.disabled = false; mathItalic(rd);
   clearTimeout(fnTimer); nt.textContent = '';
   fnTimer = setTimeout(() => { try { const T = analyze(r.p); nt.textContent = T.hand ? '' : 'Hinweis: Bei dieser Funktion lassen sich nicht alle Gleichungen schön von Hand lösen. Du brauchst den Taschenrechner (Solver).'; } catch (e) { } }, 250);
 }
@@ -1827,7 +1827,7 @@ function draw() {
   const v = T ? T.view : { xmin: -5, xmax: 5, ymin: -5, ymax: 5 };
   const L = 40, R = 16, Tp = 14, B = 28; const pw = W - L - R, ph = H - Tp - B;
   const X = x => L + (x - v.xmin) / (v.xmax - v.xmin) * pw, Y = y => Tp + (v.ymax - y) / (v.ymax - v.ymin) * ph;
-  g.font = '11.5px ' + cssv('--font-mono'); g.textBaseline = 'middle';
+  g.font = '12.5px ' + cssv('--font-math'); g.textBaseline = 'middle';
   // Raster
   const sx = niceStep(v.xmax - v.xmin, 10), sy = niceStep(v.ymax - v.ymin, 7);
   g.lineWidth = 1; g.strokeStyle = C.grid; g.fillStyle = C.muted; g.textAlign = 'center';
@@ -1855,7 +1855,7 @@ function draw() {
       const y1 = up ? Tp + 54 : Tp + ph - 54, y0 = up ? Tp + 20 : Tp + ph - 20; const tipY = y0, baseY = y1;
       g.beginPath(); g.moveTo(px, baseY); g.lineTo(px, tipY + (up ? 4 : -4)); g.stroke();
       g.beginPath(); g.moveTo(px, tipY); g.lineTo(px - 6, tipY + (up ? 10 : -10)); g.lineTo(px + 6, tipY + (up ? 10 : -10)); g.closePath(); g.fill();
-      g.font = '12px ' + cssv('--font-mono'); g.textAlign = align; g.textBaseline = 'middle'; g.fillText(label, px + (align === 'left' ? 11 : -11), (tipY + baseY) / 2); g.restore();
+      g.font = 'italic 13px ' + cssv('--font-math'); g.textAlign = align; g.textBaseline = 'middle'; g.fillText(label, px + (align === 'left' ? 11 : -11), (tipY + baseY) / 2); g.restore();
     };
     arrow(L + 24, T.rand.left, 'x→−∞', 'left'); arrow(L + pw - 24, T.rand.right, 'x→+∞', 'right');
   }
@@ -1870,7 +1870,7 @@ function draw() {
   }
   g.restore();
   // Punkte und Beschriftung
-  const pts = visiblePoints(); const placed = []; g.font = '12px ' + cssv('--font-mono'); g.textAlign = 'left';
+  const pts = visiblePoints(); const placed = []; g.font = 'italic 13px ' + cssv('--font-math'); g.textAlign = 'left';
   pts.forEach(p => { const mx = X(p.x), my = Y(p.y); placed.push({ x: mx - 9, y: my - 9 - 8 + 8, w: 18, h: 18, m: 1 }); });
   const groups = {}; pts.forEach(p => { const k = Math.round(X(p.x)) + ',' + Math.round(Y(p.y)); (groups[k] = groups[k] || []).push(p); });
   Object.values(groups).forEach(gr => {
