@@ -14,7 +14,7 @@
   var titel=(document.title||'mathdrian').replace(/\s+/g,' ').trim();
   var was=nr?(nr+' '+titel):titel;
   var betreff='Rückmeldung mathdrian: '+was;
-  var text='Hallo Adrian\r\n\r\nZu: '+was+'\r\nSeite: '+location.href.split('#')[0]+'\r\n\r\nMeine Rückmeldung (Fehler, Unklarheit oder Idee):\r\n\r\n\r\n(Bitte keine persönlichen Angaben wie Namen oder Schule schreiben.)';
+  var text='Hallo Adrian\r\n\r\nZu: '+was+'\r\nSeite: '+location.href.split('#')[0]+'\r\n\r\nMeine Rückmeldung (Fehler, Unklarheit oder Idee):\r\n\r\n';
   var a=document.createElement('a');
   a.href='mailto:'+adr+'?subject='+encodeURIComponent(betreff)+'&body='+encodeURIComponent(text);
   a.textContent='✉ Fehler melden';
