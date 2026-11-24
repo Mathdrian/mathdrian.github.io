@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Ableitung skizzieren</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Layout: Schrittleiste, Aufgabenkarte, links die Bühne (Graph f oben, Skizze von f′ oder f″ darunter), rechts Funktion und Optionen.
+   Farbcode: bergauf = Türkis, bergab = Himbeere, Linkskurve = Blau, Rechtskurve = Orange. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --surface2:#eceff6; --ink:#18202f; --muted:#576277; --line:#d5dbe7; --grid:#e7ebf3; --axis:#8791a6;
+  --accent:#2d56e0; --accent-ink:#ffffff; --road:#c9cfdc; --roadline:#ffffff;
+  --up:#d6303a; --down:#1c7ed6; --lc:#d6303a; --rc:#1c7ed6; --f2:#7048e8; --note:#e8590c; --ok:#2b8a3e; --bad:#d6303a;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --font-math:'STIX Two Text','Latin Modern Roman','Cambria Math','Times New Roman',serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+    --accent:#7f9fff; --accent-ink:#0c1226; --road:#39425a; --roadline:#7f8aa6;
+    --up:#ff6b6b; --down:#4dabf7; --lc:#ff6b6b; --rc:#4dabf7; --f2:#b39dfc; --note:#ff922b; --ok:#51cf66; --bad:#ff7b84;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+  --accent:#7f9fff; --accent-ink:#0c1226; --road:#39425a; --roadline:#7f8aa6;
+  --up:#ff6b6b; --down:#4dabf7; --lc:#ff6b6b; --rc:#4dabf7; --f2:#b39dfc; --note:#ff922b; --ok:#51cf66; --bad:#ff7b84;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.01em}
+h2{font-size:20px}
+h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.lead{max-width:64ch;color:var(--muted);margin-top:6px}
+header{margin-bottom:18px}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:500;transition:background .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{padding:5px 10px;font-size:13px}
+.steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px 5px 6px;font-weight:500;font-size:14px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:12px;font-weight:600}
+.step.done .n{background:color-mix(in srgb,var(--ok) 22%,var(--surface))}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+.task{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px;display:grid;gap:10px}
+.task-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.ask{background:var(--surface2);border-radius:8px;padding:9px 12px}
+.task-nav{display:flex;gap:8px;justify-content:flex-end}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage{display:grid;gap:10px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.panel canvas{display:block;width:100%}
+#cvA{height:320px}
+#cvB,#cvC{height:190px}
+@media (max-width:560px){#cvA{height:260px}#cvB,#cvC{height:160px}}
+.carrow{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:10px}
+@media (max-width:700px){.carrow{grid-template-columns:minmax(0,1fr)}}
+.wheelbox{display:grid;place-items:center;align-content:center;gap:4px;padding:8px}
+#cvW{width:160px;height:160px}
+.wheelbox .cap{font-size:13px;color:var(--muted);text-align:center}
+.status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);min-height:50px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-weight:600;font-size:13px;color:#fff}
+.chip.up{background:var(--up)}.chip.down{background:var(--down)}.chip.lc{background:var(--lc)}.chip.rc{background:var(--rc)}
+.chip.zero{background:var(--ok)}.chip.flat{background:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin:0 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.status .txt{font-size:14px;overflow-wrap:anywhere}
+.mono{font-family:var(--font-mono);font-size:.92em}
+.mx{font-family:var(--font-math);font-size:1.1em;font-variant-ligatures:none}
+.mx i{font-style:italic}
+.controls{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px}
+.sliderrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.sliderrow .xval{font-family:var(--font-body);font-size:14px;min-width:8.5ch;text-align:right}
+input[type=range]{width:100%;height:30px;accent-color:var(--accent)}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.opts{display:flex;flex-wrap:wrap;gap:6px 18px}
+label.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.side{display:grid;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+label.l{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;min-width:0}
+input.mono{font-size:15px}
+.fieldrow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+.fieldrow label{font-family:var(--font-mono);font-size:15px;white-space:nowrap}
+.read{font-size:13px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
+.read.bad{color:var(--bad)}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.note{margin-top:10px;border:1px solid color-mix(in srgb,var(--note) 70%,var(--line));background:color-mix(in srgb,var(--note) 10%,var(--surface));border-radius:8px;padding:8px 10px;font-size:13px}
+.note b{color:var(--note);text-transform:uppercase;letter-spacing:.05em;font-size:12px;margin-right:4px}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px;display:grid;gap:6px}
+.calc .row{font-family:var(--font-math);font-size:16px;overflow-wrap:anywhere}
+.calc .row.res{font-weight:500}
+.calc .why{font-family:var(--font-body);font-size:14px;color:var(--muted)}
+.calc small{color:var(--muted);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tablewrap{overflow-x:auto}
+.teacher{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
+.teacher .inner{padding:0 18px 14px;max-width:80ch;display:grid;gap:8px}
+.teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.tools .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tools .sp{flex:1}
+#cvG{cursor:crosshair;touch-action:none;-webkit-user-select:none;user-select:none}
+.fb{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.fb li{display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:14px}
+.fb .ic{font-weight:700}.fb .ok .ic{color:var(--ok)}.fb .part .ic{color:var(--note)}.fb .bad .ic{color:var(--bad)}
+.verdict{font-family:var(--font-head);font-size:17px;margin:0 0 8px}
+.side{display:grid;gap:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:5px}
+.gb{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 0;font:600 13px var(--font-body);cursor:pointer;color:var(--ink)}
+.gb.l1{border-bottom:3px solid #51a96b}.gb.l2{border-bottom:3px solid #e0a030}.gb.l3{border-bottom:3px solid #d6303a}
+.gb[aria-current=true]{outline:2px solid var(--accent);outline-offset:1px}
+.gb.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+.hint2{margin:0;font-size:12.5px;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.box h3{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.opts{display:grid;gap:6px}
+.radio{display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer}
+.solbox{font-size:14px}
+select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.mx{font-family:var(--font-math);font-size:1.1em;font-variant-ligatures:none}.mx i{font-style:italic}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Analysis · Grafisches Ableiten</p>
+    <h1>Ableitung skizzieren</h1>
+    <p class="lead">Oben siehst du den Graphen von f. Zeichne darunter mit dem Stift (oder der Maus) die Ableitung f′. Danach prüft die Seite Nullstellen, Vorzeichen und Form.</p>
+  </header>
+  <section class="task">
+    <div class="task-head"><span class="badge" id="tBadge">Aufgabe 1</span><h2 id="tH">Skizziere f′ im unteren Feld</h2><button class="btn small" id="bNxt0" hidden></button></div>
+    <p>Frage dich: Wo hat f eine waagrechte Tangente? Wo steigt f (f′ positiv), wo fällt f (f′ negativ)? Wo ist f besonders steil? Es muss nicht genau sein, aber die Nullstellen und die Form sollten stimmen.</p>
+  </section>
+  <main class="layout" style="margin-top:12px">
+    <div class="stage">
+      <div class="panel"><canvas id="cvF" style="height:260px" aria-label="Graph der Funktion f"></canvas></div>
+      <div class="panel">
+        <canvas id="cvG" style="height:300px" aria-label="Zeichenfläche für die Ableitung"></canvas>
+        <div class="tools">
+          <button class="btn small" id="bPen" aria-pressed="true">✎ Stift</button>
+          <button class="btn small" id="bEr" aria-pressed="false">⌫ Radierer</button>
+          <button class="btn small" id="bUndo">↶ Rückgängig</button>
+          <button class="btn small" id="bClear">Alles löschen</button>
+          <span class="sp"></span>
+          <button class="btn primary" id="bCheck">Prüfen</button>
+        </div>
+      </div>
+      <div class="box" id="fbBox" hidden><div id="fbOut" aria-live="polite"></div>
+        <div class="btnrow"><button class="btn small" id="bSol">Lösung einblenden</button><button class="btn small primary" id="bNext" hidden>Nächste Aufgabe →</button></div></div>
+    </div>
+    <aside class="side">
+      <div class="box"><h3>Aufgabe wählen</h3>
+        <div class="btnrow"><button class="btn small" id="bPrev" aria-label="Vorherige Aufgabe">←</button>
+        <label style="font-size:14px">Nr. <input type="number" id="nIn" min="1" max="29" style="width:64px;font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"></label>
+        <button class="btn small" id="bNext2" aria-label="Nächste Aufgabe">→</button><button class="btn small" id="bRand">Zufällig</button></div>
+        <div id="grid" class="grid" role="group" aria-label="Aufgabenübersicht"></div>
+        <p class="hint2">Stufe 1: einfache Graphen · Stufe 2: mehr Extrempunkte, Wellen, Brüche · Stufe 3: Produkte und Summen. Grün = geschafft.</p>
+        <button class="btn small" id="bLink">Link zu dieser Aufgabe kopieren</button>
+      </div>
+      <div class="box"><h3>Hilfen</h3>
+        <label class="chk"><input type="checkbox" id="cHelp"><span> Hilfslinien bei den waagrechten Tangenten von f</span></label>
+        
+      </div>
+      <div class="box"><h3>Challenge</h3>
+        <label class="chk"><input type="checkbox" id="cChal"> Funktionstyp bestimmen</label>
+        <div id="chal" hidden class="opts">
+          <p style="margin:0;font-size:14px">Um welche Art von Funktion könnte es sich handeln? Du siehst nur einen Ausschnitt, mehrere Antworten können passen.</p>
+          <label class="radio"><input type="radio" name="typ" value="poly"> Polynomfunktion</label>
+          <label id="degRow" style="display:none;font-size:14px;padding-left:26px">Grad: <select id="deg"><option value="">wählen</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
+          <label class="radio"><input type="radio" name="typ" value="exp"> Exponentialfunktion</label>
+          <label class="radio"><input type="radio" name="typ" value="log"> Logarithmus- oder Wurzelfunktion</label>
+          <label class="radio"><input type="radio" name="typ" value="trig"> trigonometrische Funktion</label>
+          <label class="radio"><input type="radio" name="typ" value="rat"> gebrochen-rationale Funktion</label>
+          <label class="radio"><input type="radio" name="typ" value="mix"> zusammengesetzt / abschnittsweise</label>
+          <button class="btn small primary" id="bTyp">Typ prüfen</button>
+          <div id="chalFb" class="solbox" aria-live="polite"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <details class="teacher"><summary>Für Lehrpersonen: Einsatz im Unterricht</summary><div class="inner">
+    <p>Die Lernenden skizzieren f′ mit Stift oder Maus. Geprüft werden die Nullstellen (waagrechte Tangenten von f), das Vorzeichen (steigt oder fällt f) und die Form (Korrelation mit der echten Ableitung, Toleranz bewusst grosszügig).</p>
+    <ul><li>Die Hilfslinien zeigen die x-Werte der waagrechten Tangenten in beiden Feldern.</li>
+    <li>Die Lösung wird erst auf Wunsch blass eingeblendet. So können die Lernenden zuerst selbst nachbessern.</li>
+    <li>Die Challenge zum Funktionstyp ist bewusst weich bewertet, denn man sieht nur einen Ausschnitt. Mehrere Typen oder Grade können passen.</li>
+    <li>Jede Aufgabe hat eine Nummer. Mit «Link kopieren» oder der Adresse mit <code>#12</code> am Ende öffnet die ganze Klasse dieselbe Aufgabe, zum Beispiel für die Besprechung an der Wandtafel.</li>
+    <li>Die Stufen: 1 = einfache Graphen (Gerade, Parabel, Kubik, e, ln, sin), 2 = mehr Extrempunkte, Wellen, Brüche und Knicke, 3 = Produkte, Summen und Polynome höheren Grades.</li></ul>
+  </div></details>
+</div>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+/* ---------- Mathe-Modus: Ausdrücke in LaTeX-ähnlicher Schrift ---------- */
+const MATH=(function(){
+  const L='A-Za-zÄÖÜäöüß';
+  const fn='(?:sin|cos|tan|exp|ln|log|abs)';
+  const letter='(?<!['+L+'])(?<!z\\.\\s)[A-Za-z](?!['+L+'])(?!\\.\\s?[A-Za-z]\\.)';
+  const num='(?:\\d+(?:[.,]\\d+)?)';
+  const sym='[′″‴⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾₀₁₂₃₄₅₆₇₈₉()|^±Δ√π]';
+  const atom='(?:(?<!['+L+'])'+fn+'(?!['+L+'])|'+letter+'|'+num+'|'+sym+')';
+  const term='(?:[−]|-(?=\\d))?'+atom+'+';
+  const op=' ?[+−=<>≤≥≠≈→⇒·/*|] ?';
+  const RE=new RegExp(term+'(?:'+op+term+')*','g');
+  const NEED=new RegExp('(?:'+letter+')|[′″‴≤≥≠≈⇒→Δπ√]');
+  const SPLIT=/(sin|cos|tan|exp|ln|log|abs)/;
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const SKIP='script,style,code,input,textarea,button,select,option,svg,canvas,.mx,.raw,pre';
+  function html(tok){
+    return tok.split(SPLIT).map(p=>SPLIT.test(p)?esc(p):[...p].map(c=>/[A-Za-z]/.test(c)?'<i>'+c+'</i>':esc(c)).join('')).join('');
+  }
+  function apply(root,sel){
+    (sel?root.querySelectorAll(sel):[root]).forEach(el=>{
+      const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),list=[];let n;
+      while((n=w.nextNode())){if(n.parentElement.closest(SKIP))continue;if(/[A-Za-z′″‴≤≥≠≈⇒→Δπ√]/.test(n.nodeValue))list.push(n);}
+      list.forEach(t=>{
+        const txt=t.nodeValue,f=document.createDocumentFragment();let last=0,m,hit=false;RE.lastIndex=0;
+        while((m=RE.exec(txt))){
+          if(!m[0]||!NEED.test(m[0]))continue;
+          f.append(txt.slice(last,m.index));
+          const s=document.createElement('span');s.className='mx';s.innerHTML=html(m[0]);f.append(s);
+          last=m.index+m[0].length;hit=true;
+        }
+        if(hit){f.append(txt.slice(last));t.replaceWith(f);}
+      });
+    });
+  }
+  /* Canvas: Text mit Mathe-Ausdrücken in Mathe-Schrift (Variablen kursiv) */
+  function text(g,str,x,y,size,weight,align){
+    const cs=getComputedStyle(document.documentElement),FM=cs.getPropertyValue('--font-math').trim(),FB=cs.getPropertyValue('--font-body').trim();
+    const segs=[],push=(s,math)=>{
+      if(!s)return;
+      if(!math){segs.push([s,(weight||400)+' '+size+'px '+FB]);return;}
+      s.split(SPLIT).forEach(p=>{if(!p)return;if(SPLIT.test(p)){segs.push([p,(weight||400)+' '+(size*1.08)+'px '+FM]);}
+        else [...p].forEach(ch=>segs.push([ch,(/[A-Za-z]/.test(ch)?'italic ':'')+(weight||400)+' '+(size*1.08)+'px '+FM]));});
+    };
+    let last=0,m;RE.lastIndex=0;
+    while((m=RE.exec(str))){if(!m[0]||!NEED.test(m[0]))continue;push(str.slice(last,m.index),false);push(m[0],true);last=m.index+m[0].length;}
+    push(str.slice(last),false);
+    let tw=0;segs.forEach(s=>{g.font=s[1];s.w=g.measureText(s[0]).width;tw+=s.w;});
+    const al=align||g.textAlign;let px=al==='center'?x-tw/2:al==='right'?x-tw:x;
+    const keep=g.textAlign;g.textAlign='left';
+    segs.forEach(s=>{g.font=s[1];g.fillText(s[0],px,y);px+=s.w;});
+    g.textAlign=keep;
+  }
+  return {apply,text,RE};
+})();
+
+const TAU=Math.PI*2;
+const POOL=[
+ /* Stufe 1 */
+ {lab:'f(x) = 2x − 1',f:x=>2*x-1,d:x=>2,a:-3,b:3,ok:[{t:'poly',d:[1]}],why:'Eine Gerade hat überall dieselbe Steigung, also ist f′ konstant. Das ist eine Polynomfunktion vom Grad 1.'},
+ {lab:'f(x) = −0.5x + 1',f:x=>-.5*x+1,d:x=>-.5,a:-4,b:4,ok:[{t:'poly',d:[1]}],why:'Eine fallende Gerade: f′ ist konstant negativ. Polynomfunktion vom Grad 1.'},
+ {lab:'f(x) = 0.5x² − 2',f:x=>.5*x*x-2,d:x=>x,a:-4,b:4,ok:[{t:'poly',d:[2,4]}],why:'Ein Tiefpunkt und Parabelform: Grad 2. Grad 4 wäre im Ausschnitt nicht auszuschliessen.'},
+ {lab:'f(x) = −x² + 4',f:x=>-x*x+4,d:x=>-2*x,a:-3,b:3,ok:[{t:'poly',d:[2,4]}],why:'Ein Hochpunkt, nach unten offen: Grad 2 (oder 4).'},
+ {lab:'f(x) = x³ − 3x',f:x=>x*x*x-3*x,d:x=>3*x*x-3,a:-2.5,b:2.5,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links fällt f ins Negative, rechts steigt es ins Positive: Grad 3. Grad 5 wäre auch möglich.'},
+ {lab:'f(x) = −x³ + 3x',f:x=>-x*x*x+3*x,d:x=>-3*x*x+3,a:-2.5,b:2.5,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links steigt f ins Positive, rechts fällt es ins Negative: Grad 3 mit negativem Leitkoeffizienten (oder Grad 5).'},
+ {lab:'f(x) = e^(x/2)',f:x=>Math.exp(x/2),d:x=>.5*Math.exp(x/2),a:-4,b:3,ok:[{t:'exp'}],why:'Immer steigend, immer steiler, links nähert sich der Graph der x-Achse: eine Exponentialfunktion.'},
+ {lab:'f(x) = e^(−x)',f:x=>Math.exp(-x),d:x=>-Math.exp(-x),a:-2,b:4,ok:[{t:'exp'}],why:'Immer fallend, links sehr steil, rechts nähert sich der Graph der x-Achse: eine Exponentialfunktion (Abnahme).'},
+ {lab:'f(x) = ln(x)',f:x=>Math.log(x),d:x=>1/x,a:.25,b:6,ok:[{t:'log'}],why:'Der Graph steigt, wird aber immer flacher und beginnt bei x = 0 steil: Logarithmus (oder Wurzelfunktion).'},
+ {lab:'f(x) = sin(x)',f:x=>Math.sin(x),d:x=>Math.cos(x),a:-TAU,b:TAU,ok:[{t:'trig'}],why:'Regelmässig wiederkehrende Hoch- und Tiefpunkte gleicher Höhe: eine trigonometrische Funktion.'},
+ /* Stufe 2 */
+ {lab:'f(x) = x³ − 6x² + 9x + 1',f:x=>x*x*x-6*x*x+9*x+1,d:x=>3*x*x-12*x+9,a:-0.5,b:4.5,ok:[{t:'poly',d:[3,5]}],why:'Hoch- und Tiefpunkt, ein Wendepunkt dazwischen, Randverhalten wie bei x³: Grad 3 (oder 5).'},
+ {lab:'f(x) = x⁴/4 − x²',f:x=>x**4/4-x*x,d:x=>x**3-2*x,a:-3,b:3,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach oben offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = −x⁴/4 + x²',f:x=>-(x**4)/4+x*x,d:x=>-(x**3)+2*x,a:-3,b:3,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach unten offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = cos(x)',f:x=>Math.cos(x),d:x=>-Math.sin(x),a:-TAU,b:TAU,ok:[{t:'trig'}],why:'Wellenförmig und periodisch: trigonometrisch. Hier liegt ein Hochpunkt auf der y-Achse (Kosinus).'},
+ {lab:'f(x) = sin(2x)',f:x=>Math.sin(2*x),d:x=>2*Math.cos(2*x),a:-Math.PI,b:Math.PI,ok:[{t:'trig'}],why:'Doppelt so schnell schwingend wie der Sinus: trigonometrisch. Die Steilheit von f′ ist doppelt so gross wie die von f.'},
+ {lab:'f(x) = √x',f:x=>Math.sqrt(x),d:x=>.5/Math.sqrt(x),a:.25,b:6,ok:[{t:'log'}],why:'Steigt, wird immer flacher und beginnt bei x = 0 steil: Wurzelfunktion (oder Logarithmus).'},
+ {lab:'f(x) = 1/x',f:x=>1/x,d:x=>-1/(x*x),a:.4,b:4,ok:[{t:'rat'}],why:'Immer fallend, steil nahe bei x = 0 (Polstelle), rechts fast waagrecht: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = x + 1/x',f:x=>x+1/x,d:x=>1-1/(x*x),a:.3,b:4,ok:[{t:'rat'}],why:'Steil abfallend nahe bei x = 0 (Polstelle), danach fast eine Gerade: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = x/(1 + x²)',f:x=>x/(1+x*x),d:x=>(1-x*x)/Math.pow(1+x*x,2),a:-4,b:4,ok:[{t:'rat'}],why:'Punktsymmetrisch, zwei Extrempunkte, beidseitig nähert sich der Graph der x-Achse: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = |x| − 1',f:x=>Math.abs(x)-1,d:x=>x<0?-1:1,a:-3,b:3,sing:[0],ok:[{t:'mix'}],why:'Ein Knick bei x = 0 und sonst Geraden: abschnittsweise definiert. f′ springt von −1 auf 1.'},
+ {lab:'f(x) = −|x − 1| + 2',f:x=>-Math.abs(x-1)+2,d:x=>x<1?1:-1,a:-2,b:4,sing:[1],ok:[{t:'mix'}],why:'Ein Knick bei x = 1 (Spitze nach oben) und sonst Geraden: abschnittsweise definiert. f′ springt von 1 auf −1.'},
+ {lab:'f(x) = x² für x ≤ 1, 2x − 1 für x > 1',f:x=>x<=1?x*x:2*x-1,d:x=>x<=1?2*x:2,a:-2,b:3,ok:[{t:'mix'}],why:'Links eine Parabel, rechts eine Gerade, ohne Knick aneinandergesetzt: abschnittsweise definiert. f′ geht von der Geraden 2x in die Konstante 2 über.'},
+ /* Stufe 3 */
+ {lab:'f(x) = 0.05x⁵ − 0.4x³ + 0.4x',f:x=>.05*x**5-.4*x**3+.4*x,d:x=>.25*x**4-1.2*x*x+.4,a:-3,b:3,ok:[{t:'poly',d:[5,7]}],why:'Vier Extrempunkte erfordern mindestens Grad 5, und das Randverhalten ist punktsymmetrisch (ungerader Grad).'},
+ {lab:'f(x) = 0.1x⁴ − 0.4x³ − 0.9x² + 2',f:x=>.1*x**4-.4*x**3-.9*x*x+2,d:x=>.4*x**3-1.2*x*x-1.8*x,a:-2.5,b:5,ok:[{t:'poly',d:[4,6]}],why:'Drei Extrempunkte (zwei Tiefpunkte, ein Hochpunkt), beidseitig nach oben offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = x·e^(−x)',f:x=>x*Math.exp(-x),d:x=>(1-x)*Math.exp(-x),a:-1,b:5,ok:[{t:'mix'}],why:'Links fällt f schnell ins Negative, rechts nähert es sich der x-Achse, dazwischen ein Hochpunkt: Produkt aus x und einer Exponentialfunktion, also zusammengesetzt.'},
+ {lab:'f(x) = x·e^(−x²/2)',f:x=>x*Math.exp(-x*x/2),d:x=>(1-x*x)*Math.exp(-x*x/2),a:-3,b:3,ok:[{t:'mix'}],why:'Punktsymmetrisch, zwei Extrempunkte und beidseitig nähert sich der Graph der x-Achse: ein Produkt aus x und einer Exponentialfunktion, also zusammengesetzt.'},
+ {lab:'f(x) = e^(−x²/2)',f:x=>Math.exp(-x*x/2),d:x=>-x*Math.exp(-x*x/2),a:-3,b:3,ok:[{t:'exp'},{t:'mix'}],why:'Glockenform: Hochpunkt bei x = 0, beidseitig nähert sich der Graph der x-Achse. Es ist eine Exponentialfunktion mit quadratischem Exponenten (Normalverteilung).'},
+ {lab:'f(x) = sin(x) + 0.5x',f:x=>Math.sin(x)+.5*x,d:x=>Math.cos(x)+.5,a:-TAU,b:TAU,ok:[{t:'mix'}],why:'Eine Welle, die auf einer ansteigenden Geraden schwingt: Summe aus trigonometrischer und linearer Funktion, also zusammengesetzt.'},
+ {lab:'f(x) = x·sin(x)',f:x=>x*Math.sin(x),d:x=>Math.sin(x)+x*Math.cos(x),a:-6,b:6,ok:[{t:'mix'}],why:'Eine Schwingung, deren Ausschläge nach aussen wachsen, symmetrisch zur y-Achse: Produkt aus x und Sinus, also zusammengesetzt.'}
+];
+const TYPN={poly:'Polynomfunktion',exp:'Exponentialfunktion',log:'Logarithmus-/Wurzelfunktion',trig:'trigonometrische Funktion',rat:'gebrochen-rationale Funktion',mix:'zusammengesetzte Funktion'};
+const S={p:null,strokes:[],cur:null,tool:'pen',penSeen:false,sol:false,help:false,n:0,Z:[],fr:[0,1],dr:[0,1]};
+const ML=50,MR=16,MT=32,MB=26;
+function fmt(v){return (Math.round(v*100)/100).toString().replace('-','−');}
+function rng(fn,a,b){let lo=1e9,hi=-1e9;for(let i=0;i<=600;i++){const x=a+(b-a)*i/600;let v=fn(x);if(!isFinite(v))continue;lo=Math.min(lo,v);hi=Math.max(hi,v);}return [lo,hi];}
+function pad(r,inc0){let [lo,hi]=r;if(inc0){lo=Math.min(lo,0);hi=Math.max(hi,0);}let s=hi-lo||2;return [lo-.12*s,hi+.12*s];}
+function nice(span,n){const raw=span/n,e=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/e;return (m<1.5?1:m<3.5?2:m<7.5?5:10)*e;}
+function zerosOf(p){const out=[],N=1500,{a,b}=p;let px=a+(b-a)*.0001,pv=p.d(px);for(let i=1;i<=N;i++){const x=a+(b-a)*(i-.3137*(i<N?1:0))/N,v=p.d(x);if(pv*v<0&&Math.abs(pv-v)<.5*(S.dr[1]-S.dr[0])){let lo=px,hi=x;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(p.d(lo)*p.d(m)<=0)hi=m;else lo=m;}out.push((lo+hi)/2);}px=x;pv=v;}return out;}
+const LV=n=>n<=10?1:n<=21?2:3;
+const done=new Set();
+function num(){const h=parseInt(location.hash.slice(1),10);return (h>=1&&h<=POOL.length)?h:1;}
+function goTo(n){n=((n-1+POOL.length)%POOL.length)+1;if(num()===n&&S.p===POOL[n-1])return;location.hash=n;load();}
+function load(){S.n=num();S.p=POOL[S.n-1];const p=S.p;S.strokes=[];S.cur=null;S.sol=false;
+  S.fr=pad(rng(p.f,p.a,p.b));S.dr=pad(rng(p.d,p.a,p.b),true);S.Z=zerosOf(p);
+  const lv=LV(S.n);$('#tBadge').textContent='Aufgabe '+S.n+' von '+POOL.length+' · Stufe '+lv+' '+'●'.repeat(lv)+'○'.repeat(3-lv);
+  $('#nIn').value=S.n;$('#fbBox').hidden=true;$('#fbOut').innerHTML='';$('#bNext').hidden=true;$('#bSol').textContent='Lösung einblenden';
+  $('#chalFb').innerHTML='';document.querySelectorAll('input[name=typ]').forEach(r=>r.checked=false);$('#deg').value='';$('#degRow').style.display='none';
+  document.querySelectorAll('#grid button').forEach(b=>b.setAttribute('aria-current',+b.dataset.n===S.n?'true':'false'));draw();}
+function setup(c){const dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  const C={surface:v('--surface'),ink:v('--ink'),muted:v('--muted'),grid:v('--grid'),axis:v('--axis'),acc:v('--accent'),f2:v('--f2'),ok:v('--ok'),note:v('--note'),FM:v('--font-math')};
+  g.clearRect(0,0,W,H);return {g,W,H,C};}
+function frame(c,yr,title){const {g,W,H,C}=setup(c),p=S.p,pw=W-ML-MR,ph=H-MT-MB;
+  const X=x=>ML+(x-p.a)/(p.b-p.a)*pw,Y=y=>MT+(yr[1]-y)/(yr[1]-yr[0])*ph;
+  g.fillStyle=C.surface;g.fillRect(0,0,W,H);
+  g.font='12px '+C.FM;g.textBaseline='top';g.textAlign='center';
+  const sx=nice(p.b-p.a,9),sy=nice(yr[1]-yr[0],6);
+  g.lineWidth=1;g.strokeStyle=C.grid;g.fillStyle=C.muted;
+  for(let x=Math.ceil(p.a/sx-1e-9)*sx;x<=p.b+1e-9;x+=sx){g.beginPath();g.moveTo(X(x),MT);g.lineTo(X(x),MT+ph);g.stroke();if(Math.abs(x)>1e-9||true)g.fillText(fmt(+x.toFixed(6)),X(x),Math.min(H-MB+6,Y(0)>MT&&Y(0)<MT+ph?H-MB+6:H-MB+6));}
+  g.textAlign='right';g.textBaseline='middle';
+  for(let y=Math.ceil(yr[0]/sy-1e-9)*sy;y<=yr[1]+1e-9;y+=sy){g.beginPath();g.moveTo(ML,Y(y));g.lineTo(ML+pw,Y(y));g.stroke();g.fillText(fmt(+y.toFixed(6)),ML-6,Y(y));}
+  g.strokeStyle=C.axis;g.lineWidth=1.4;
+  if(yr[0]<0&&yr[1]>0){g.beginPath();g.moveTo(ML,Y(0));g.lineTo(ML+pw,Y(0));g.stroke();}
+  if(p.a<0&&p.b>0){g.beginPath();g.moveTo(X(0),MT);g.lineTo(X(0),MT+ph);g.stroke();}
+  g.strokeRect(ML,MT,pw,ph);
+  g.fillStyle=C.ink;MATH.text(g,title,ML+8,9,13,600,'left');
+  return {g,C,X,Y,pw,ph,W,H,yr};}
+function curve(F,fn,col,w,dash,al){const {g,X,Y,yr}=F,p=S.p,N=500;g.save();g.beginPath();g.rect(ML,MT,F.pw,F.ph);g.clip();g.beginPath();g.strokeStyle=col;g.lineWidth=w;g.globalAlpha=al||1;g.setLineDash(dash||[]);g.lineJoin='round';
+  let pen=false,py=0;for(let i=0;i<=N;i++){const x=p.a+(p.b-p.a)*i/N,y=fn(x);if(!isFinite(y)){pen=false;continue;}if(pen&&Math.abs(y-py)>.4*(yr[1]-yr[0])){pen=false;}if(!pen){g.moveTo(X(x),Y(y));pen=true;}else g.lineTo(X(x),Y(y));py=y;}g.stroke();g.restore();}
+function draw(){const p=S.p;if(!p)return;
+  const A=frame($('#cvF'),S.fr,'f(x)  gegeben');curve(A,p.f,A.C.acc,2.6);
+  const B=frame($('#cvG'),S.dr,'f′(x)  deine Skizze');
+  if(S.help){[A,B].forEach(F=>{F.g.save();F.g.strokeStyle=F.C.note;F.g.globalAlpha=.7;F.g.setLineDash([4,4]);F.g.lineWidth=1.4;S.Z.forEach(z=>{F.g.beginPath();F.g.moveTo(F.X(z),MT);F.g.lineTo(F.X(z),MT+F.ph);F.g.stroke();});F.g.restore();});}
+  if(S.sol){curve(B,p.d,B.C.ok,2.4,[7,5],.85);const g=B.g;g.fillStyle=B.C.ok;S.Z.forEach(z=>{g.beginPath();g.arc(B.X(z),B.Y(0),5,0,TAU);g.fill();});}
+  const g=B.g;g.save();g.beginPath();g.rect(ML,MT,B.pw,B.ph);g.clip();g.beginPath();g.strokeStyle=B.C.f2;g.lineWidth=3;g.lineCap='round';g.lineJoin='round';
+  const all=S.cur?S.strokes.concat([S.cur]):S.strokes;
+  all.forEach(s=>{if(!s.length)return;g.beginPath();g.moveTo(B.X(s[0].x),B.Y(s[0].y));if(s.length===1)g.lineTo(B.X(s[0].x)+.1,B.Y(s[0].y));for(let i=1;i<s.length;i++)g.lineTo(B.X(s[i].x),B.Y(s[i].y));g.stroke();});
+  g.restore();S.geo=B;}
+/* Zeichnen */
+function pt(e){const c=$('#cvG'),r=c.getBoundingClientRect(),B=S.geo,p=S.p;const px=e.clientX-r.left,py=e.clientY-r.top;
+  const x=p.a+(Math.min(Math.max(px,ML),ML+B.pw)-ML)/B.pw*(p.b-p.a),y=S.dr[1]-(Math.min(Math.max(py,MT),MT+B.ph)-MT)/B.ph*(S.dr[1]-S.dr[0]);return {x,y,px,py};}
+function erase(e){const B=S.geo,q=pt(e);const near=s=>s.some(u=>Math.hypot(B.X(u.x)-q.px,B.Y(u.y)-q.py)<14);const n=S.strokes.length;S.strokes=S.strokes.filter(s=>!near(s));if(S.strokes.length!==n){clearFb();draw();}}
+function clearFb(){$('#fbBox').hidden=true;}
+const cv=$('#cvG');
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')S.penSeen=true;if(e.pointerType==='touch'&&S.penSeen)return;e.preventDefault();cv.setPointerCapture(e.pointerId);
+  if(S.tool==='erase'){S.erasing=true;erase(e);return;}S.cur=[pt(e)];clearFb();draw();});
+cv.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&S.penSeen)return;if(S.erasing){erase(e);return;}if(!S.cur)return;const ev=e.getCoalescedEvents?e.getCoalescedEvents():[e];(ev.length?ev:[e]).forEach(u=>S.cur.push(pt(u)));draw();});
+function up(){S.erasing=false;if(S.cur){if(S.cur.length>1)S.strokes.push(S.cur);S.cur=null;draw();}}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+/* Auswertung */
+function analyse(){const p=S.p,N=120,W=p.b-p.a,tol=.07*W,span=S.dr[1]-S.dr[0];
+  const cols=Array.from({length:N},()=>[]);S.strokes.forEach(s=>s.forEach(u=>{cols[Math.min(N-1,Math.floor((u.x-p.a)/W*N))].push(u.y);}));
+  let g=cols.map(c=>c.length?c.reduce((u,v)=>u+v,0)/c.length:null);
+  for(let i=0;i<N;i++){if(g[i]!==null)continue;let l=i-1;while(l>=0&&g[l]===null)l--;let r=i+1;while(r<N&&g[r]===null)r++;if(l>=0&&r<N&&r-l-1<=8){g[i]=g[l]+(g[r]-g[l])*(i-l)/(r-l);}}
+  const have=g.filter(v=>v!==null).length;if(have<.75*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse.'};
+  g=g.map((v,i)=>{if(v===null)return null;const a=g[i-1],b=g[i+1];return (a!=null&&b!=null)?(a+v+b)/3:v;});
+  const cx=i=>p.a+(i+.5)*W/N,eps=.012*span,zs=[];
+  const sr=[];for(let i=0;i<N;i++){if(g[i]===null||Math.abs(g[i])<eps)continue;const s=Math.sign(g[i]),r=sr[sr.length-1];if(r&&r.s===s&&i-r.e<=3){r.e=i;r.n++;}else sr.push({s,b:i,e:i,n:1});}
+  const R=sr.filter(r=>r.n>=3),M=[];R.forEach(r=>{const m=M[M.length-1];if(m&&m.s===r.s)m.e=r.e;else M.push({...r});});
+  for(let q=1;q<M.length;q++){let k=M[q-1].e;while(k<M[q].b-1&&!(g[k]!==null&&g[k+1]!==null&&g[k]*g[k+1]<=0))k++;const d=(g[k]!==null&&g[k+1]!==null)?g[k]-g[k+1]:0,t=d?g[k]/d:.5;zs.push(cx(k)+t*W/N);}
+  const sing=p.sing||[],badCol=x=>sing.some(s=>Math.abs(x-s)<tol*.8);
+  for(let j=zs.length-1;j>=0;j--)if(sing.some(z=>Math.abs(zs[j]-z)<tol))zs.splice(j,1);
+  /* Nullstellen */
+  const miss=[],used=new Set();S.Z.forEach(z=>{let bi=-1,bd=1e9;zs.forEach((q,j)=>{if(used.has(j))return;const d=Math.abs(q-z);if(d<bd){bd=d;bi=j;}});if(bi>=0&&bd<=tol)used.add(bi);else miss.push(z);});
+  const extra=zs.filter((q,j)=>!used.has(j)&&!sing.some(z=>Math.abs(q-z)<tol));
+  /* Vorzeichen */
+  let tot=0,agree=0;const runs=[];let run=null;
+  for(let i=0;i<N;i++){if(g[i]===null)continue;const x=cx(i),tv=p.d(x);if(badCol(x)||Math.abs(tv)<.08*span||S.Z.some(z=>Math.abs(x-z)<tol*.8))continue;tot++;if(Math.sign(tv)===Math.sign(g[i])&&Math.abs(g[i])>=.0){agree++;if(run){runs.push(run);run=null;}}else{if(!run)run={a:x,b:x};run.b=x;}}
+  if(run)runs.push(run);const badRuns=runs.filter(r=>r.b-r.a>=.05*W);
+  const sgnFrac=tot?agree/tot:1;
+  /* Form */
+  let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;for(let i=0;i<N;i++){if(g[i]===null)continue;const x=cx(i);if(badCol(x))continue;const u=g[i],v=p.d(x);n++;sx+=u;sy+=v;sxx+=u*u;syy+=v*v;sxy+=u*v;}
+  const vu=sxx/n-(sx/n)**2,vv=syy/n-(sy/n)**2;let r=null,ratio=1;
+  if(vv<1e-9*span*span){let dev=0;for(let i=0;i<N;i++)if(g[i]!==null)dev+=Math.abs(g[i]-sy/n);r=1-Math.min(1,(dev/n)/(.25*span))*0.3-(dev/n>.2*span?.5:0);ratio=1;}
+  else{r=vu<1e-12?0:(sxy/n-sx/n*sy/n)/Math.sqrt(vu*vv);ratio=Math.sqrt(Math.max(vu,0)/vv);}
+  return {zs,miss,extra,sgnFrac,badRuns,r,ratio,tol};}
+function xr(v){return fmt(Math.round(v*2)/2);}
+function check(){const p=S.p,A=analyse(),out=$('#fbOut');$('#fbBox').hidden=false;
+  if(A.err){out.innerHTML='<p class="verdict">Noch nicht auswertbar</p><p>'+A.err+'</p>';MATH.apply(out);return;}
+  const L=[];let score=0;
+  if(S.Z.length===0){if(A.zs.length===0){L.push(['ok','Nullstellen: f hat keine waagrechte Tangente, und deine Skizze schneidet die x-Achse auch nicht.']);score++;}else{L.push(['bad','Nullstellen: Deine Skizze schneidet die x-Achse bei x ≈ '+A.zs.map(xr).join(', ')+'. Hat f dort eine waagrechte Tangente?']);}}
+  else if(!A.miss.length&&!A.extra.length){L.push(['ok','Nullstellen: Alle '+S.Z.length+' Nullstellen von f′ stimmen (dort hat f eine waagrechte Tangente).']);score++;}
+  else{const t=[];if(A.miss.length)t.push((A.miss.length>1?'Es fehlen Nullstellen':'Es fehlt eine Nullstelle')+' in der Nähe von x ≈ '+A.miss.map(xr).join(' und '));if(A.extra.length)t.push('Deine Skizze schneidet die x-Achse bei x ≈ '+A.extra.map(xr).join(' und ')+', obwohl f dort keine waagrechte Tangente hat');L.push([A.miss.length+A.extra.length>1?'bad':'part','Nullstellen: '+t.join('. ')+'.']);}
+  if(A.sgnFrac>=.85&&!A.badRuns.length){L.push(['ok','Vorzeichen: f′ ist positiv, wo f steigt, und negativ, wo f fällt.']);score++;}
+  else if(A.sgnFrac>=.65){L.push(['part','Vorzeichen: Fast. Prüfe '+A.badRuns.map(r=>'den Bereich x ≈ '+xr(r.a)+' bis '+xr(r.b)).join(' und ')+' (steigt oder fällt f dort?).']);}
+  else L.push(['bad','Vorzeichen: Bei vielen Stellen liegt deine Skizze auf der falschen Seite der x-Achse. Wo steigt f (f′ > 0), wo fällt f (f′ < 0)?']);
+  if(A.r>=.88&&A.ratio>.5&&A.ratio<2&&A.sgnFrac>=.85){L.push(['ok','Form: Der Verlauf von f′ passt gut.']);score++;}
+  else if(A.r>=.88&&A.sgnFrac>=.85){L.push(['part','Form: Der Verlauf stimmt, aber die Höhe der Ausschläge passt noch nicht ganz (Skala links beachten).']);score+=.5;}
+  else if(A.r>=.65){L.push(['part','Form: Ungefähr richtig. Achte auf die Steilheit von f: Wo f am steilsten ist, hat f′ ihren grössten Betrag.']);score+=.5;}
+  else L.push(['bad','Form: Der Verlauf weicht noch deutlich ab. Wo ist f steil, wo flach? Das bestimmt die Höhe von f′.']);
+  const ic={ok:'✓',part:'◐',bad:'✗'};
+  const v=score>=3?'Super, deine Skizze stimmt!':score>=2?'Fast, noch eine Kleinigkeit.':'Noch nicht ganz, versuche es nochmals.';
+  out.innerHTML='<p class="verdict">'+v+'</p><ul class="fb">'+L.map(l=>'<li class="'+l[0]+'"><span class="ic">'+ic[l[0]]+'</span><span>'+l[1]+'</span></li>').join('')+'</ul>';
+  MATH.apply(out,'li span:last-child,.verdict');
+  $('#bNext').hidden=false;if(score>=3){done.add(S.n);const b=document.querySelector('#grid button[data-n="'+S.n+'"]');if(b)b.classList.add('done');}}
+/* Challenge */
+function typ(){const r=document.querySelector('input[name=typ]:checked');if(!r){$('#chalFb').textContent='Wähle zuerst einen Typ.';return;}
+  const t=r.value,d=+$('#deg').value,p=S.p;let good=p.ok.some(o=>o.t===t&&(t!=='poly'||(d&&o.d.includes(d))));
+  let msg;if(t==='poly'&&!d)msg='Gib bei der Polynomfunktion auch den Grad an.';
+  else if(good)msg='<b>✓ Das passt.</b> '+p.why;
+  else if(t==='poly'&&p.ok.some(o=>o.t==='poly'))msg='<b>◐ Typ stimmt, Grad nicht.</b> '+p.why;
+  else msg='<b>✗ Eher nicht.</b> '+p.why;
+  $('#chalFb').innerHTML=msg+(msg.startsWith('Gib')?'':'<br>Die Funktion war: <span class="fl">'+p.lab+'</span>');MATH.apply($('#chalFb'),'.fl,.solbox');}
+/* UI */
+function tool(t){S.tool=t;$('#bPen').setAttribute('aria-pressed',t==='pen');$('#bEr').setAttribute('aria-pressed',t==='erase');cv.style.cursor=t==='pen'?'crosshair':'cell';}
+$('#bNxt0').remove();
+$('#bPen').onclick=()=>tool('pen');$('#bEr').onclick=()=>tool('erase');
+$('#bUndo').onclick=()=>{S.strokes.pop();clearFb();draw();};
+$('#bClear').onclick=()=>{S.strokes=[];clearFb();draw();};
+$('#bCheck').onclick=()=>{if(!S.strokes.length){$('#fbBox').hidden=false;$('#fbOut').innerHTML='<p>Zeichne zuerst f′ ins untere Feld.</p>';return;}check();};
+$('#bSol').onclick=()=>{S.sol=!S.sol;$('#bSol').textContent=S.sol?'Lösung ausblenden':'Lösung einblenden';draw();};
+$('#bNext').onclick=()=>goTo(S.n+1);$('#bPrev').onclick=()=>goTo(S.n-1);$('#bNext2').onclick=()=>goTo(S.n+1);
+$('#bRand').onclick=()=>{let n;do{n=1+Math.floor(Math.random()*POOL.length);}while(n===S.n&&POOL.length>1);goTo(n);};
+$('#nIn').onchange=e=>goTo(+e.target.value||1);
+$('#bLink').onclick=()=>{const u=location.href,t=$('#bLink'),ok=()=>{t.textContent='✓ Link kopiert';setTimeout(()=>t.textContent='Link zu dieser Aufgabe kopieren',1600);};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(ok,()=>prompt('Link kopieren:',u));else prompt('Link kopieren:',u);};
+addEventListener('hashchange',()=>{if(S.n!==num())load();});
+$('#grid').innerHTML=POOL.map((_,i)=>'<button class="gb l'+LV(i+1)+'" data-n="'+(i+1)+'" aria-label="Aufgabe '+(i+1)+'">'+(i+1)+'</button>').join('');
+$('#grid').onclick=e=>{const b=e.target.closest('button');if(b)goTo(+b.dataset.n);};
+$('#cHelp').onchange=e=>{S.help=e.target.checked;draw();};
+$('#cChal').onchange=e=>{$('#chal').hidden=!e.target.checked;};
+document.querySelectorAll('input[name=typ]').forEach(r=>r.onchange=()=>{$('#degRow').style.display=r.value==='poly'?'block':'none';});
+$('#bTyp').onclick=typ;
+new ResizeObserver(()=>draw()).observe($('.stage'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+MATH.apply(document,'.lead,.task p,.box label span,.box p,.teacher .inner p,.teacher .inner li');
+load();
+})();
+</script>
+<p style="text-align:center;margin:24px 0"><a href="/" style="color:inherit;font:14px system-ui">← mathdrian</a></p><script src="../../feedback.js" defer></script>
+</body></html>
