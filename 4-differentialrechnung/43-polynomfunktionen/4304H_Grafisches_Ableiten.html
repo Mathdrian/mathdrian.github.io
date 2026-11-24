@@ -385,10 +385,12 @@ function up(){S.erasing=false;if(S.cur){if(S.cur.length>1)S.strokes.push(S.cur);
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 /* Auswertung */
 function analyse(){const p=S.p,N=120,W=p.b-p.a,tol=.07*W,span=S.dr[1]-S.dr[0];
-  const cols=Array.from({length:N},()=>[]);S.strokes.forEach(s=>s.forEach(u=>{if(u.x<p.a||u.x>p.b)return;cols[Math.min(N-1,Math.floor((u.x-p.a)/W*N))].push(u.y);}));
+  const cols=Array.from({length:N},()=>[]);const colOf=x=>Math.min(N-1,Math.max(0,Math.floor((x-p.a)/W*N)));
+  S.strokes.forEach(st=>{for(let k=0;k<st.length;k++){const u=st[k];if(u.x>=p.a&&u.x<=p.b)cols[colOf(u.x)].push(u.y);
+    if(k>0){const v=st[k-1],c0=colOf(Math.min(u.x,v.x)),c1=colOf(Math.max(u.x,v.x));if(c1-c0>1&&Math.abs(u.x-v.x)>1e-12)for(let c=c0+1;c<c1;c++){const x=p.a+(c+.5)*W/N;if(x<Math.min(u.x,v.x)||x>Math.max(u.x,v.x))continue;cols[c].push(v.y+(u.y-v.y)*(x-v.x)/(u.x-v.x));}}}});
   let g=cols.map(c=>c.length?c.reduce((u,v)=>u+v,0)/c.length:null);
   for(let i=0;i<N;i++){if(g[i]!==null)continue;let l=i-1;while(l>=0&&g[l]===null)l--;let r=i+1;while(r<N&&g[r]===null)r++;if(l>=0&&r<N&&r-l-1<=8){g[i]=g[l]+(g[r]-g[l])*(i-l)/(r-l);}}
-  const have=g.filter(v=>v!==null).length;if(have<.75*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse. Mit «Standard» siehst du wieder den Ausgangsausschnitt.'};
+  const have=g.filter(v=>v!==null).length;if(have<.6*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse. Mit «Standard» siehst du wieder den Ausgangsausschnitt.'};
   g=g.map((v,i)=>{if(v===null)return null;const a=g[i-1],b=g[i+1];return (a!=null&&b!=null)?(a+v+b)/3:v;});
   const cx=i=>p.a+(i+.5)*W/N,eps=.012*span,zs=[];
   const sr=[];for(let i=0;i<N;i++){if(g[i]===null||Math.abs(g[i])<eps)continue;const s=Math.sign(g[i]),r=sr[sr.length-1];if(r&&r.s===s&&i-r.e<=3){r.e=i;r.n++;}else sr.push({s,b:i,e:i,n:1});}
@@ -415,7 +417,7 @@ function check(){const p=S.p,A=analyse(),out=$('#fbOut');$('#fbBox').hidden=fals
   if(A.err){out.innerHTML='<p class="verdict">Noch nicht auswertbar</p><p>'+A.err+'</p>';MATH.apply(out);return;}
   const L=[];let score=0;
   if(S.Z.length===0){if(A.zs.length===0){L.push(['ok','Nullstellen: f hat keine waagrechte Tangente, und deine Skizze schneidet die x-Achse auch nicht.']);score++;}else{L.push(['bad','Nullstellen: Deine Skizze schneidet die x-Achse bei x ≈ '+A.zs.map(xr).join(', ')+'. Hat f dort eine waagrechte Tangente?']);}}
-  else if(!A.miss.length&&!A.extra.length){L.push(['ok','Nullstellen: Alle '+S.Z.length+' Nullstellen von f′ stimmen (dort hat f eine waagrechte Tangente).']);score++;}
+  else if(!A.miss.length&&!A.extra.length){L.push(['ok',S.Z.length===1?'Nullstellen: Die Nullstelle von f′ stimmt (dort hat f eine waagrechte Tangente).':'Nullstellen: Alle '+S.Z.length+' Nullstellen von f′ stimmen (dort hat f eine waagrechte Tangente).']);score++;}
   else{const t=[];if(A.miss.length)t.push((A.miss.length>1?'Es fehlen Nullstellen':'Es fehlt eine Nullstelle')+' in der Nähe von x ≈ '+A.miss.map(xr).join(' und '));if(A.extra.length)t.push('Deine Skizze schneidet die x-Achse bei x ≈ '+A.extra.map(xr).join(' und ')+', obwohl f dort keine waagrechte Tangente hat');L.push([A.miss.length+A.extra.length>1?'bad':'part','Nullstellen: '+t.join('. ')+'.']);}
   if(A.sgnFrac>=.85&&!A.badRuns.length){L.push(['ok','Vorzeichen: f′ ist positiv, wo f steigt, und negativ, wo f fällt.']);score++;}
   else if(A.sgnFrac>=.65){L.push(['part','Vorzeichen: Fast. Prüfe '+A.badRuns.map(r=>'den Bereich x ≈ '+xr(r.a)+' bis '+xr(r.b)).join(' und ')+' (steigt oder fällt f dort?).']);}
