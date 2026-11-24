@@ -66,6 +66,7 @@ button{cursor:pointer}
 .pre{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;font-family:var(--font-mono);font-size:13px;line-height:1.45}
 .pre:hover{background:var(--surface2)}
 .pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .rand{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
 .seg button{border:0;background:var(--surface);padding:7px 14px;font-weight:500;border-right:1px solid var(--line)}
@@ -143,7 +144,8 @@ details.k summary{cursor:pointer;font-weight:600}
         <h2>Beispiele</h2>
         <div id="presets"></div>
         <div class="rand"><span class="muted">Zufällige Aufgabe:</span>
-          <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button></div>
+          <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button>
+          <button class="btn small" id="special" aria-pressed="false" title="Dann kann beim Erzeugen auch ein Sonderfall (keine oder unendlich viele Lösungen) vorkommen.">mit Spezialfällen</button></div>
       </div>
       <div class="card">
         <h2>Eigenes System</h2>
@@ -786,6 +788,22 @@ function randomSys(lvl){
   return PRESETS[3].e.slice();
 }
 
+/* Sonderfall zur gewählten Stufe: parallele Geraden (keine Lösung) oder dieselbe Gerade (unendlich viele) */
+function specialSys(lvl){
+  const inf=Math.random()<.5;
+  if(lvl===0){
+    let m=0;while(!m)m=ri(-3,3);const q=ri(-5,5);
+    const e1='y = '+(m===1?'':m===-1?'-':m)+'x '+(q<0?'- '+(-q):'+ '+q);
+    const q2=inf?q:q+(Math.random()<.5?-1:1)*ri(1,4);
+    const e2=Math.random()<.5?'y = '+(m===1?'':m===-1?'-':m)+'x '+(q2<0?'- '+(-q2):'+ '+q2):mkEq(m,-1,-q2);
+    return [e1,e2].map(s=>s.replace('+ 0','').trim());
+  }
+  let a=0,b=0;while(!a||!b){a=ri(-5,5);b=ri(-5,5);}
+  const c=ri(-12,12),k=lvl===1?[2,-1,3][ri(0,2)]:[2,3,-2,-3][ri(0,3)];
+  const d=inf?0:(Math.random()<.5?-1:1)*ri(1,5);
+  const e1=mkEq(a,b,c),e2=mkEq(k*a,k*b,k*c+d);
+  return Math.random()<.5?[e1,e2]:[e2,e1];
+}
 /* ---------- Zustand ---------- */
 const S={step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
 function refreshSys(){
@@ -904,7 +922,9 @@ function init(){
   refreshSys();renderS1();
   $('#steps').addEventListener('click',e=>{const b=e.target.closest('.step');if(b&&!b.disabled)show(+b.dataset.p);});
   $('#presets').addEventListener('click',e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.i);});
-  document.querySelectorAll('.rand button').forEach(b=>b.onclick=()=>{S.mode='eq';S.preset=-1;S.src=randomSys(+b.dataset.lvl);refreshSys();renderS1();});
+  let withSpecial=false;
+  $('#special').onclick=e=>{withSpecial=!withSpecial;e.currentTarget.setAttribute('aria-pressed',String(withSpecial));};
+  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.lvl;S.mode='eq';S.preset=-1;S.src=(withSpecial&&Math.random()<.3)?specialSys(l):randomSys(l);refreshSys();renderS1();});
   [0,1].forEach(i=>{
     $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();});
     [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();}));
@@ -934,7 +954,7 @@ function init(){
   $('#kdet').addEventListener('toggle',redraw);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
   new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  window.LGS={parseEq,analyse,pathSub,pathAdd,pathGraph,rate,stepsHTML,randomSys,S};
+  window.LGS={specialSys,parseEq,analyse,pathSub,pathAdd,pathGraph,rate,stepsHTML,randomSys,S};
 }
 init();
 })();
