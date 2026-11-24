@@ -160,6 +160,10 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
   </section>
   <main class="layout" style="margin-top:12px">
     <div class="stage">
+      <div class="tools zoombar" style="border:1px solid var(--line);border-radius:12px;background:var(--surface)"><span style="font-size:13px;color:var(--muted)">Ausschnitt (beide Felder):</span>
+        <button class="btn small" id="zOut" aria-label="Herauszoomen">−</button><button class="btn small" id="zIn" aria-label="Hineinzoomen">+</button>
+        <button class="btn small" id="zL" aria-label="Nach links">◀</button><button class="btn small" id="zR" aria-label="Nach rechts">▶</button>
+        <button class="btn small" id="zAll">Standard</button><span id="zInfo" style="font-size:13px;color:var(--muted)"></span></div>
       <div class="panel"><canvas id="cvF" style="height:260px" aria-label="Graph der Funktion f"></canvas></div>
       <div class="panel">
         <canvas id="cvG" style="height:300px" aria-label="Zeichenfläche für die Ableitung"></canvas>
@@ -210,7 +214,7 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
     <ul><li>Die Hilfslinien zeigen die x-Werte der waagrechten Tangenten in beiden Feldern.</li>
     <li>Die Lösung wird erst auf Wunsch blass eingeblendet. So können die Lernenden zuerst selbst nachbessern.</li>
     <li>Die Challenge zum Funktionstyp ist bewusst weich bewertet, denn man sieht nur einen Ausschnitt. Mehrere Typen oder Grade können passen.</li>
-    <li>Jede Aufgabe hat eine Nummer. Mit «Link kopieren» oder der Adresse mit <code>#12</code> am Ende öffnet die ganze Klasse dieselbe Aufgabe, zum Beispiel für die Besprechung an der Wandtafel.</li>
+    <li>Der Ausschnitt lässt sich für beide Felder gemeinsam vergrössern, verkleinern (bis auf das Vierfache der Breite) und verschieben, die x-Achsen bleiben immer deckungsgleich. Bewertet wird nur der Standardausschnitt, der Rest ist grau hinterlegt und dient dazu, die Funktionsart besser abzuschätzen. Jede Aufgabe hat eine Nummer. Mit «Link kopieren» oder der Adresse mit <code>#12</code> am Ende öffnet die ganze Klasse dieselbe Aufgabe, zum Beispiel für die Besprechung an der Wandtafel.</li>
     <li>Die Stufen: 1 = einfache Graphen (Gerade, Parabel, Kubik, e, ln, sin), 2 = mehr Extrempunkte, Wellen, Brüche und Knicke, 3 = Produkte, Summen und Polynome höheren Grades.</li></ul>
   </div></details>
 </div>
@@ -307,6 +311,7 @@ const POOL=[
  {lab:'f(x) = sin(x) + 0.5x',f:x=>Math.sin(x)+.5*x,d:x=>Math.cos(x)+.5,a:-TAU,b:TAU,ok:[{t:'mix'}],why:'Eine Welle, die auf einer ansteigenden Geraden schwingt: Summe aus trigonometrischer und linearer Funktion, also zusammengesetzt.'},
  {lab:'f(x) = x·sin(x)',f:x=>x*Math.sin(x),d:x=>Math.sin(x)+x*Math.cos(x),a:-6,b:6,ok:[{t:'mix'}],why:'Eine Schwingung, deren Ausschläge nach aussen wachsen, symmetrisch zur y-Achse: Produkt aus x und Sinus, also zusammengesetzt.'}
 ];
+POOL.forEach(q=>{const d0=q.d;q.d=x=>isFinite(q.f(x))?d0(x):NaN;});
 const TYPN={poly:'Polynomfunktion',exp:'Exponentialfunktion',log:'Logarithmus-/Wurzelfunktion',trig:'trigonometrische Funktion',rat:'gebrochen-rationale Funktion',mix:'zusammengesetzte Funktion'};
 const S={p:null,strokes:[],cur:null,tool:'pen',penSeen:false,sol:false,help:false,n:0,Z:[],fr:[0,1],dr:[0,1]};
 const ML=50,MR=16,MT=32,MB=26;
@@ -320,16 +325,23 @@ const done=new Set();
 function num(){const h=parseInt(location.hash.slice(1),10);return (h>=1&&h<=POOL.length)?h:1;}
 function goTo(n){n=((n-1+POOL.length)%POOL.length)+1;if(num()===n&&S.p===POOL[n-1])return;location.hash=n;load();}
 function load(){S.n=num();S.p=POOL[S.n-1];const p=S.p;S.strokes=[];S.cur=null;S.sol=false;
-  S.fr=pad(rng(p.f,p.a,p.b));S.dr=pad(rng(p.d,p.a,p.b),true);S.Z=zerosOf(p);
+  S.fr=pad(rng(p.f,p.a,p.b));S.dr=pad(rng(p.d,p.a,p.b),true);S.Z=zerosOf(p);S.vx=[p.a,p.b];S.lim=[p.a-1.5*(p.b-p.a),p.b+1.5*(p.b-p.a)];updView();
   const lv=LV(S.n);$('#tBadge').textContent='Aufgabe '+S.n+' von '+POOL.length+' · Stufe '+lv+' '+'●'.repeat(lv)+'○'.repeat(3-lv);
   $('#nIn').value=S.n;$('#fbBox').hidden=true;$('#fbOut').innerHTML='';$('#bNext').hidden=true;$('#bSol').textContent='Lösung einblenden';
   $('#chalFb').innerHTML='';document.querySelectorAll('input[name=typ]').forEach(r=>r.checked=false);$('#deg').value='';$('#degRow').style.display='none';
   document.querySelectorAll('#grid button').forEach(b=>b.setAttribute('aria-current',+b.dataset.n===S.n?'true':'false'));draw();}
+function roundRange(r){const s=nice(r[1]-r[0],6);return [Math.floor(r[0]/s+1e-9)*s,Math.ceil(r[1]/s-1e-9)*s];}
+function rngSafe(fn,a,b,ref){let lo=1e9,hi=-1e9;const m=1.5*(ref[1]-ref[0]),L=ref[0]-m,H=ref[1]+m;for(let i=0;i<=600;i++){const v=fn(a+(b-a)*i/600);if(!isFinite(v)||v<L||v>H)continue;lo=Math.min(lo,v);hi=Math.max(hi,v);}if(lo>hi){lo=ref[0];hi=ref[1];}return [lo,hi];}
+function updView(){const p=S.p,[a,b]=S.vx;S.vf=roundRange(pad(rngSafe(p.f,a,b,S.fr)));S.vd=roundRange(pad(rngSafe(p.d,a,b,S.dr),true));
+  const eq=(u,v)=>Math.abs(u-v)<1e-9;if($('#zIn')){$('#zOut').disabled=S.vx[1]-S.vx[0]>=S.lim[1]-S.lim[0]-1e-9;$('#zAll').disabled=eq(S.vx[0],p.a)&&eq(S.vx[1],p.b);$('#zL').disabled=S.vx[0]<=S.lim[0]+1e-9;$('#zR').disabled=S.vx[1]>=S.lim[1]-1e-9;
+  $('#zInfo').textContent='x von '+fmt(+S.vx[0].toFixed(2))+' bis '+fmt(+S.vx[1].toFixed(2));}}
+function zoom(f){const L=S.lim,c=(S.vx[0]+S.vx[1])/2,w=Math.min((S.vx[1]-S.vx[0])*f,L[1]-L[0]);if(w<(S.p.b-S.p.a)/12)return;let a=c-w/2,b=c+w/2;if(a<L[0]){b+=L[0]-a;a=L[0];}if(b>L[1]){a-=b-L[1];b=L[1];}S.vx=[Math.max(a,L[0]),Math.min(b,L[1])];updView();draw();}
+function pan(d){const L=S.lim,w=S.vx[1]-S.vx[0];let a=S.vx[0]+d*w,b=S.vx[1]+d*w;if(a<L[0]){b+=L[0]-a;a=L[0];}if(b>L[1]){a-=b-L[1];b=L[1];}S.vx=[a,b];updView();draw();}
 function setup(c){const dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
   const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
   const C={surface:v('--surface'),ink:v('--ink'),muted:v('--muted'),grid:v('--grid'),axis:v('--axis'),acc:v('--accent'),f2:v('--f2'),ok:v('--ok'),note:v('--note'),FM:v('--font-math')};
   g.clearRect(0,0,W,H);return {g,W,H,C};}
-function frame(c,yr,title){const {g,W,H,C}=setup(c),p=S.p,pw=W-ML-MR,ph=H-MT-MB;
+function frame(c,yr,title){const {g,W,H,C}=setup(c),p={a:S.vx[0],b:S.vx[1]},pw=W-ML-MR,ph=H-MT-MB;
   const X=x=>ML+(x-p.a)/(p.b-p.a)*pw,Y=y=>MT+(yr[1]-y)/(yr[1]-yr[0])*ph;
   g.fillStyle=C.surface;g.fillRect(0,0,W,H);
   g.font='12px '+C.FM;g.textBaseline='top';g.textAlign='center';
@@ -344,20 +356,25 @@ function frame(c,yr,title){const {g,W,H,C}=setup(c),p=S.p,pw=W-ML-MR,ph=H-MT-MB;
   g.strokeRect(ML,MT,pw,ph);
   g.fillStyle=C.ink;MATH.text(g,title,ML+8,9,13,600,'left');
   return {g,C,X,Y,pw,ph,W,H,yr};}
-function curve(F,fn,col,w,dash,al){const {g,X,Y,yr}=F,p=S.p,N=500;g.save();g.beginPath();g.rect(ML,MT,F.pw,F.ph);g.clip();g.beginPath();g.strokeStyle=col;g.lineWidth=w;g.globalAlpha=al||1;g.setLineDash(dash||[]);g.lineJoin='round';
+function shade(F,lab){const {g,X,C}=F,p=S.p,x0=ML,x1=ML+F.pw;g.save();g.beginPath();g.rect(ML,MT,F.pw,F.ph);g.clip();g.fillStyle=C.muted;g.globalAlpha=.09;
+  const l=Math.min(X(p.a),x1),r=Math.max(X(p.b),x0);if(l>x0)g.fillRect(x0,MT,l-x0,F.ph);if(r<x1)g.fillRect(r,MT,x1-r,F.ph);
+  g.globalAlpha=.55;g.strokeStyle=C.muted;g.setLineDash([3,4]);g.lineWidth=1;[X(p.a),X(p.b)].forEach(x=>{if(x>x0&&x<x1){g.beginPath();g.moveTo(x,MT);g.lineTo(x,MT+F.ph);g.stroke();}});
+  if(lab){g.globalAlpha=.8;g.setLineDash([]);g.fillStyle=C.muted;g.font='italic 12px '+C.FM;g.textBaseline='bottom';g.textAlign='left';if(l-x0>90)g.fillText('nicht bewertet',x0+6,MT+F.ph-5);g.textAlign='right';if(x1-r>90)g.fillText('nicht bewertet',x1-6,MT+F.ph-5);}
+  g.restore();}
+function curve(F,fn,col,w,dash,al){const {g,X,Y,yr}=F,p={a:S.vx[0],b:S.vx[1]},N=500;g.save();g.beginPath();g.rect(ML,MT,F.pw,F.ph);g.clip();g.beginPath();g.strokeStyle=col;g.lineWidth=w;g.globalAlpha=al||1;g.setLineDash(dash||[]);g.lineJoin='round';
   let pen=false,py=0;for(let i=0;i<=N;i++){const x=p.a+(p.b-p.a)*i/N,y=fn(x);if(!isFinite(y)){pen=false;continue;}if(pen&&Math.abs(y-py)>.4*(yr[1]-yr[0])){pen=false;}if(!pen){g.moveTo(X(x),Y(y));pen=true;}else g.lineTo(X(x),Y(y));py=y;}g.stroke();g.restore();}
 function draw(){const p=S.p;if(!p)return;
-  const A=frame($('#cvF'),S.fr,'f(x)  gegeben');curve(A,p.f,A.C.acc,2.6);
-  const B=frame($('#cvG'),S.dr,'f′(x)  deine Skizze');
+  const A=frame($('#cvF'),S.vf,'f(x)  gegeben');shade(A,false);curve(A,p.f,A.C.acc,2.6);
+  const B=frame($('#cvG'),S.vd,'f′(x)  deine Skizze');shade(B,true);
   if(S.help){[A,B].forEach(F=>{F.g.save();F.g.strokeStyle=F.C.note;F.g.globalAlpha=.7;F.g.setLineDash([4,4]);F.g.lineWidth=1.4;S.Z.forEach(z=>{F.g.beginPath();F.g.moveTo(F.X(z),MT);F.g.lineTo(F.X(z),MT+F.ph);F.g.stroke();});F.g.restore();});}
-  if(S.sol){curve(B,p.d,B.C.ok,2.4,[7,5],.85);const g=B.g;g.fillStyle=B.C.ok;S.Z.forEach(z=>{g.beginPath();g.arc(B.X(z),B.Y(0),5,0,TAU);g.fill();});}
+  if(S.sol){curve(B,p.d,B.C.ok,2.4,[7,5],.85);const g=B.g;g.fillStyle=B.C.ok;S.Z.filter(z=>z>=S.vx[0]&&z<=S.vx[1]).forEach(z=>{g.beginPath();g.arc(B.X(z),B.Y(0),5,0,TAU);g.fill();});}
   const g=B.g;g.save();g.beginPath();g.rect(ML,MT,B.pw,B.ph);g.clip();g.beginPath();g.strokeStyle=B.C.f2;g.lineWidth=3;g.lineCap='round';g.lineJoin='round';
   const all=S.cur?S.strokes.concat([S.cur]):S.strokes;
   all.forEach(s=>{if(!s.length)return;g.beginPath();g.moveTo(B.X(s[0].x),B.Y(s[0].y));if(s.length===1)g.lineTo(B.X(s[0].x)+.1,B.Y(s[0].y));for(let i=1;i<s.length;i++)g.lineTo(B.X(s[i].x),B.Y(s[i].y));g.stroke();});
   g.restore();S.geo=B;}
 /* Zeichnen */
-function pt(e){const c=$('#cvG'),r=c.getBoundingClientRect(),B=S.geo,p=S.p;const px=e.clientX-r.left,py=e.clientY-r.top;
-  const x=p.a+(Math.min(Math.max(px,ML),ML+B.pw)-ML)/B.pw*(p.b-p.a),y=S.dr[1]-(Math.min(Math.max(py,MT),MT+B.ph)-MT)/B.ph*(S.dr[1]-S.dr[0]);return {x,y,px,py};}
+function pt(e){const c=$('#cvG'),r=c.getBoundingClientRect(),B=S.geo,p={a:S.vx[0],b:S.vx[1]};const px=e.clientX-r.left,py=e.clientY-r.top;
+  const x=p.a+(Math.min(Math.max(px,ML),ML+B.pw)-ML)/B.pw*(p.b-p.a),y=S.vd[1]-(Math.min(Math.max(py,MT),MT+B.ph)-MT)/B.ph*(S.vd[1]-S.vd[0]);return {x,y,px,py};}
 function erase(e){const B=S.geo,q=pt(e);const near=s=>s.some(u=>Math.hypot(B.X(u.x)-q.px,B.Y(u.y)-q.py)<14);const n=S.strokes.length;S.strokes=S.strokes.filter(s=>!near(s));if(S.strokes.length!==n){clearFb();draw();}}
 function clearFb(){$('#fbBox').hidden=true;}
 const cv=$('#cvG');
@@ -368,10 +385,10 @@ function up(){S.erasing=false;if(S.cur){if(S.cur.length>1)S.strokes.push(S.cur);
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 /* Auswertung */
 function analyse(){const p=S.p,N=120,W=p.b-p.a,tol=.07*W,span=S.dr[1]-S.dr[0];
-  const cols=Array.from({length:N},()=>[]);S.strokes.forEach(s=>s.forEach(u=>{cols[Math.min(N-1,Math.floor((u.x-p.a)/W*N))].push(u.y);}));
+  const cols=Array.from({length:N},()=>[]);S.strokes.forEach(s=>s.forEach(u=>{if(u.x<p.a||u.x>p.b)return;cols[Math.min(N-1,Math.floor((u.x-p.a)/W*N))].push(u.y);}));
   let g=cols.map(c=>c.length?c.reduce((u,v)=>u+v,0)/c.length:null);
   for(let i=0;i<N;i++){if(g[i]!==null)continue;let l=i-1;while(l>=0&&g[l]===null)l--;let r=i+1;while(r<N&&g[r]===null)r++;if(l>=0&&r<N&&r-l-1<=8){g[i]=g[l]+(g[r]-g[l])*(i-l)/(r-l);}}
-  const have=g.filter(v=>v!==null).length;if(have<.75*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse.'};
+  const have=g.filter(v=>v!==null).length;if(have<.75*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse. Mit «Standard» siehst du wieder den Ausgangsausschnitt.'};
   g=g.map((v,i)=>{if(v===null)return null;const a=g[i-1],b=g[i+1];return (a!=null&&b!=null)?(a+v+b)/3:v;});
   const cx=i=>p.a+(i+.5)*W/N,eps=.012*span,zs=[];
   const sr=[];for(let i=0;i<N;i++){if(g[i]===null||Math.abs(g[i])<eps)continue;const s=Math.sign(g[i]),r=sr[sr.length-1];if(r&&r.s===s&&i-r.e<=3){r.e=i;r.n++;}else sr.push({s,b:i,e:i,n:1});}
@@ -423,6 +440,7 @@ function typ(){const r=document.querySelector('input[name=typ]:checked');if(!r){
 /* UI */
 function tool(t){S.tool=t;$('#bPen').setAttribute('aria-pressed',t==='pen');$('#bEr').setAttribute('aria-pressed',t==='erase');cv.style.cursor=t==='pen'?'crosshair':'cell';}
 $('#bNxt0').remove();
+$('#zIn').onclick=()=>zoom(.6);$('#zOut').onclick=()=>zoom(1/.6);$('#zL').onclick=()=>pan(-.3);$('#zR').onclick=()=>pan(.3);$('#zAll').onclick=()=>{S.vx=[S.p.a,S.p.b];updView();draw();};
 $('#bPen').onclick=()=>tool('pen');$('#bEr').onclick=()=>tool('erase');
 $('#bUndo').onclick=()=>{S.strokes.pop();clearFb();draw();};
 $('#bClear').onclick=()=>{S.strokes=[];clearFb();draw();};
