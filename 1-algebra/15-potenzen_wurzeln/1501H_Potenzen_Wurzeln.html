@@ -127,6 +127,11 @@ footer{margin-top:18px;font-size:14px}footer a{color:var(--muted);text-decoratio
 .shake{animation:shake .35s}
 @keyframes shake{20%{transform:translateX(-6px)}50%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#trophy .card{transform:none;opacity:1}}
+
+.nr{font-family:var(--font-mono);font-size:12px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--accent);margin-left:auto;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface2)}
+.codeform{display:flex;gap:6px;margin:8px 0 4px}
+.codeform input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;font:500 14px var(--font-mono)}
+.codeerr{font-size:13px;color:var(--bad);min-height:0;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -147,6 +152,13 @@ footer{margin-top:18px;font-size:14px}footer a{color:var(--muted);text-decoratio
         <div class="grp"><span class="lab">Übungsart</span><div id="kinds" class="chips"></div></div>
         <div class="grp" id="catrow"><span class="lab">Sparte</span><div id="cats" class="chips"></div><p class="blurb" id="blurbrow"><span id="blurb"></span></p></div>
         <div class="grp"><span class="lab">Niveau</span><div id="levels" class="chips"></div></div>
+      </section>
+      <section class="card">
+        <h3>Aufgabe aufrufen</h3>
+        <p class="blurb">Jede Aufgabe hat eine Nummer. Wer dieselbe Nummer eingibt, sieht dieselbe Aufgabe.</p>
+        <form id="codeform" class="codeform"><input id="codein" type="text" inputmode="numeric" autocomplete="off" aria-label="Aufgabennummer" placeholder="z. B. 1032-4821"><button class="btn small" type="submit">Los</button></form>
+        <p class="codeerr" id="codeerr" role="alert"></p>
+        <button class="btn small" id="codecopy" type="button">Link zur Aufgabe kopieren</button>
       </section>
       <section class="card">
         <h3>Fortschritt</h3>
@@ -500,7 +512,7 @@ function tex(n) {
       return '\\frac{' + tex(n.a) + '}{' + tex(n.b) + '}';
     case 'pow': {
       const b = n.a;
-      const need = !(b.t === 'num' || b.t === 'var' || b.t === 'root' || b.t === 'euler') || (b.t === 'num' && b.par);
+      const need = !(b.t === 'num' || b.t === 'var' || b.t === 'euler') || (b.t === 'num' && b.par);
       return W(b, need) + '^{' + tex(n.b) + '}';
     }
     case 'euler': return '\\mathrm{e}';
@@ -3338,8 +3350,55 @@ const FX = (() => {
     'Ein Haar ist rund $7\\cdot10^{-5}\\,\\text{m}$ dick, ein Wasserstoffatom etwa $10^{-10}\\,\\text{m}$.',
     'Die Zahl $\\sqrt{2}$ ist irrational: Ihre Dezimalstellen hören nie auf und wiederholen sich nie.',
     'Eine Zahl «hoch 0» ergibt 1 – sogar $0{,}001^0=1$ und $1\\,000\\,000^0=1$. Nur $0^0$ sorgt für Streit.',
-    'Schachbrett-Legende: Verdoppelt man 63-mal ein Reiskorn, hat man $2^{63}\\approx9{,}2\\cdot10^{18}$ Körner.'
+    'Schachbrett-Legende: Verdoppelt man 63-mal ein Reiskorn, hat man $2^{63}\\approx9{,}2\\cdot10^{18}$ Körner.',
+    'Évariste Galois starb 1832 mit nur 20 Jahren nach einem Pistolenduell. In der Nacht davor schrieb er seine Ideen zur Lösbarkeit von Gleichungen in Briefen fieberhaft auf – heute heisst das Galois-Theorie.',
+    'Carl Friedrich Gauss soll als Schüler die Zahlen von 1 bis 100 in Sekunden addiert haben: 50 Paare mit Summe 101, also $50\\cdot101=5050$.',
+    'Gauss entdeckte mit 18 Jahren, dass sich das regelmässige 17-Eck mit Zirkel und Lineal konstruieren lässt. Auf seinem Denkmal in Braunschweig steht ein 17-zackiger Stern.',
+    'Leonhard Euler aus Basel schrieb über 800 Arbeiten – auch nachdem er erblindet war, diktierte er weiter. Von ihm stammen unter anderem die Zahl $e$, das Symbol $i$ und die Schreibweise $f(x)$.',
+    'Euler fasste fünf wichtige Zahlen in einer Formel zusammen: $e^{i\\pi}+1=0$.',
+    'Sophie Germain schrieb Gauss und Lagrange unter dem Männernamen «Monsieur Le Blanc», weil Frauen damals nicht an die Universität durften. Gauss lobte sie später sehr.',
+    'Niels Henrik Abel bewies mit 21 Jahren, dass es für Gleichungen 5. Grades keine allgemeine Lösungsformel mit Wurzeln gibt. Er starb mit 26 an Tuberkulose.',
+    'Als Hardy den kranken Ramanujan besuchte, sagte er, seine Taxi-Nummer 1729 sei langweilig. Ramanujan widersprach: Es ist die kleinste Zahl, die man auf zwei Arten als Summe zweier Kubikzahlen schreiben kann: $1^3+12^3=9^3+10^3$.',
+    'Pierre de Fermat schrieb 1637 an den Rand eines Buches, er habe einen wunderbaren Beweis für seinen «letzten Satz», doch der Rand sei zu schmal. Erst Andrew Wiles bewies ihn 1994/95, über 350 Jahre später.',
+    'Ada Lovelace schrieb 1843 für Babbages Rechenmaschine das erste Programm der Geschichte – lange bevor es Computer gab.',
+    'John Napier, ein schottischer Gutsherr, veröffentlichte 1614 die ersten Logarithmentafeln. Damit wurde Multiplizieren zum Addieren – und Astronomen sparten Jahre an Rechenarbeit.',
+    'Das Wort «Algebra» kommt aus dem Titel eines Buches von al-Chwarizmi (um 820), «al-dschabr». Aus seinem Namen entstand auch das Wort «Algorithmus».',
+    'Paul Erdős reiste mit zwei Koffern von Kollege zu Kollege und schrieb über 1500 Arbeiten mit mehr als 500 Mitautoren. Wer mit ihm zusammen publiziert hat, hat die «Erdős-Zahl» 1.',
+    'Maryam Mirzakhani aus dem Iran erhielt 2014 als erste Frau die Fields-Medaille, den «Nobelpreis der Mathematik».',
+    'Emmy Noether zeigte, dass hinter jeder Symmetrie in der Physik ein Erhaltungssatz steckt, zum Beispiel für die Energie. Ihr Satz gehört bis heute zu den Grundpfeilern der Physik.',
+    'Georg Cantor bewies, dass es verschieden grosse Unendlichkeiten gibt: Es gibt «mehr» reelle Zahlen als natürliche Zahlen.',
+    'Newton und Leibniz entwickelten die Differenzialrechnung unabhängig voneinander und stritten jahrelang darum, wer zuerst war. Die Schreibweise $\\frac{dy}{dx}$ stammt von Leibniz.',
+    'Der Legende nach kam René Descartes die Idee des Koordinatensystems, als er im Bett eine Fliege an der Zimmerdecke beobachtete.',
+    'Der Legende nach rief Archimedes bei der Eroberung von Syrakus einem Soldaten zu: «Störe meine Kreise nicht!» – und wurde getötet.',
+    'Die Babylonier kannten schon vor rund 3700 Jahren einen sehr guten Näherungswert für $\\sqrt{2}\\approx1.41421$. Er steht auf der Tontafel YBC 7289.',
+    'Papier im Format A0 hat genau $1\\,\\text{m}^2$. Jedes Halbieren gibt das nächste Format, und das Seitenverhältnis bleibt $1:\\sqrt{2}$.',
+    'Faltet man ein Blatt Papier ($0.1\\,\\text{mm}$ dick) 42-mal, wäre der Stapel $0.1\\,\\text{mm}\\cdot2^{42}\\approx440\\,000\\,\\text{km}$ hoch – weiter als bis zum Mond. (Falten lässt sich ein Blatt so oft in Wirklichkeit nicht.)',
+    'Verdoppelst du einen Rappen 30 Tage lang jeden Tag, liegen am letzten Tag über 5 Millionen Franken da: $0.01\\,\\text{Fr.}\\cdot2^{29}\\approx5\\,368\\,709\\,\\text{Fr.}$',
+    '$2^{10}=1024$ ist fast $10^3$. Darum bedeuteten «Kilobyte» und Co. in der Informatik lange 1024 statt 1000.',
+    'Der Zauberwürfel hat etwa $4.3\\cdot10^{19}$ mögliche Stellungen. Und trotzdem lässt er sich von jeder Stellung aus in höchstens 20 Zügen lösen.',
+    'Die Zahl der möglichen Schachpartien schätzt man auf etwa $10^{120}$ – viel mehr als es Atome im sichtbaren Universum gibt (etwa $10^{80}$).',
+    'Die Avogadro-Zahl $6.022\\cdot10^{23}$ gibt an, wie viele Teilchen in einem Mol stecken – etwa in 18 g Wasser.',
+    'Die Erde ist rund $1.5\\cdot10^{11}\\,\\text{m}$ von der Sonne entfernt. Das Sonnenlicht ist trotzdem nur gut 8 Minuten unterwegs.',
+    'Die kleinste sinnvolle Länge der Physik, die Planck-Länge, beträgt etwa $1.6\\cdot10^{-35}\\,\\text{m}$.',
+    'Die Zahl $\\pi$ wurde schon auf über 200 Billionen Stellen berechnet. Für eine Kreisberechnung des ganzen Universums auf Atomgrösse reichen etwa 40 Stellen.',
+    'Die Mersenne-Primzahl $2^{136\\,279\\,841}-1$ (2024 gefunden) hat über 41 Millionen Stellen und ist die grösste bekannte Primzahl.',
+    'Brahmagupta beschrieb in Indien um das Jahr 628 als Erster Rechenregeln für die Null, auch mit negativen Zahlen.',
+    'Mit der 72er-Regel schätzt man die Verdopplungszeit: Bei $p\\,\\%$ Zins verdoppelt sich ein Betrag in etwa $\\frac{72}{p}$ Jahren.',
+    'Jeder Schritt auf der Richterskala heisst: 10-mal grössere Bodenbewegung und rund 32-mal mehr Energie. Ein Beben der Stärke 7 ist also enorm viel kräftiger als eines der Stärke 5.',
+    '+10 Dezibel bedeuten die 10-fache Schallintensität. Ein Presslufthammer (etwa 100 dB) ist also zehn Milliarden Mal lauter als das leiseste hörbare Geräusch (0 dB).',
+    'Eine Lösung mit pH 3 ist zehnmal saurer als pH 4 und tausendmal saurer als pH 6. Die pH-Skala ist logarithmisch.',
+    'Das menschliche Erbgut besteht aus rund $3.1\\cdot10^{9}$ Buchstaben (Basenpaaren) – gedruckt wären das tausende dicke Bücher.',
+    'Auf und in deinem Körper leben ungefähr so viele Bakterien wie du Körperzellen hast, rund $3.8\\cdot10^{13}$.'
   ];
+  /* Fakten-Beutel: jeder Fakt kommt einmal dran, bevor sich einer wiederholt (pro Gerät gemerkt) */
+  function nextFact() {
+    let bag = [];
+    try { bag = JSON.parse(localStorage.getItem('pw_facts') || '[]').filter(i => i < FACTS.length); } catch (e) { }
+    if (!bag.length) { bag = FACTS.map((_, i) => i); for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; } }
+    const k = bag.pop();
+    try { localStorage.setItem('pw_facts', JSON.stringify(bag)); } catch (e) { }
+    return FACTS[k];
+  }
   function level3(ox, oy, done) {
     level2(ox, oy);
     const cols = ['#ffcf33', '#e8453c', '#2f5bd8', '#19a974', '#8b5cf6'];
@@ -3348,7 +3407,7 @@ const FX = (() => {
     for (let i = 0; i < 34; i++) setTimeout(() => add(glyph(pick(sy), rnd(30, W - 30), -30, rnd(-30, 30), rnd(60, 160))), 600 + i * 90);
     const box = document.getElementById('trophy');
     if (box) {
-      box.querySelector('.fact').innerHTML = rich(pick(FACTS));
+      box.querySelector('.fact').innerHTML = rich(nextFact());
       box.hidden = false; box.classList.remove('in'); void box.offsetWidth; box.classList.add('in');
       const close = () => { box.hidden = true; box.removeEventListener('click', close); clearTimeout(tm); done && done(); };
       const tm = setTimeout(close, 7000); box.addEventListener('click', close);
@@ -3356,7 +3415,7 @@ const FX = (() => {
   }
   function play(level, el, done) {
     if (!cv) init();
-    if (reduce()) { if (level === 3) { const b = document.getElementById('trophy'); if (b) { b.querySelector('.fact').innerHTML = rich(pick(FACTS)); b.hidden = false; b.classList.add('in'); setTimeout(() => { b.hidden = true; }, 5000); } } return; }
+    if (reduce()) { if (level === 3) { const b = document.getElementById('trophy'); if (b) { b.querySelector('.fact').innerHTML = rich(nextFact()); b.hidden = false; b.classList.add('in'); setTimeout(() => { b.hidden = true; }, 5000); } } return; }
     let ox, oy; if (el) { const r = el.getBoundingClientRect(); ox = r.left + r.width / 2; oy = r.top + r.height / 2; }
     if (level === 1) level1(ox, oy); else if (level === 2) level2(ox, oy); else level3(ox, oy, done);
   }
@@ -3403,12 +3462,43 @@ function renderControls() {
   $('#catrow').style.display = S.kind === 'hunt' ? 'none' : '';
 }
 
+/* Aufgabennummer: [Thema][Art][Sparte][Niveau]-[Zufallszahl 4 Stellen]. Dieselbe Nummer ergibt überall dieselbe Aufgabe. */
+const fmtCode = d => d.slice(0, 4) + '-' + d.slice(4);
+function buildFromCode(digits) {
+  const m = /^(\d)(\d)(\d)(\d)(\d{4})$/.exec(digits); if (!m) return null;
+  const mi = +m[1] - 1, kd = +m[2], ci = +m[3], lv = +m[4];
+  if (mi < 0 || mi >= MODES.length || kd > 1 || lv < 1 || lv > 3) return null;
+  const mode = MODES[mi][0], cats = CATALOG[mode].cats;
+  if (kd === 0 && ci >= cats.length) return null;
+  seedRng(parseInt(digits, 10) >>> 0);
+  const t = kd === 1 ? makeFehler(mode, lv) : makeTask(mode, cats[ci].id, lv);
+  t.code = fmtCode(digits);
+  return { t, mode, kind: kd === 1 ? 'hunt' : 'solve', cat: kd === 1 ? 'alle' : cats[ci].id, level: lv };
+}
+function randomCode() {
+  const mi = MODES.findIndex(m => m[0] === S.mode), kd = S.kind === 'hunt' ? 1 : 0;
+  const cats = CATALOG[S.mode].cats.filter(c => !c.skipInAll);
+  let ci = 0;
+  if (!kd) { if (S.cat === 'alle') ci = CATALOG[S.mode].cats.indexOf(cats[Math.floor(Math.random() * cats.length)]); else ci = Math.max(0, CATALOG[S.mode].cats.findIndex(c => c.id === S.cat)); }
+  const lv = S.level || 1 + Math.floor(Math.random() * 3);
+  return `${mi + 1}${kd}${ci}${lv}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+}
+function showCode(t) { try { history.replaceState(null, '', '#' + t.code); } catch (e) { } }
 function newTask() {
   S.done = false; S.tries = 0;
-  try {
-    S.task = S.kind === 'hunt' ? makeFehler(S.mode, S.level) : makeTask(S.mode, S.cat, S.level);
-  } catch (e) { console.error(e); S.task = S.kind === 'hunt' ? makeFehler(S.mode, S.level) : makeTask(S.mode, S.cat, S.level); }
+  let r = null;
+  for (let k = 0; k < 6 && !r; k++) { try { r = buildFromCode(randomCode()); } catch (e) { console.error(e); } }
+  S.task = r.t; showCode(S.task);
   renderTask();
+}
+function openCode(raw) {
+  const d = String(raw).replace(/\D/g, ''); let r = null;
+  try { r = buildFromCode(d); } catch (e) { console.error(e); }
+  const err = $('#codeerr');
+  if (!r) { err.textContent = 'Diese Nummer kenne ich nicht. Sie hat 8 Ziffern, zum Beispiel 1032-4821.'; return false; }
+  err.textContent = '';
+  S.mode = r.mode; S.kind = r.kind; S.cat = r.cat; S.level = r.level; S.done = false; S.tries = 0; S.task = r.t;
+  renderControls(); showCode(r.t); renderTask(); return true;
 }
 
 function stepHtml(s, cls) { return `<li class="step ${cls || ''}"><div class="m">${kx(s.tex)}</div>${s.why ? `<div class="w">${rich(s.why)}</div>` : ''}</li>`; }
@@ -3417,7 +3507,7 @@ function renderTask() {
   const t = S.task, box = $('#task');
   if (t.kind === 'fehler') return renderHunt();
   box.innerHTML = `<div class="task-in">
-    <div class="meta"><span class="badge b${t.level}">${LV[t.level]}</span><span>${esc(t.catName || '')}</span></div>
+    <div class="meta"><span class="badge b${t.level}">${LV[t.level]}</span><span>${esc(t.catName || '')}</span><span class="nr" title="Mit dieser Nummer sehen alle dieselbe Aufgabe">Nr. ${t.code}</span></div>
     <div class="prompt">${rich(t.prompt)}</div>
     <div class="q">${kx(t.qTex, true)}</div>
     <div class="ans"><input id="inp" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Deine Lösung" placeholder="${S.mode === 'sci' ? 'z. B. 3.2·10^5  oder  3.2E5' : S.mode === 'log' ? (t.eq ? 'z. B. 2^x=8' : 'z. B. 3  oder  2*lg(a)+lg(b)') : 'z. B. 3a^2·b^(-1)'}">
@@ -3501,7 +3591,7 @@ function doCheck() {
 function renderHunt() {
   const t = S.task, box = $('#task');
   box.innerHTML = `<div class="task-in">
-    <div class="meta"><span class="badge b${t.level}">${LV[t.level]}</span><span>Fehlerjagd</span></div>
+    <div class="meta"><span class="badge b${t.level}">${LV[t.level]}</span><span>Fehlerjagd</span><span class="nr" title="Mit dieser Nummer sehen alle dieselbe Aufgabe">Nr. ${t.code}</span></div>
     <div class="prompt"><b>${esc(t.title)}</b> Tippe auf die Zeile, in der der <b>erste</b> Fehler steckt.</div>
     <div class="hunt" id="hunt">
       <div class="hl-row start"><span class="eq">A</span><span class="m">${kx(t.startTex)}</span></div>
@@ -3545,11 +3635,19 @@ function init() {
   $('#levels').onclick = e => { const b = e.target.closest('[data-lv]'); if (!b) return; S.level = +b.dataset.lv; renderControls(); newTask(); };
   $('#kinds').onclick = e => { const b = e.target.closest('[data-kind]'); if (!b) return; S.kind = b.dataset.kind; renderControls(); newTask(); };
   $('#resetstats').onclick = () => { S.stats = { 1: [0, 0], 2: [0, 0], 3: [0, 0] }; saveStats(); renderScore(); };
-  renderControls(); newTask();
+  $('#codeform').onsubmit = e => { e.preventDefault(); if (openCode($('#codein').value)) $('#codein').value = ''; };
+  $('#codecopy').onclick = () => {
+    const url = location.href.split('#')[0] + '#' + S.task.code, b = $('#codecopy');
+    const ok = () => { b.textContent = 'Link kopiert'; setTimeout(() => { b.textContent = 'Link zur Aufgabe kopieren'; }, 1800); };
+    try { navigator.clipboard.writeText(url).then(ok, () => { window.prompt('Link kopieren:', url); }); } catch (e) { window.prompt('Link kopieren:', url); }
+  };
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (h && h.replace(/\D/g, '') !== (S.task && S.task.code || '').replace(/\D/g, '')) openCode(h); });
+  renderControls();
+  const h0 = location.hash.slice(1);
+  if (!(h0 && openCode(h0))) newTask();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
 </script>
-<script src="../../feedback.js" defer></script>
 </body>
 </html>
