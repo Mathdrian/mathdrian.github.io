@@ -157,12 +157,12 @@ details.k summary{cursor:pointer;font-weight:600}
         <div id="inEq">
           <div class="eqrow"><b class="e1">(I)</b><input type="text" id="q0" autocomplete="off" spellcheck="false" aria-label="Gleichung I"></div>
           <div class="eqrow"><b class="e2">(II)</b><input type="text" id="q1" autocomplete="off" spellcheck="false" aria-label="Gleichung II"></div>
-          <p class="read">Schreibweise: <span class="mono">2x + 3y = 12</span>, <span class="mono">y = 2x - 1</span>, <span class="mono">2(x - 1) = y + 3</span>, <span class="mono">x/2 + y/3 = 3</span>, <span class="mono">0.5x</span>. Brüche tippst du mit <span class="mono">/</span>, unten siehst du sie als Bruch.</p>
+          <p class="read">Beispiele: <span data-tex="2x+3y=12"></span>, <span data-tex="y=2x-1"></span>, <span data-tex="2(x-1)=y+3"></span>, <span data-tex="\dfrac{x}{2}+\dfrac{y}{3}=3"></span>, <span data-tex="0.5x"></span>. Du tippst ganz normal mit der Tastatur; für einen Bruch nimmst du den Schrägstrich <b>/</b>, angezeigt wird er unten als Bruch.</p>
         </div>
         <div id="inCo" hidden>
           <div class="corow"><b class="e1">(I)</b><input type="text" id="c00" aria-label="a1"> <span data-tex="x+">x +</span> <input type="text" id="c01" aria-label="b1"> <span data-tex="y=">y =</span> <input type="text" id="c02" aria-label="c1"></div>
           <div class="corow"><b class="e2">(II)</b><input type="text" id="c10" aria-label="a2"> <span data-tex="x+">x +</span> <input type="text" id="c11" aria-label="b2"> <span data-tex="y=">y =</span> <input type="text" id="c12" aria-label="c2"></div>
-          <p class="read">Zahlen, Dezimalzahlen oder Brüche (z. B. <span class="mono">-3</span>, <span class="mono">0.5</span>, <span class="mono">2/3</span>).</p>
+          <p class="read">Zahlen, Dezimalzahlen oder Brüche (z. B. <span data-tex="-3"></span>, <span data-tex="0.5"></span>, Bruch mit Schrägstrich <b>/</b> tippen).</p>
         </div>
         <p class="read" id="sysErr"></p>
         <div class="sysbox" id="sysPrev"></div>
@@ -191,9 +191,9 @@ details.k summary{cursor:pointer;font-weight:600}
     <div class="card">
       <h2>Deine Lösungsmenge</h2>
       <div class="seg" id="amode"><button data-m="one" aria-pressed="true">Eine Lösung</button><button data-m="none" aria-pressed="false">Keine Lösung</button><button data-m="inf" aria-pressed="false">Unendlich viele Lösungen</button></div>
-      <div class="lrow" id="aOne"><span data-tex="L=\{\,(">L = {(</span> <input type="text" id="ax" autocomplete="off" aria-label="x-Koordinate" placeholder="x"> <span data-tex=";">;</span> <input type="text" id="ay" autocomplete="off" aria-label="y-Koordinate" placeholder="y"> <span data-tex=")\,\}">)}</span></div>
-      <div class="lrow" id="aNone" hidden><span data-tex="L=\{\,\}">L = { }</span></div>
-      <div class="lrow" id="aInf" hidden><span data-tex="L=\{(x;\,y)\mid">L = {(x; y) |</span> <input type="text" class="wide" id="al" autocomplete="off" aria-label="Gleichung der Geraden" placeholder="y = ..."> <span data-tex="\}">}</span></div>
+      <div class="lrow" id="aOne"><span data-tex="\mathbb{L}_{(x;y)}=\Bigl\{\Bigl(">L = {(</span> <input type="text" id="ax" autocomplete="off" aria-label="x-Koordinate" placeholder="x"> <span data-tex=";">;</span> <input type="text" id="ay" autocomplete="off" aria-label="y-Koordinate" placeholder="y"> <span data-tex="\Bigr)\Bigr\}">)}</span></div>
+      <div class="lrow" id="aNone" hidden><span data-tex="\mathbb{L}_{(x;y)}=\left\{\right\}">L = { }</span></div>
+      <div class="lrow" id="aInf" hidden><span data-tex="\mathbb{L}_{(x;y)}=\Bigl\{\left(x;y\right)\mid">L = {(x; y) |</span> <input type="text" class="wide" id="al" autocomplete="off" aria-label="Gleichung der Geraden" placeholder="y = ..."> <span data-tex="\Bigr\}">}</span></div>
       <p class="read" id="ahint"></p>
       <button class="btn primary" id="check">Prüfen</button>
       <div id="fb" aria-live="polite"></div>
@@ -392,10 +392,11 @@ function toTex(r){
   r=r.replace(/[mq][₁₂]/g,m=>m[0]+'_'+(m[1]==='₁'?1:2))
     .replace(/[−]/g,'-').replace(/[·*]/g,'\\cdot ').replace(/\|/g,'\\mid ').replace(/\{/g,'\\{').replace(/\}/g,'\\}')
     .replace(/≠/g,'\\neq ').replace(/≈/g,'\\approx ').replace(/′/g,"'").replace(/</g,'\\lt ').replace(/>/g,'\\gt ');
+  r=r.replace(/\u0006/g,'\\mathbb{L}_{(x;y)}').replace(/\u0007/g,'\\left\\{').replace(/\u0008/g,'\\right\\}').replace(/\u000b/g,'\\left(').replace(/\u000c/g,'\\right)');
   return r.replace(/\u0003(.*?)\u0004(.*?)\u0005/g,(m,a,b)=>'\\dfrac{'+a+'}{'+b+'}');
 }
 const NB='(?<![A-Za-zÄÖÜäöüß0-9])';
-const RUN=new RegExp('(?:(?<![A-Za-zÄÖÜäöüß])(?:[xyL]|[mq][₁₂])(?![A-Za-zÄÖÜäöüß₁₂])|\\\\d+(?:\\\\.\\\\d+)?|\\u0003[^\\u0004]*\\u0004[^\\u0005]*\\u0005|[+\\\\-−·*/=()|:;{}≠≈′<>]|\\\\s)+','g');
+const RUN=/(?:(?<![A-Za-zÄÖÜäöüß])(?:[xyL]|[mq][₁₂])(?![A-Za-zÄÖÜäöüß₁₂])|\d+(?:\.\d+)?|\u0003[^\u0004]*\u0004[^\u0005]*\u0005|[+\-−·*\/=()|:;{}≠≈′<>\u0006\u0007\u0008\u000b\u000c]|\s)+/g;
 function mathText(t){
   return t.replace(RUN,run=>{
     const lead=run.match(/^\s*/)[0];let core=run.trim();let tail=run.slice(lead.length+core.length);
@@ -404,7 +405,7 @@ function mathText(t){
     let ch=true;
     while(ch){ch=false;
       const b=core;
-      cut(/[.;:,]$/);
+      cut(/[.;:,\-−]$/);
       const o=(core.match(/\(/g)||[]).length,c=(core.match(/\)/g)||[]).length;
       if(c>o&&core.endsWith(')')){tail=')'+tail;core=core.slice(0,-1);}
       if(o>c&&core.endsWith('(')){tail='('+tail;core=core.slice(0,-1);}
@@ -412,7 +413,7 @@ function mathText(t){
     }
     let lead2=lead;
     while(/^[(]/.test(core)&&(core.match(/\(/g)||[]).length>(core.match(/\)/g)||[]).length){lead2+='(';core=core.slice(1).trim();}
-    if(!/[xyL]|[mq][₁₂]|=|\u0003|[+·*|]|\d\s*[;|]|\(.*\d.*\)/.test(core)) return run;
+    if(!/[xyL]|[mq][₁₂]|=|\u0003|\u0006|[+·*|]|\d/.test(core)) return run;
     const tx=toTex(core);return lead2+'<span class="mj'+(tx.includes('dfrac')?' mjf':'')+'">'+KT(tx)+'</span>'+tail;
   });
 }
@@ -519,7 +520,7 @@ function probeRows(sys,x,y){
     return {ok,h:nm(i)+' '+linSub([[e.a,'x'],[e.b,'y']],{x,y})+' = '+numHTML(lhs)+(ok?' <b class="ok">✓</b>':' ≠ '+numHTML(e.c)+' <b class="bad">✗</b>')};
   });
 }
-const LHTML=sys=>{const s=sys.sol;return s.type==='one'?'L = {('+numHTML(s.x)+'; '+numHTML(s.y)+')}':s.type==='none'?'L = { }':'L = {(x; y) | '+infLine(sys.e1)+'}';};
+const LHTML=sys=>{const s=sys.sol,L='\u0006 = ';return s.type==='one'?L+'\u0007\u000b'+numHTML(s.x)+'; '+numHTML(s.y)+'\u000c\u0008':s.type==='none'?L+'\u0007\u0008':L+'\u0007\u000bx; y\u000c | '+infLine(sys.e1)+'\u0008';};
 function endSteps(sys,steps){
   const s=sys.sol;
   if(s.type==='one'){
@@ -749,12 +750,12 @@ function drawGraph(c,show){
   for(let k=-Math.floor(R/gs)*gs;k<=R;k+=gs){g.moveTo(X(k),Y(-R));g.lineTo(X(k),Y(R));g.moveTo(X(-R),Y(k));g.lineTo(X(R),Y(k));}
   g.stroke();
   g.strokeStyle=C.axis;g.lineWidth=1.6;g.beginPath();g.moveTo(X(-R),Y(0));g.lineTo(X(R),Y(0));g.moveTo(X(0),Y(-R));g.lineTo(X(0),Y(R));g.stroke();
-  g.font='11px Inter, system-ui, sans-serif';g.fillStyle=C.muted;
+  g.font='12px KaTeX_Main, serif';g.fillStyle=C.muted;
   g.textAlign='center';g.textBaseline='top';
   for(let k=-Math.floor(R/st)*st;k<=R;k+=st){if(k!==0)g.fillText(String(k).replace('-','−'),X(k),Y(0)+4);}
   g.textAlign='right';g.textBaseline='middle';
   for(let k=-Math.floor(R/st)*st;k<=R;k+=st){if(k!==0)g.fillText(String(k).replace('-','−'),X(0)-5,Y(k));}
-  g.textAlign='left';g.textBaseline='bottom';g.fillText('x',X(R)-10,Y(0)-5);g.textAlign='left';g.fillText('y',X(0)+7,Y(R)+12);
+  g.textAlign='left';g.textBaseline='bottom';g.font='italic 13px KaTeX_Math, serif';g.fillText('x',X(R)-10,Y(0)-5);g.fillText('y',X(0)+7,Y(R)+12);
   g.save();g.beginPath();g.rect(X(-R),Y(R),2*R*sc,2*R*sc);g.clip();
   const E=[S.sys.e1,S.sys.e2],cols=[C.e1,C.e2],labels=[];
   E.forEach((e,i)=>{
@@ -793,8 +794,8 @@ function hookHover(c,out,show){
     let x=((ev.clientX-r.left-pad)/sz)*2*Rr-Rr,y=Rr-((ev.clientY-r.top-pad)/sz)*2*Rr;
     if(Math.abs(x)>Rr||Math.abs(y)>Rr){HV[c.id]=null;out.textContent='';drawGraph(c,show());return;}
     const rx=Math.round(x),ry=Math.round(y);
-    if(Math.abs(x-rx)<.01&&Math.abs(y-ry)<.01){x=rx;y=ry;out.textContent='( '+String(rx).replace('-','−')+' | '+String(ry).replace('-','−')+' )';}
-    else out.textContent='( '+x.toFixed(1).replace('-','−')+' | '+y.toFixed(1).replace('-','−')+' )';
+    if(Math.abs(x-rx)<.01&&Math.abs(y-ry)<.01){x=rx;y=ry;out.innerHTML=KT('\\left('+rx+'\\,|\\,'+ry+'\\right)');}
+    else out.innerHTML=KT('\\left('+x.toFixed(1)+'\\,|\\,'+y.toFixed(1)+'\\right)');
     HV[c.id]={x,y};drawGraph(c,show());
   });
   c.addEventListener('pointerleave',()=>{HV[c.id]=null;out.textContent='';drawGraph(c,show());});
@@ -919,7 +920,7 @@ function renderS3(){
   $('#mtag').innerHTML='Methode: <b>'+MNAME[S.method]+'</b>'+(S.method==='graph'?'. Lies den Schnittpunkt aus dem Bild ab.':'. Rechne auf Papier und gib dann deine Lösungsmenge ein.');
   $('#gcard').hidden=S.method!=='graph';
   $('#kdet').hidden=S.method==='graph';
-  $('#ahint').textContent='Zahlen als ganze Zahl, Dezimalzahl oder Bruch, z. B. 2, −1.5 oder 7/3.'+(S.method==='graph'?' Beim Ablesen genügt ein Näherungswert.':'');
+  $('#ahint').innerHTML='Zahlen als ganze Zahl, Dezimalzahl oder Bruch, z. B. '+KT('2')+', '+KT('-1.5')+' oder '+KT('\\tfrac{7}{3}')+' (Bruch mit Schrägstrich <b>/</b> tippen).'+(S.method==='graph'?' Beim Ablesen genügt ein Näherungswert.':'');
   $('#fb').innerHTML='';$('#pcard').hidden=true;S.checked=false;
   ['ax','ay','al'].forEach(id=>$('#'+id).value='');
   setAM('one');
@@ -948,7 +949,7 @@ function check(){
     ok=true;html=box('ok','<b>Richtig!</b> L = { }: Die Gleichungen widersprechen sich.');
   }else if(S.am==='inf'){
     let e=null;try{e=parseEq($('#al').value);}catch(x){}
-    if(!e){fb.innerHTML=box('info','Gib die Gleichung der Geraden ein, z. B. <span class="mono">y = 2x - 1</span> (Brüche tippst du mit /).');return;}
+    if(!e){fb.innerHTML=box('info','Gib die Gleichung der Geraden ein, z. B. <span class="mono">y = 2x - 1</span> (Brüche tippst du mit dem Schrägstrich).');return;}
     const a=sys.e1,eq=fIs0(fSub(fMul(e.a,a.b),fMul(e.b,a.a)))&&fIs0(fSub(fMul(e.a,a.c),fMul(e.c,a.a)))&&fIs0(fSub(fMul(e.b,a.c),fMul(e.c,a.b)));
     if(eq){ok=true;html=box('ok','<b>Richtig!</b> '+LHTML(sys)+'<br>Beide Gleichungen beschreiben dieselbe Gerade.');}
     else html=box('bad','<b>Nicht ganz.</b> Es gibt zwar unendlich viele Lösungen, aber diese Gleichung beschreibt nicht die Gerade der beiden Gleichungen. Prüfe sie mit einem Punkt.');
