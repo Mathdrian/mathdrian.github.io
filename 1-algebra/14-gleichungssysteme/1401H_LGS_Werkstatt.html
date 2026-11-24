@@ -45,6 +45,11 @@ button{cursor:pointer}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.small{padding:5px 10px;font-size:13px}
+.codebar{display:flex;gap:10px;align-items:center;margin:-6px 0 12px;min-height:0}
+.nrbadge{font:600 13px/1 'JetBrains Mono',ui-monospace,monospace;color:var(--accent,#2d56e0);border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--surface,#fff)}
+.codeform{display:flex;gap:8px;align-items:center;margin-top:12px}
+.codeform input{flex:1;min-width:0;max-width:170px;border:1px solid var(--line);background:var(--bg,transparent);color:inherit;border-radius:8px;padding:6px 10px;font:500 14px 'JetBrains Mono',ui-monospace,monospace}
+.codeerr{font-size:13px;color:#c0392b;margin:6px 0 0}
 .topbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}.numseg{margin:0}
 .steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px 5px 6px;font-weight:500;font-size:14px}
@@ -143,6 +148,8 @@ details.k summary{cursor:pointer;font-weight:600}
   </header>
   <div class="topbar"><ol class="steps" id="steps"></ol><div class="seg numseg" id="numseg" role="group" aria-label="Zahlendarstellung"><button data-n="fr" aria-pressed="true">Brüche</button><button data-n="dec" aria-pressed="false" title="Zeigt endliche Dezimalzahlen mit höchstens 2 Nachkommastellen als Dezimalzahl, alles andere bleibt ein Bruch.">Dezimalzahlen</button></div></div>
 
+  <div class="codebar"><span id="nr" class="nrbadge" hidden></span><button class="btn small" id="codecopy" type="button" hidden>Link kopieren</button></div>
+
   <section id="s1" class="stack">
     <div class="grid2">
       <div class="card">
@@ -151,6 +158,8 @@ details.k summary{cursor:pointer;font-weight:600}
         <div class="rand"><span class="muted">Zufällige Aufgabe:</span>
           <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button>
           <button class="btn small" id="special" aria-pressed="false" title="Dann kann beim Erzeugen auch ein Sonderfall (keine oder unendlich viele Lösungen) vorkommen.">mit Spezialfällen</button></div>
+        <form id="codeform" class="codeform"><label class="muted" for="codein">Aufgabe aufrufen:</label><input id="codein" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 104-821"><button class="btn small" type="submit">Los</button></form>
+        <p class="codeerr" id="codeerr" role="alert"></p>
       </div>
       <div class="card">
         <h2>Eigenes System</h2>
@@ -819,7 +828,9 @@ const PRESETS=[
   {g:'Sonderfälle',e:['y = 2x + 1','y = 2x - 3']},
   {g:'Sonderfälle',e:['y = 0.5x + 1','x - 2y = -2']}
 ];
-const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+let RNG=Math.random;
+function seedRNG(n){let a=n>>>0;RNG=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const ri=(a,b)=>a+Math.floor(RNG()*(b-a+1));
 function mkEq(a,b,c){
   const t=(k,v,first)=>k===0?'':(first?(k<0?'-':''):(k<0?' - ':' + '))+(Math.abs(k)===1?'':Math.abs(k))+v;
   const l=t(a,'x',true)+t(b,'y',a===0);
@@ -836,7 +847,7 @@ function randomSys(lvl){
       return ['y = '+(m===1?'':m===-1?'-':m)+'x '+(q<0?'- '+(-q):'+ '+q),mkEq(...eq2)].map(s=>s.replace('+ 0','').trim());
     }
     if(lvl===1){
-      const b=ri(1,4),a1=ri(1,6),a2=ri(1,6),flip=Math.random()<.5;
+      const b=ri(1,4),a1=ri(1,6),a2=ri(1,6),flip=RNG()<.5;
       const e1=flip?[b,a1]:[a1,b],e2=flip?[-b,a2]:[a2,-b];
       return [mkEq(e1[0],e1[1],e1[0]*sx+e1[1]*sy),mkEq(e2[0],e2[1],e2[0]*sx+e2[1]*sy)];
     }
@@ -850,22 +861,48 @@ function randomSys(lvl){
 
 /* Sonderfall zur gewählten Stufe: parallele Geraden (keine Lösung) oder dieselbe Gerade (unendlich viele) */
 function specialSys(lvl){
-  const inf=Math.random()<.5;
+  const inf=RNG()<.5;
   if(lvl===0){
     let m=0;while(!m)m=ri(-3,3);const q=ri(-5,5);
     const e1='y = '+(m===1?'':m===-1?'-':m)+'x '+(q<0?'- '+(-q):'+ '+q);
-    const q2=inf?q:q+(Math.random()<.5?-1:1)*ri(1,4);
-    const e2=Math.random()<.5?'y = '+(m===1?'':m===-1?'-':m)+'x '+(q2<0?'- '+(-q2):'+ '+q2):mkEq(m,-1,-q2);
+    const q2=inf?q:q+(RNG()<.5?-1:1)*ri(1,4);
+    const e2=RNG()<.5?'y = '+(m===1?'':m===-1?'-':m)+'x '+(q2<0?'- '+(-q2):'+ '+q2):mkEq(m,-1,-q2);
     return [e1,e2].map(s=>s.replace('+ 0','').trim());
   }
   let a=0,b=0;while(!a||!b){a=ri(-5,5);b=ri(-5,5);}
   const c=ri(-12,12),k=lvl===1?[2,-1,3][ri(0,2)]:[2,3,-2,-3][ri(0,3)];
-  const d=inf?0:(Math.random()<.5?-1:1)*ri(1,5);
+  const d=inf?0:(RNG()<.5?-1:1)*ri(1,5);
   const e1=mkEq(a,b,c),e2=mkEq(k*a,k*b,k*c+d);
-  return Math.random()<.5?[e1,e2]:[e2,e1];
+  return RNG()<.5?[e1,e2]:[e2,e1];
 }
 /* ---------- Zustand ---------- */
-const S={showG:false,step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
+const S={code:'900000',showG:false,step:1,mode:'eq',src:PRESETS[0].e.slice(),co:[['','',''],['','','']],preset:0,sys:null,errs:[null,null],method:null,am:'one',checked:false};
+/* Aufgabennummer: Stufe (1-3), Sonderfall (0/1), 4 Ziffern Zufall. Beispiele: 9 + Nummer. Gleiche Nummer = gleiche Aufgabe. */
+const fmtCode=c=>c.slice(0,3)+'-'+c.slice(3);
+function sysFromCode(c){
+  if(!/^\d{6}$/.test(c)) return null;
+  if(c[0]==='9'){const i=+c.slice(1);return (c.slice(1,4)==='000'&&i<PRESETS.length)?{preset:i,src:PRESETS[i].e.slice()}:null;}
+  const l=+c[0]-1,sp=+c[1];
+  if(l<0||l>2||sp>1) return null;
+  seedRNG(parseInt(c,10));
+  return {preset:-1,src:sp?specialSys(l):randomSys(l)};
+}
+function newRandom(l,withSpecial){
+  const sp=withSpecial&&Math.random()<.3?1:0;
+  return String(l+1)+sp+String(Math.floor(Math.random()*10000)).padStart(4,'0');
+}
+function applyCode(c){
+  const r=sysFromCode(c);if(!r) return false;
+  S.showG=false;S.mode='eq';S.preset=r.preset;S.src=r.src;S.code=c;
+  refreshSys();renderS1();renderCode();
+  try{history.replaceState(null,'','#'+c);}catch(e){}
+  return true;
+}
+function renderCode(){
+  const b=$('#nr');if(!b) return;
+  if(!S.code){b.hidden=true;$('#codecopy').hidden=true;return;}
+  b.hidden=false;b.textContent='Aufgabe Nr. '+fmtCode(S.code);$('#codecopy').hidden=false;
+}
 function refreshSys(){
   const eqs=[],errs=[null,null];
   for(let i=0;i<2;i++){
@@ -996,7 +1033,7 @@ function check(){
 }
 
 /* ---------- Ereignisse ---------- */
-function loadPreset(i){S.showG=false;S.mode='eq';S.preset=i;S.src=PRESETS[i].e.slice();refreshSys();renderS1();}
+function loadPreset(i){applyCode('9000'+String(i).padStart(2,'0'));}
 function init(){
   document.querySelectorAll('[data-tex]').forEach(el=>{el.innerHTML=KT(el.dataset.tex);});
   if(document.fonts){['italic 14px KaTeX_Math','14px KaTeX_Main'].forEach(f=>document.fonts.load(f).then(()=>{if(S.step===3)redrawAll();}).catch(()=>{}));}
@@ -1005,10 +1042,10 @@ function init(){
   $('#presets').addEventListener('click',e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.i);});
   let withSpecial=false;
   $('#special').onclick=e=>{withSpecial=!withSpecial;e.currentTarget.setAttribute('aria-pressed',String(withSpecial));};
-  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{const l=+b.dataset.lvl;S.showG=false;S.mode='eq';S.preset=-1;S.src=(withSpecial&&Math.random()<.3)?specialSys(l):randomSys(l);refreshSys();renderS1();});
+  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{$('#codeerr').textContent='';applyCode(newRandom(+b.dataset.lvl,withSpecial));});
   [0,1].forEach(i=>{
-    $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();});
-    [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;refreshSys();renderPrev();renderPresets();}));
+    $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;S.code=null;renderCode();refreshSys();renderPrev();renderPresets();});
+    [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;S.code=null;renderCode();refreshSys();renderPrev();renderPresets();}));
   });
   $('#mEq').onclick=()=>{
     if(S.mode==='eq') return;
@@ -1026,6 +1063,14 @@ function init(){
   });
   document.addEventListener('click',e=>{const b=e.target.closest('.gbtn');if(!b)return;S.showG=!S.showG;
     if(S.sys){$('#sysPrev').innerHTML=sysHTML(S.sys);$('#rec2').innerHTML=sysHTML(S.sys);$('#rec3').innerHTML=sysHTML(S.sys);}});
+  $('#codeform').onsubmit=e=>{e.preventDefault();const c=$('#codein').value.replace(/\D/g,'');
+    if(applyCode(c)){$('#codein').value='';$('#codeerr').textContent='';}else $('#codeerr').textContent='Diese Nummer kenne ich nicht. Sie hat 6 Ziffern, zum Beispiel 104-821.';};
+  $('#codecopy').onclick=()=>{const u=location.href.split('#')[0]+'#'+S.code,b=$('#codecopy');
+    const ok=()=>{b.textContent='Link kopiert';setTimeout(()=>{b.textContent='Link kopieren';},1800);};
+    try{navigator.clipboard.writeText(u).then(ok,()=>window.prompt('Link kopieren:',u));}catch(err){window.prompt('Link kopieren:',u);}};
+  addEventListener('hashchange',()=>{const h=location.hash.replace(/\D/g,'');if(h&&h!==S.code)applyCode(h);});
+  { const h=location.hash.replace(/\D/g,''); if(h) applyCode(h); }
+  renderCode();
   $('#to2').onclick=()=>{if(S.sys)show(2);};
   $('#back1').onclick=()=>show(1);
   $('#methods').addEventListener('click',e=>{const b=e.target.closest('.method');if(b){S.method=b.dataset.m;show(3);}});
