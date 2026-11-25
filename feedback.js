@@ -4,7 +4,7 @@
    2. Unten rechts: kleiner Knopf «Fehler melden» (öffnet das Mailprogramm, speichert nichts).
    Einbinden mit einer Zeile vor </body>:
    Startseite:  <script src="feedback.js" defer></script>
-   Werkzeug (immer 2 Ebenen tief, z. B. 4-differentialrechnung/43-polynomfunktionen/):
+   Werkzeug (immer 2 Ebenen tief, z. B. 4-differentialrechnung/3-polynomfunktionen/):
                 <script src="../../feedback.js" defer></script>
    Die Nummer (z. B. 4303H) wird aus dem Dateinamen gelesen, eine Aufgabennummer aus der Adresse (#...). */
 (function(){

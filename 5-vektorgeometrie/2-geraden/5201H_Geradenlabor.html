@@ -1,0 +1,1992 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Geradenlabor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Geradenlabor: eine einzige, in sich geschlossene HTML-Datei (läuft offline, ohne Anmeldung).
+   Farbcode (identisch zum Theorieblatt «Geraden in der Vektorgeometrie»):
+   Stützvektor/Ortsvektor = Blau, Richtungsvektor = Rot, Punkt auf der Geraden = Grün,
+   Punkte A und B = Violett, y-Achsenabschnitt = Türkis, Normalenvektor = Orange. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --surface2:#eceff6; --ink:#18202f; --muted:#576277; --line:#d5dbe7; --grid:#e7ebf3; --axis:#8791a6;
+  --accent:#2d56e0; --accent-ink:#ffffff; --ok:#2b8a3e; --bad:#d6303a; --warn:#e8590c;
+  --stuetz:#1c64f2; --richt:#d6303a; --punkt:#2b8a3e; --ab:#7048e8; --qc:#0c8599; --normal:#e8590c;
+  --lv1:#5f9171; --lv2:#4a7fb5; --lv3:#b5645f;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+    --accent:#7f9fff; --accent-ink:#0c1226; --ok:#51cf66; --bad:#ff7b84; --warn:#ff922b;
+    --stuetz:#6ea8ff; --richt:#ff6b6b; --punkt:#51cf66; --ab:#b39dfc; --qc:#3bc9db; --normal:#ff922b;
+    --lv1:#7fb592; --lv2:#74a6d9; --lv3:#d98c87;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1f2842; --ink:#e8ecf6; --muted:#9aa5bc; --line:#2c3752; --grid:#222c45; --axis:#6d7995;
+  --accent:#7f9fff; --accent-ink:#0c1226; --ok:#51cf66; --bad:#ff7b84; --warn:#ff922b;
+  --stuetz:#6ea8ff; --richt:#ff6b6b; --punkt:#51cf66; --ab:#b39dfc; --qc:#3bc9db; --normal:#ff922b;
+  --lv1:#7fb592; --lv2:#74a6d9; --lv3:#d98c87;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-head);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(26px,4vw,36px);letter-spacing:-.01em}
+h2{font-size:20px}
+h3{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.lead{max-width:68ch;color:var(--muted);margin-top:6px}
+header{margin-bottom:18px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 13px;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{padding:5px 10px;font-size:13px}
+/* Schrittleiste */
+.steps{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px 5px 6px;font-weight:500;font-size:14px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface2);font-size:12px;font-weight:600}
+.step.done .n{background:color-mix(in srgb,var(--ok) 22%,var(--surface))}
+.step[aria-current="step"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+.step .v{color:var(--muted);font-weight:400}
+/* Auswahlkarten */
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:820px}
+.pick{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:left;display:grid;gap:10px;transition:border-color .15s,transform .15s,box-shadow .15s}
+.pick:hover{border-color:var(--accent);box-shadow:0 4px 18px color-mix(in srgb,var(--accent) 14%,transparent)}
+.pick svg{width:100%;height:150px;background:var(--surface2);border-radius:10px}
+.pick h2{font-size:22px}
+.pick p{color:var(--muted);font-size:14px}
+.back{margin-top:14px}
+/* Arbeitsbereich */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 14px;font-weight:500;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.toolbar .lab{font-size:12px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-right:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:500;font-size:14px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:1000px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage{display:grid;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;position:relative}
+.panel canvas{display:block;width:100%;height:420px;touch-action:none}
+@media (max-width:560px){.panel canvas{height:320px}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);padding:9px 12px;border-top:1px solid var(--line)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:18px;height:4px;border-radius:2px;display:inline-block}
+.legend i.dot{width:11px;height:11px;border-radius:50%}
+.canvasbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.side{display:grid;gap:12px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+label.l{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+input[type=text],input[type=number],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;min-width:0}
+input.num{text-align:center;font-family:var(--font-mono)}
+.pt{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px;align-items:center;margin-top:6px}
+.pt.d2{grid-template-columns:auto repeat(2,minmax(0,1fr))}
+.pt b{font-family:var(--font-head);font-size:17px;min-width:2.2ch}
+.pt b.A,.pt b.B{color:var(--ab)}
+.pt b.C,.pt b.D{color:var(--muted)}
+.read{font-size:13px;color:var(--muted);margin-top:6px}
+.read.bad{color:var(--bad)}
+.radios{display:grid;gap:5px;margin-top:4px}
+.radios label{display:flex;gap:8px;align-items:center;font-size:14px;padding:4px 6px;border-radius:7px}
+.radios label:hover{background:var(--surface2)}
+.radios input[type=range]{flex:1}
+.note{margin-top:10px;border:1px solid color-mix(in srgb,var(--warn) 70%,var(--line));background:color-mix(in srgb,var(--warn) 10%,var(--surface));border-radius:8px;padding:8px 10px;font-size:13px}
+.note b{color:var(--warn);text-transform:uppercase;letter-spacing:.05em;font-size:12px;margin-right:4px}
+/* Schrittbereich */
+.explain{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px}
+.explain .head{display:flex;gap:10px 14px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.sheetref{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);background:var(--surface2)}
+.dots{display:flex;gap:6px}
+.dots button{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--axis);background:transparent;padding:0}
+.dots button[aria-current="step"]{background:var(--accent);border-color:var(--accent)}
+.dots button.done{background:color-mix(in srgb,var(--ok) 60%,transparent);border-color:var(--ok)}
+.explain .body{display:grid;gap:10px}
+.explain .nav{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.eq{font-size:17px;padding:10px 14px;background:var(--surface2);border-radius:9px;overflow-x:auto;line-height:2}
+.eq.big{font-size:20px}
+.eq .row{display:block}
+.why{color:var(--muted);font-size:14px}
+.tip{border-left:3px solid var(--accent);padding:4px 10px;background:color-mix(in srgb,var(--accent) 7%,var(--surface));border-radius:0 8px 8px 0;font-size:14px}
+.warnbox{border-left:3px solid var(--warn);padding:6px 10px;background:color-mix(in srgb,var(--warn) 9%,var(--surface));border-radius:0 8px 8px 0;font-size:14px}
+table.tv{border-collapse:collapse;font-size:14px}
+table.tv th,table.tv td{padding:5px 12px;border-bottom:1px solid var(--line);text-align:center}
+table.tv th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.sub{margin-top:16px}
+/* Notation */
+.c-s{color:var(--stuetz);font-weight:600}.c-r{color:var(--richt);font-weight:600}.c-p{color:var(--punkt);font-weight:600}
+.c-ab{color:var(--ab);font-weight:600}.c-q{color:var(--qc);font-weight:600}.c-n{color:var(--normal);font-weight:600}
+.vec{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;padding:0 7px;margin:0 3px;border-left:2px solid currentColor;border-right:2px solid currentColor;border-radius:7px/12px;line-height:1.3;font-size:.94em}
+.vec>span{display:block;min-width:1.1ch;text-align:center;padding:0 1px}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 2px;font-size:.92em;line-height:1.25}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.frac>span:last-child{padding:0 3px}
+.mono{font-family:var(--font-mono);font-size:.92em}
+/* Aufgaben */
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px}
+.qhead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.lvl{font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;color:#fff}
+.lvl.l1{background:var(--lv1)}.lvl.l2{background:var(--lv2)}.lvl.l3{background:var(--lv3)}
+.qtext{font-size:16px}
+.form{display:grid;gap:10px}
+.frow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.frow .fl{min-width:0}
+.frow input[type=text]{width:84px;text-align:center;font-family:var(--font-mono)}
+.fbox{margin-top:2px}
+.fb{border-radius:9px;padding:9px 12px;font-size:14px;display:grid;gap:4px}
+.fb.ok{background:color-mix(in srgb,var(--ok) 13%,var(--surface));border:1px solid var(--ok)}
+.fb.no{background:color-mix(in srgb,var(--bad) 9%,var(--surface));border:1px solid var(--bad)}
+.fb .m.ok::before{content:"✓ ";color:var(--ok);font-weight:700}
+.fb .m.no::before{content:"✗ ";color:var(--bad);font-weight:700}
+.hints{display:grid;gap:8px}
+.score{font-size:13px;color:var(--muted)}
+.opts2{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+label.chk{display:flex;gap:8px;align-items:center;font-size:14px}
+.special{margin-top:18px}
+.special .grid2{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;align-items:center}
+@media (max-width:760px){.special .grid2{grid-template-columns:minmax(0,1fr)}}
+.special canvas{width:100%;height:230px;background:var(--surface2);border-radius:10px;display:block}
+.teacher{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
+.teacher .inner{padding:0 18px 14px;max-width:84ch;display:grid;gap:8px}
+.teacher ul{margin:0;padding-left:20px;display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.vin{display:inline-flex;flex-direction:column;gap:4px;padding:4px 8px;border-left:2px solid var(--ink);border-right:2px solid var(--ink);border-radius:8px/14px}
+.vin input{width:72px!important}
+.frow .fl{font-size:15px}
+.pt b.C,.pt b.D{color:var(--qc)}
+.step{font:inherit;color:inherit}.step:disabled{cursor:default;opacity:1}
+.step:not(:disabled){cursor:pointer}
+.btn.small{padding:4px 10px;font-size:13px}
+.radios label input[type=range]{min-width:0}
+.fbox:empty,.hints:empty{display:none}
+
+.va{position:relative;display:inline-block;line-height:1;padding-top:.2em}
+.va::before{content:"";position:absolute;left:.03em;right:.05em;top:.07em;border-top:.075em solid currentColor}
+.va::after{content:"";position:absolute;right:.03em;top:0em;width:.2em;height:.2em;border-top:.075em solid currentColor;border-right:.075em solid currentColor;transform:rotate(45deg)}
+.fx{font-family:var(--font-mono);font-weight:600;padding:0 4px}
+.frow .sep{font-size:20px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Vektorgeometrie · Geraden</p>
+      <h1>Geradenlabor</h1>
+      <p class="lead">Sehen Sie, wie eine Geradengleichung aus zwei Punkten entsteht, und üben Sie danach mit Aufgaben, die sich sofort überprüfen lassen. Passend zum Theorieblatt «Geraden in der Vektorgeometrie».</p>
+    </div>
+    <div class="btnrow"><button class="btn small" id="themeBtn" aria-label="Hell oder dunkel umschalten">◐ Hell / Dunkel</button></div>
+  </header>
+
+  <ol class="steps" id="steps"></ol>
+
+  <!-- Schritt 1: Dimension -->
+  <section id="pick1">
+    <h2 style="margin-bottom:12px">Wo arbeiten Sie?</h2>
+    <div class="picks">
+      <button class="pick" data-dim="2">
+        <svg viewBox="0 0 240 150" aria-hidden="true"><g stroke="currentColor" opacity=".25"><path d="M20 120H225M60 10V140M100 20V140M140 20V140M180 20V140M20 85H225M20 50H225"/></g><path d="M20 128H228M60 142V10" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M28 118L214 30" stroke="#18202f" stroke-width="2.6" stroke-linecap="round"/><path d="M60 128L100 100" stroke="#1c64f2" stroke-width="3" stroke-linecap="round"/><path d="M100 100L172 62" stroke="#d6303a" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="5" fill="#7048e8"/><circle cx="172" cy="62" r="5" fill="#7048e8"/></svg>
+        <h2>2D: in der Ebene</h2>
+        <p>Vektorform, explizite Form <span class="mono">y = mx + q</span> und Grundform <span class="mono">ax + by + c = 0</span>.</p>
+      </button>
+      <button class="pick" data-dim="3">
+        <svg viewBox="0 0 240 150" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6" fill="none"><path d="M120 110L50 140M120 110L225 128M120 110V10"/></g><g stroke="currentColor" opacity=".25"><path d="M85 125L170 119M70 133L195 124M155 117L100 135"/></g><path d="M40 125L205 38" stroke="#18202f" stroke-width="2.6" stroke-linecap="round"/><path d="M120 110L86 92" stroke="#1c64f2" stroke-width="3" stroke-linecap="round"/><path d="M86 92L160 62" stroke="#d6303a" stroke-width="3" stroke-linecap="round"/><circle cx="86" cy="92" r="5" fill="#7048e8"/><circle cx="160" cy="62" r="5" fill="#7048e8"/></svg>
+        <h2>3D: im Raum</h2>
+        <p>Nur die Vektorform. Die Ansicht lässt sich drehen.</p>
+      </button>
+    </div>
+  </section>
+
+  <!-- Schritt 2: Theorie oder Aufgaben -->
+  <section id="pick2" hidden>
+    <h2 style="margin-bottom:12px">Was möchten Sie tun?</h2>
+    <div class="picks">
+      <button class="pick" data-mode="theorie">
+        <svg viewBox="0 0 240 150" aria-hidden="true"><rect x="40" y="14" width="160" height="122" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M60 40H180M60 62H160M60 84H175" stroke="currentColor" stroke-width="2" opacity=".35"/><path d="M60 112L110 104L150 118" stroke="#d6303a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="110" cy="104" r="5" fill="#1c64f2"/></svg>
+        <h2>Theorie</h2>
+        <p>Zwei Punkte eingeben und Schritt für Schritt sehen, wie die Gleichung entsteht.</p>
+      </button>
+      <button class="pick" data-mode="aufgabe">
+        <svg viewBox="0 0 240 150" aria-hidden="true"><rect x="40" y="14" width="160" height="122" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M60 42H150" stroke="currentColor" stroke-width="2" opacity=".35"/><rect x="60" y="62" width="44" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="114" y="62" width="44" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M64 118l10 10 22-26" stroke="#2b8a3e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h2>Aufgaben lösen</h2>
+        <p>Immer neue Aufgaben in drei Schwierigkeitsstufen, mit Rückmeldung, Hinweisen und Lösungsweg.</p>
+      </button>
+    </div>
+    <button class="btn back" id="back1">← Zurück zur Auswahl 2D / 3D</button>
+  </section>
+
+  <!-- Schritt 3: Arbeitsbereich -->
+  <section id="work" hidden>
+    <div class="toolbar">
+      <span><span class="lab">Raum</span><span class="seg" id="segDim"><button data-dim="2" aria-pressed="false">2D</button><button data-dim="3" aria-pressed="false">3D</button></span></span>
+      <span><span class="lab">Modus</span><span class="seg" id="segMode"><button data-mode="theorie" aria-pressed="false">Theorie</button><button data-mode="aufgabe" aria-pressed="false">Aufgaben</button></span></span>
+      <span id="notaWrap"><span class="lab">Schreibweise</span><span class="seg" id="segNota"><button data-nota="mq" aria-pressed="false">y = mx + q</button><button data-nota="ab" aria-pressed="false">y = ax + b</button></span></span>
+    </div>
+
+    <!-- THEORIE -->
+    <div id="theorie">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="layout">
+        <div class="stage">
+          <div class="panel">
+            <canvas id="cvT" aria-label="Zeichnung der Geraden"></canvas>
+            <div class="legend" id="legT"></div>
+            <div class="canvasbar" id="barT"></div>
+          </div>
+          <div class="explain" id="explain" aria-live="polite"></div>
+        </div>
+        <aside class="side">
+          <section class="card" id="cardPts"></section>
+          <section class="card" id="cardOpts" hidden></section>
+        </aside>
+      </div>
+
+      <section class="card special" id="special"></section>
+    </div>
+
+    <!-- AUFGABEN -->
+    <div id="aufgabe" hidden>
+      <div class="layout">
+        <div class="stage">
+          <div class="qcard" id="qcard"></div>
+          <div class="panel" id="panQ">
+            <canvas id="cvQ" aria-label="Skizze zur Aufgabe"></canvas>
+            <div class="legend" id="legQ"></div>
+            <div class="canvasbar" id="barQ"></div>
+          </div>
+        </div>
+        <aside class="side">
+          <section class="card">
+            <h3>Aufgabe einstellen</h3>
+            <label class="l" style="margin-top:0">Schwierigkeit</label>
+            <div class="seg" id="segLvl" style="display:flex"><button data-lvl="1" aria-pressed="false" style="flex:1">Einfach</button><button data-lvl="2" aria-pressed="false" style="flex:1">Mittel</button><button data-lvl="3" aria-pressed="false" style="flex:1">Schwierig</button></div>
+            <label class="l" for="selType">Aufgabentyp</label>
+            <select id="selType"></select>
+            <label class="l" for="seedIn">Aufgabennummer (für die ganze Klasse gleich)</label>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input type="text" id="seedIn" class="num" inputmode="numeric" autocomplete="off"><button class="btn small" id="seedGo">Laden</button></div>
+            <div class="opts2" style="margin-top:12px"><label class="chk"><input type="checkbox" id="chkSketch" checked> Skizze anzeigen</label></div>
+          </section>
+          <section class="card">
+            <h3>Bilanz in dieser Sitzung</h3>
+            <p class="score" id="score">Noch keine Aufgabe bearbeitet.</p>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <details class="teacher">
+    <summary>Für Lehrpersonen: Einsatz im Unterricht</summary>
+    <div class="inner">
+      <p>Die Seite ist eine einzige HTML-Datei und läuft offline in jedem aktuellen Browser, ohne Anmeldung.</p>
+      <ul>
+        <li><b>Zum Theorieblatt:</b> Der Modus «Theorie» folgt den Rezepten des Blattes: Ortsvektor und Verbindungsvektor (Abschnitt 1), Parameterform und Punktprobe (Abschnitt 2), Steigung, explizite Form und Grundform (Abschnitt 3), Lage zweier Geraden und Schnittwinkel (Abschnitt 4).</li>
+        <li><b>Farben:</b> Blau = Stützvektor, Rot = Richtungsvektor, Grün = Punkt auf der Geraden, Violett = Punkte A und B, Türkis = y-Achsenabschnitt, Orange = Normalenvektor.</li>
+        <li><b>Punkte ziehen:</b> In 2D lassen sich A und B mit der Maus (oder dem Finger) auf ganzzahlige Gitterpunkte ziehen. In 3D dreht man die Ansicht durch Ziehen.</li>
+        <li><b>Aufgabennummer:</b> Jede Aufgabe hat eine Nummer. Wer dieselbe Nummer, Stufe und denselben Typ einstellt, bekommt dieselbe Aufgabe. So lässt sich im Plenum über eine Aufgabe sprechen.</li>
+        <li><b>Mehrere richtige Antworten:</b> Eine Gerade hat unendlich viele Gleichungen. Die Prüfung akzeptiert jeden gültigen Stützpunkt und jeden passenden Richtungsvektor, jede Grundform in beliebigem ganzzahligem Vielfachem und Brüche oder Dezimalzahlen.</li>
+      </ul>
+    </div>
+  </details>
+</div>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
+/* ============================================================
+   1. Rechnen mit Brüchen (exakt)
+   ============================================================ */
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t;}return a||1;};
+const Q=(n,d=1)=>{if(d<0){n=-n;d=-d;}const g=gcd(n,d);return {n:n/g,d:d/g};};
+const qa=(a,b)=>Q(a.n*b.d+b.n*a.d,a.d*b.d);
+const qs=(a,b)=>Q(a.n*b.d-b.n*a.d,a.d*b.d);
+const qm=(a,b)=>Q(a.n*b.n,a.d*b.d);
+const qd=(a,b)=>Q(a.n*b.d,a.d*b.n);
+const qn=a=>Q(-a.n,a.d);
+const q0=a=>a.n===0;
+const qeq=(a,b)=>a.n===b.n&&a.d===b.d;
+const qv=a=>a.n/a.d;
+const qI=n=>Q(n,1);
+const qabs=a=>Q(Math.abs(a.n),a.d);
+function parseQ(s){
+  s=String(s).trim().replace(/[−–]/g,'-').replace(',','.');
+  if(!s) return null;
+  let m=/^(-?\d+)\s*\/\s*(-?\d+)$/.exec(s);
+  if(m){const d=+m[2];if(d===0) return null;return Q(+m[1],d);}
+  if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+  const dec=(s.split('.')[1]||'').length,p=Math.pow(10,Math.min(dec,4));
+  return Q(Math.round(parseFloat(s)*p),p);
+}
+/* Eingabe passt zur Lösung: exakt, oder bei Nicht-Ganzzahlen auf 0.006 genau als Dezimalzahl */
+function matchQ(inp,ans){
+  if(!inp) return false;
+  if(qeq(inp,ans)) return true;
+  return ans.d!==1&&Math.abs(qv(inp)-qv(ans))<0.006;
+}
+
+/* ============================================================
+   2. Darstellung (HTML) – Brüche, Vektoren, Punkte
+   ============================================================ */
+const MINUS='−';
+const tQ=q=>(q.n<0?MINUS:'')+Math.abs(q.n)+(q.d===1?'':'/'+q.d);
+function hQ(q){
+  if(q.d===1) return (q.n<0?MINUS:'')+Math.abs(q.n);
+  return (q.n<0?MINUS:'')+'<span class="frac"><span>'+Math.abs(q.n)+'</span><span>'+q.d+'</span></span>';
+}
+const hP=q=>q.n<0?'('+hQ(q)+')':hQ(q);          // in Klammern, falls negativ
+const hVec=(a,cls)=>'<span class="vec'+(cls?' '+cls:'')+'">'+a.map(x=>'<span>'+(typeof x==='string'?x:hQ(x))+'</span>').join('')+'</span>';
+const tPt=(name,a)=>name+'('+a.map(tQ).join(' | ')+')';
+const fmtN=(x,d)=>{d=d===undefined?1:d;return String(parseFloat(x.toFixed(d))).replace('-',MINUS);};
+const sp=(cls,html)=>'<span class="'+cls+'">'+html+'</span>';
+/* Terme wie «3x + 7» sauber setzen */
+function termX(c,v,first){
+  if(q0(c)) return '';
+  const neg=c.n<0,ab=qabs(c);
+  const body=qeq(ab,qI(1))?v:hQ(ab)+v;
+  if(first) return (neg?MINUS:'')+body;
+  return ' '+(neg?MINUS:'+')+' '+body;
+}
+function termC(c,first){
+  if(q0(c)) return first?'0':'';
+  const neg=c.n<0,ab=qabs(c);
+  if(first) return (neg?MINUS:'')+hQ(ab);
+  return ' '+(neg?MINUS:'+')+' '+hQ(ab);
+}
+
+/* Vektorrechnung mit Brüchen */
+const vsub=(a,b)=>a.map((x,i)=>qs(x,b[i]));
+const vadd=(a,b)=>a.map((x,i)=>qa(x,b[i]));
+const vscale=(k,a)=>a.map(x=>qm(k,x));
+const vdot=(a,b)=>a.reduce((s,x,i)=>qa(s,qm(x,b[i])),qI(0));
+const vzero=a=>a.every(q0);
+const vN=a=>a.map(qv);
+const vclone=a=>a.map(x=>({n:x.n,d:x.d}));
+function minors(u,v){const r=[];for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++)r.push(qs(qm(u[i],v[j]),qm(u[j],v[i])));return r;}
+const parallel=(u,v)=>minors(u,v).every(q0);
+const lenV=a=>Math.sqrt(a.reduce((s,x)=>s+qv(x)*qv(x),0));
+
+/* Zwei Geraden g: p + t·u, h: q + s·v */
+function lagen(p,u,q,v){
+  const dim=p.length;
+  if(parallel(u,v)){
+    const w=vsub(q,p);
+    return {kind:parallel(w,u)?'ident':'par'};
+  }
+  const rhs=vsub(q,p);
+  for(let i=0;i<dim;i++)for(let j=i+1;j<dim;j++){
+    // u_i t − v_i s = rhs_i ; u_j t − v_j s = rhs_j
+    const det=qs(qm(u[i],qn(v[j])),qm(u[j],qn(v[i])));
+    if(q0(det)) continue;
+    const t=qd(qs(qm(rhs[i],qn(v[j])),qm(rhs[j],qn(v[i]))),det);
+    const s=qd(qs(qm(u[i],rhs[j]),qm(u[j],rhs[i])),det);
+    const ok=u.every((_,k)=>qeq(qa(p[k],qm(t,u[k])),qa(q[k],qm(s,v[k]))));
+    if(ok) return {kind:'cut',t,s,S:vadd(p,vscale(t,u)),eqs:[i,j]};
+    return {kind:'skew',eqs:[i,j],t,s};
+  }
+  return {kind:'par'};
+}
+
+/* ============================================================
+   3. Zustand
+   ============================================================ */
+const S={
+  step:1,dim:2,mode:'theorie',nota:'mq',
+  tab:'vektor',tstep:0,
+  A:[qI(-1),qI(1)],B:[qI(3),qI(4)],C:[qI(0),qI(5)],D:[qI(4),qI(2)],
+  stuetz:'A',sfree:Q(1,2),richt:'AB',kfac:qI(2),t:Q(1,1),
+  P:[qI(7),qI(-2),qI(7)],
+  cam:{az:0.55,el:0.4},auto:false,
+  lvl:1,type:'zufall',seed:1,showSketch:true,
+  score:{solved:0,tried:0},
+  lock:null
+};
+const nm=()=>S.nota==='mq'?'m':'a';
+const nq=()=>S.nota==='mq'?'q':'b';
+const GA=()=>S.nota==='mq'?'a':'A', GB=()=>S.nota==='mq'?'b':'B', GC=()=>S.nota==='mq'?'c':'C';
+
+/* ============================================================
+   4. Zeichnen – gemeinsame Hilfen
+   ============================================================ */
+function css(){
+  const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  return {surface:v('--surface'),ink:v('--ink'),muted:v('--muted'),grid:v('--grid'),axis:v('--axis'),line:v('--line'),
+    s:v('--stuetz'),r:v('--richt'),p:v('--punkt'),ab:v('--ab'),q:v('--qc'),n:v('--normal'),accent:v('--accent'),bad:v('--bad'),ok:v('--ok')};
+}
+function setup(c){
+  const dpr=window.devicePixelRatio||1,W=c.clientWidth,H=c.clientHeight;
+  if(!W||!H) return null;
+  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  return {g,W,H,C:css()};
+}
+function niceStep(range,target){
+  const raw=range/target,mag=Math.pow(10,Math.floor(Math.log10(raw))),nm_=raw/mag;
+  return (nm_<1.5?1:nm_<3?2:nm_<7?5:10)*mag;
+}
+const nf=v=>String(parseFloat(v.toFixed(4))).replace('-',MINUS);
+function halo(g,txt,x,y,col,C,font,align,base){
+  g.font=font||'600 13px Inter, system-ui, sans-serif';g.textAlign=align||'left';g.textBaseline=base||'alphabetic';
+  g.lineWidth=4;g.strokeStyle=C.surface;g.lineJoin='round';g.strokeText(txt,x,y);g.fillStyle=col;g.fillText(txt,x,y);
+  if(VECL.indexOf(txt)>=0){
+    const fs=+(/(\d+(?:\.\d+)?)px/.exec(g.font)||[0,13])[1],w=g.measureText(txt).width;
+    const x0=g.textAlign==='center'?x-w/2:g.textAlign==='right'?x-w:x,ay=(base==='middle')?y-fs*0.8:y-fs*0.9;
+    g.save();g.strokeStyle=col;g.lineWidth=1.4;g.lineCap='round';g.beginPath();g.moveTo(x0,ay);g.lineTo(x0+w,ay);
+    g.moveTo(x0+w-3.5,ay-2.6);g.lineTo(x0+w,ay);g.lineTo(x0+w-3.5,ay+2.6);g.stroke();g.restore();
+  }
+}
+const VECL=['OS','OP','AB','BA','u','v','n','r'];
+function arrowHead(g,x0,y0,x1,y1,col,size){
+  const dx=x1-x0,dy=y1-y0,L=Math.hypot(dx,dy);if(L<1) return;
+  const ux=dx/L,uy=dy/L,s=Math.min(size||10,L*0.6);
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x1-ux*s-uy*s*0.45,y1-uy*s+ux*s*0.45);g.lineTo(x1-ux*s+uy*s*0.45,y1-uy*s-ux*s*0.45);g.closePath();
+  g.fillStyle=col;g.fill();
+}
+
+/* ============================================================
+   5. 2D-Zeichnung
+   ============================================================ */
+/* Szene: {pts:[{p,label,color,r,hollow,drag}], lines:[{p,u,color,w,dash,label}], vecs:[{a,b,color,label,w,dash,lab:{dx,dy}}],
+           segs:[{a,b,color,dash,w}], texts:[{at,text,color,dx,dy}], focus:[p] } – alle Koordinaten als Zahlen */
+function view2(sc,W,H){
+  const L={ml:34,mr:14,mt:12,mb:26};
+  const xs=[0],ys=[0],add=p=>{xs.push(p[0]);ys.push(p[1]);};
+  sc.pts.forEach(o=>add(o.p));sc.vecs.forEach(v=>{add(v.a);add(v.b);});sc.segs.forEach(s=>{add(s.a);add(s.b);});(sc.focus||[]).forEach(add);
+  let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const px=Math.max(1.5,(x1-x0)*.14),py=Math.max(1.5,(y1-y0)*.14);
+  x0=Math.floor(x0-px);x1=Math.ceil(x1+px);y0=Math.floor(y0-py);y1=Math.ceil(y1+py);
+  if(x1-x0<8){const c=(x0+x1)/2;x0=Math.floor(c-4);x1=x0+8;}
+  if(y1-y0<8){const c=(y0+y1)/2;y0=Math.floor(c-4);y1=y0+8;}
+  const pw=W-L.ml-L.mr,ph=H-L.mt-L.mb,ratio=pw/ph;
+  if((x1-x0)/(y1-y0)<ratio){const nx=(y1-y0)*ratio,c=(x0+x1)/2;x0=c-nx/2;x1=c+nx/2;}
+  else{const ny=(x1-x0)/ratio,c=(y0+y1)/2;y0=c-ny/2;y1=c+ny/2;}
+  return {L,x0,x1,y0,y1,pw,ph};
+}
+function clipLine(p,u,v){
+  // Parameterbereich [ta,tb], in dem p+t·u im Rechteck liegt
+  let ta=-1e9,tb=1e9;
+  const test=(pk,uk,lo,hi)=>{
+    if(Math.abs(uk)<1e-12){if(pk<lo||pk>hi){ta=1;tb=0;}return;}
+    let t1=(lo-pk)/uk,t2=(hi-pk)/uk;if(t1>t2){const t=t1;t1=t2;t2=t;}
+    ta=Math.max(ta,t1);tb=Math.min(tb,t2);
+  };
+  test(p[0],u[0],v.x0,v.x1);test(p[1],u[1],v.y0,v.y1);
+  return ta<=tb?[ta,tb]:null;
+}
+
+const COLK=['ink','muted','s','r','p','ab','q','n','accent','bad','ok'];
+function resolveScene(sc,C){
+  const f=o=>Object.assign({},o,{color:C[o.color]||o.color});
+  return {pts:sc.pts.map(f),lines:sc.lines.map(f),vecs:sc.vecs.map(f),segs:sc.segs.map(f),texts:sc.texts.map(f),focus:sc.focus};
+}
+const T2={};   // Zuordnung für Interaktion pro Canvas
+function draw2D(cv,sc,key){
+  const st=setup(cv);if(!st) return;
+  const {g,W,H,C}=st;
+  sc=resolveScene(sc,C);
+  let v=S.lock&&S.lock.key===key?S.lock.v:view2(sc,W,H);
+  const X=x=>v.L.ml+(x-v.x0)/(v.x1-v.x0)*v.pw,Y=y=>v.L.mt+(v.y1-y)/(v.y1-v.y0)*v.ph;
+  T2[key]={v,X,Y,sc,W,H};
+  g.fillStyle=C.surface;g.fillRect(0,0,W,H);
+  const sx=niceStep(Math.max(v.x1-v.x0,v.y1-v.y0),Math.max(5,v.pw/70));
+  g.save();g.beginPath();g.rect(v.L.ml,v.L.mt,v.pw,v.ph);g.clip();
+  g.lineWidth=1;g.strokeStyle=C.grid;g.beginPath();
+  for(let x=Math.ceil(v.x0/sx)*sx;x<=v.x1+1e-9;x+=sx){const px=Math.round(X(x))+.5;g.moveTo(px,v.L.mt);g.lineTo(px,v.L.mt+v.ph);}
+  for(let y=Math.ceil(v.y0/sx)*sx;y<=v.y1+1e-9;y+=sx){const py=Math.round(Y(y))+.5;g.moveTo(v.L.ml,py);g.lineTo(v.L.ml+v.pw,py);}
+  g.stroke();
+  g.strokeStyle=C.axis;g.lineWidth=1.5;g.beginPath();
+  if(v.y0<=0&&v.y1>=0){g.moveTo(v.L.ml,Y(0));g.lineTo(v.L.ml+v.pw,Y(0));}
+  if(v.x0<=0&&v.x1>=0){g.moveTo(X(0),v.L.mt);g.lineTo(X(0),v.L.mt+v.ph);}
+  g.stroke();
+  // Geraden
+  sc.lines.forEach(l=>{
+    const r=clipLine(l.p,l.u,v);if(!r) return;
+    g.save();g.strokeStyle=l.color;g.lineWidth=l.w||2.4;g.lineCap='round';if(l.dash)g.setLineDash(l.dash);
+    g.beginPath();g.moveTo(X(l.p[0]+r[0]*l.u[0]),Y(l.p[1]+r[0]*l.u[1]));g.lineTo(X(l.p[0]+r[1]*l.u[0]),Y(l.p[1]+r[1]*l.u[1]));g.stroke();g.restore();
+  });
+  sc.segs.forEach(s=>{
+    g.save();g.strokeStyle=s.color;g.lineWidth=s.w||1.8;if(s.dash)g.setLineDash(s.dash);
+    g.beginPath();g.moveTo(X(s.a[0]),Y(s.a[1]));g.lineTo(X(s.b[0]),Y(s.b[1]));g.stroke();g.restore();
+  });
+  sc.vecs.forEach(a=>{
+    g.save();g.strokeStyle=a.color;g.lineWidth=a.w||3;g.lineCap='round';if(a.dash)g.setLineDash(a.dash);
+    const x0=X(a.a[0]),y0=Y(a.a[1]),x1=X(a.b[0]),y1=Y(a.b[1]);
+    const L=Math.hypot(x1-x0,y1-y0),k=L>1?Math.min(8,L*.5)/L:0;
+    g.beginPath();g.moveTo(x0,y0);g.lineTo(x1-(x1-x0)*k,y1-(y1-y0)*k);g.stroke();g.restore();
+    arrowHead(g,x0,y0,x1,y1,a.color,11);
+  });
+  g.restore();
+  // Achsenbeschriftung
+  g.font='11px Inter, system-ui, sans-serif';g.fillStyle=C.muted;g.textAlign='center';g.textBaseline='top';
+  const ay=v.y0<=0&&v.y1>=0?Y(0):v.L.mt+v.ph, ax=v.x0<=0&&v.x1>=0?X(0):v.L.ml;
+  for(let x=Math.ceil(v.x0/sx)*sx;x<=v.x1+1e-9;x+=sx){if(Math.abs(x)<1e-9) continue;g.fillText(nf(x),X(x),Math.min(Math.max(ay+4,v.L.mt+2),v.L.mt+v.ph+4));}
+  g.textAlign='right';g.textBaseline='middle';
+  for(let y=Math.ceil(v.y0/sx)*sx;y<=v.y1+1e-9;y+=sx){if(Math.abs(y)<1e-9) continue;g.fillText(nf(y),Math.max(ax-5,v.L.ml-3),Y(y));}
+  g.strokeStyle=C.line;g.lineWidth=1;g.strokeRect(v.L.ml+.5,v.L.mt+.5,v.pw,v.ph);
+  halo(g,'x',v.L.ml+v.pw-8,Math.min(Math.max(ay-8,v.L.mt+12),v.L.mt+v.ph-6),C.muted,C,'italic 13px Inter, sans-serif','right');
+  halo(g,'y',Math.min(Math.max(ax+9,v.L.ml+8),v.L.ml+v.pw-8),v.L.mt+13,C.muted,C,'italic 13px Inter, sans-serif','left');
+  // Beschriftungen von Vektoren
+  sc.vecs.forEach(a=>{
+    if(!a.label) return;
+    const mx=(X(a.a[0])+X(a.b[0]))/2,my=(Y(a.a[1])+Y(a.b[1]))/2;
+    const dx=X(a.b[0])-X(a.a[0]),dy=Y(a.b[1])-Y(a.a[1]),L=Math.hypot(dx,dy)||1;
+    const off=a.off===undefined?14:a.off;
+    halo(g,a.label,mx-dy/L*off,my+dx/L*off,a.color,C,'600 13px Inter, sans-serif','center','middle');
+  });
+  sc.lines.forEach(l=>{
+    if(!l.label) return;
+    const r=clipLine(l.p,l.u,v);if(!r) return;
+    const t=r[1]-(r[1]-r[0])*0.07;
+    halo(g,l.label,X(l.p[0]+t*l.u[0])-8,Y(l.p[1]+t*l.u[1])-10,l.color,C,'600 14px Inter, sans-serif','right');
+  });
+  // Punkte
+  sc.pts.forEach(o=>{
+    const px=X(o.p[0]),py=Y(o.p[1]);
+    g.beginPath();g.arc(px,py,o.r||6,0,6.2832);
+    if(o.hollow){g.fillStyle=C.surface;g.fill();g.lineWidth=3;g.strokeStyle=o.color;g.stroke();}
+    else{g.fillStyle=o.color;g.fill();g.lineWidth=2.2;g.strokeStyle=C.surface;g.stroke();}
+    if(o.drag){g.beginPath();g.arc(px,py,(o.r||6)+5,0,6.2832);g.lineWidth=1.2;g.strokeStyle=o.color;g.globalAlpha=.45;g.setLineDash([3,3]);g.stroke();g.setLineDash([]);g.globalAlpha=1;}
+    if(o.label) halo(g,o.label,px+(o.dx===undefined?9:o.dx),py+(o.dy===undefined?-9:o.dy),o.color,C,'700 15px Space Grotesk, Inter, sans-serif','left');
+  });
+  sc.texts.forEach(t=>halo(g,t.text,X(t.at[0])+(t.dx||0),Y(t.at[1])+(t.dy||0),t.color,C,'600 13px Inter, sans-serif',t.align||'center','middle'));
+}
+
+/* ============================================================
+   6. 3D-Zeichnung (drehbar)
+   ============================================================ */
+function draw3D(cv,sc){
+  const st=setup(cv);if(!st) return;
+  const {g,W,H,C}=st;
+  sc=resolveScene(sc,C);
+  g.fillStyle=C.surface;g.fillRect(0,0,W,H);
+  const xs=[0],ys=[0],zs=[0],add=p=>{xs.push(p[0]);ys.push(p[1]);zs.push(p[2]);};
+  sc.pts.forEach(o=>add(o.p));sc.vecs.forEach(a=>{add(a.a);add(a.b);});sc.segs.forEach(s=>{add(s.a);add(s.b);});(sc.focus||[]).forEach(add);
+  let B=[[Math.min(...xs),Math.max(...xs)],[Math.min(...ys),Math.max(...ys)],[Math.min(...zs),Math.max(...zs)]];
+  B=B.map(([a,b])=>{const pad=Math.max(1.5,(b-a)*.15);return [Math.floor(a-pad),Math.ceil(b+pad)];});
+  const c=B.map(([a,b])=>(a+b)/2);
+  const ca=Math.cos(S.cam.az),sa=Math.sin(S.cam.az),ce=Math.cos(S.cam.el),se=Math.sin(S.cam.el);
+  const raw=p=>{const x=p[0]-c[0],y=p[1]-c[1],z=p[2]-c[2];const d=ca*x+sa*y;return [-sa*x+ca*y,z*ce-d*se,d*ce+z*se];};
+  // Skalierung: alle 8 Ecken müssen passen
+  let mx=0,my=0;
+  for(const i of [0,1])for(const j of [0,1])for(const k of [0,1]){const r=raw([B[0][i],B[1][j],B[2][k]]);mx=Math.max(mx,Math.abs(r[0]));my=Math.max(my,Math.abs(r[1]));}
+  const sc3=Math.min((W/2-34)/mx,(H/2-26)/my);
+  const P=p=>{const r=raw(p);return [W/2+r[0]*sc3,H/2-r[1]*sc3,r[2]];};
+  const zp=Math.min(Math.max(0,B[2][0]),B[2][1]);
+  // Bodengitter
+  const stp=niceStep(Math.max(B[0][1]-B[0][0],B[1][1]-B[1][0]),6);
+  g.lineWidth=1;g.strokeStyle=C.grid;g.beginPath();
+  for(let x=Math.ceil(B[0][0]/stp)*stp;x<=B[0][1]+1e-9;x+=stp){const a=P([x,B[1][0],zp]),b=P([x,B[1][1],zp]);g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);}
+  for(let y=Math.ceil(B[1][0]/stp)*stp;y<=B[1][1]+1e-9;y+=stp){const a=P([B[0][0],y,zp]),b=P([B[0][1],y,zp]);g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);}
+  g.stroke();
+  g.strokeStyle=C.line;g.beginPath();
+  [[B[0][0],B[1][0]],[B[0][1],B[1][0]],[B[0][1],B[1][1]],[B[0][0],B[1][1]]].forEach((q,i)=>{const a=P([q[0],q[1],zp]);if(i)g.lineTo(a[0],a[1]);else g.moveTo(a[0],a[1]);});
+  g.closePath();g.stroke();
+  // Achsen
+  const axis=(from,to,lab,dir)=>{
+    const a=P(from),b=P(to);
+    g.strokeStyle=C.axis;g.lineWidth=1.7;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();
+    arrowHead(g,a[0],a[1],b[0],b[1],C.axis,9);
+    halo(g,lab,b[0]+(b[0]-a[0])*.0+6,b[1]-6,C.muted,C,'italic 15px Inter, sans-serif','left');
+  };
+  axis([B[0][0],0,0],[B[0][1],0,0],'x');axis([0,B[1][0],0],[0,B[1][1],0],'y');axis([0,0,B[2][0]],[0,0,B[2][1]],'z');
+  // Ticks
+  g.font='10.5px Inter, sans-serif';g.fillStyle=C.muted;g.textBaseline='middle';
+  const ticks=(k)=>{
+    for(let t=Math.ceil(B[k][0]/stp)*stp;t<=B[k][1]+1e-9;t+=stp){
+      if(Math.abs(t)<1e-9) continue;
+      const p=[0,0,0];p[k]=t;const a=P(p);
+      g.beginPath();g.arc(a[0],a[1],2,0,6.2832);g.fillStyle=C.axis;g.fill();
+      g.fillStyle=C.muted;g.textAlign=k===2?'right':'center';g.fillText(nf(t),a[0]+(k===2?-6:0),a[1]+(k===2?0:11));
+    }
+  };
+  ticks(0);ticks(1);ticks(2);
+  // Hilfsfunktion: Gerade im Quader abschneiden
+  const lo=B.map(b=>b[0]-1),hi=B.map(b=>b[1]+1);
+  const clip3=(p,u)=>{let ta=-1e9,tb=1e9;for(let k=0;k<3;k++){
+    if(Math.abs(u[k])<1e-12){if(p[k]<lo[k]||p[k]>hi[k]) return null;continue;}
+    let t1=(lo[k]-p[k])/u[k],t2=(hi[k]-p[k])/u[k];if(t1>t2){const t=t1;t1=t2;t2=t;}ta=Math.max(ta,t1);tb=Math.min(tb,t2);}
+    return ta<=tb?[ta,tb]:null;};
+  // Lotlinien der Punkte auf die Bodenebene
+  sc.pts.forEach(o=>{
+    if(o.nodrop) return;
+    const a=P(o.p),b=P([o.p[0],o.p[1],zp]);
+    g.save();g.strokeStyle=o.color;g.globalAlpha=.35;g.setLineDash([3,4]);g.lineWidth=1.2;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();g.restore();
+    g.beginPath();g.arc(b[0],b[1],2.4,0,6.2832);g.fillStyle=o.color;g.globalAlpha=.4;g.fill();g.globalAlpha=1;
+  });
+  sc.lines.forEach(l=>{
+    const r=clip3(l.p,l.u);if(!r) return;
+    const a=P([l.p[0]+r[0]*l.u[0],l.p[1]+r[0]*l.u[1],l.p[2]+r[0]*l.u[2]]),b=P([l.p[0]+r[1]*l.u[0],l.p[1]+r[1]*l.u[1],l.p[2]+r[1]*l.u[2]]);
+    g.save();g.strokeStyle=l.color;g.lineWidth=l.w||2.4;g.lineCap='round';if(l.dash)g.setLineDash(l.dash);
+    g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();g.restore();
+    if(l.label) halo(g,l.label,b[0]-6,b[1]-8,l.color,C,'600 14px Inter, sans-serif','right');
+  });
+  sc.segs.forEach(s=>{const a=P(s.a),b=P(s.b);g.save();g.strokeStyle=s.color;g.lineWidth=s.w||1.8;if(s.dash)g.setLineDash(s.dash);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();g.restore();});
+  sc.vecs.forEach(v=>{
+    const a=P(v.a),b=P(v.b);
+    g.save();g.strokeStyle=v.color;g.lineWidth=v.w||3;g.lineCap='round';if(v.dash)g.setLineDash(v.dash);
+    const L=Math.hypot(b[0]-a[0],b[1]-a[1]),k=L>1?Math.min(8,L*.5)/L:0;
+    g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0]-(b[0]-a[0])*k,b[1]-(b[1]-a[1])*k);g.stroke();g.restore();
+    arrowHead(g,a[0],a[1],b[0],b[1],v.color,11);
+    if(v.label){const dx=b[0]-a[0],dy=b[1]-a[1],LL=Math.hypot(dx,dy)||1,off=v.off===undefined?14:v.off;
+      halo(g,v.label,(a[0]+b[0])/2-dy/LL*off,(a[1]+b[1])/2+dx/LL*off,v.color,C,'600 13px Inter, sans-serif','center','middle');}
+  });
+  sc.pts.forEach(o=>{
+    const a=P(o.p);
+    g.beginPath();g.arc(a[0],a[1],o.r||6,0,6.2832);
+    if(o.hollow){g.fillStyle=C.surface;g.fill();g.lineWidth=3;g.strokeStyle=o.color;g.stroke();}
+    else{g.fillStyle=o.color;g.fill();g.lineWidth=2.2;g.strokeStyle=C.surface;g.stroke();}
+    if(o.label) halo(g,o.label,a[0]+(o.dx===undefined?9:o.dx),a[1]+(o.dy===undefined?-9:o.dy),o.color,C,'700 15px Space Grotesk, Inter, sans-serif','left');
+  });
+}
+const emptyScene=()=>({pts:[],lines:[],vecs:[],segs:[],texts:[],focus:[]});
+
+/* ============================================================
+   7. Theorie: abgeleitete Grössen und Szenen
+   ============================================================ */
+function reduceVec(v){
+  let L=1;v.forEach(x=>{L=L*x.d/gcd(L,x.d);});
+  const w=v.map(x=>x.n*(L/x.d));
+  const g=w.reduce((a,b)=>gcd(a,b),0)||1;
+  return w.map(x=>qI(x/g));
+}
+function geo(){
+  const d=S.dim,A=S.A.slice(0,d),B=S.B.slice(0,d),AB=vsub(B,A);
+  const same=vzero(AB);
+  const Sp=S.stuetz==='A'?A:S.stuetz==='B'?B:vadd(A,vscale(S.sfree,AB));
+  let u=AB;
+  if(S.richt==='BA') u=vscale(qI(-1),AB);
+  else if(S.richt==='kurz') u=same?AB:reduceVec(AB);
+  else if(S.richt==='frei') u=vscale(S.kfac,AB);
+  const tt=S.t;
+  const P=vadd(Sp,vscale(tt,u));
+  return {d,A,B,AB,same,Sp,u,t:tt,P};
+}
+const dim0=(d)=>Array(d).fill(0);
+const idxName=d=>d===2?['x','y']:['x','y','z'];
+const ptNames=(d)=>d===2?'(x | y)':'(x | y | z)';
+
+function baseScene(G,opts){
+  opts=opts||{};
+  const sc=emptyScene(),d=G.d;
+  if(!G.same){
+    sc.lines.push({p:vN(G.A),u:vN(G.AB),color:'ink',w:opts.thick?2.8:1.8,dash:opts.thick?null:[8,6],label:opts.noLabel?null:'g'});
+  }
+  sc.pts.push({p:vN(G.A),label:'A',color:'ab',drag:d===2&&!opts.nodrag,key:'A'});
+  sc.pts.push({p:vN(G.B),label:'B',color:'ab',drag:d===2&&!opts.nodrag,key:'B'});
+  sc.focus.push(vN(G.A),vN(G.B));
+  return sc;
+}
+const unitVecs=(G)=>vN(G.u);
+
+/* ---------- Vektorform ---------- */
+const VSTEPS=[
+ {t:'Zwei Punkte',ref:'Blatt Abschnitt 2'},
+ {t:'Stützvektor: Ortsvektor eines Punktes der Geraden',ref:'Blatt Abschnitt 1 und 2'},
+ {t:'Richtungsvektor: Verbindungsvektor',ref:'Blatt Abschnitt 1 und 2'},
+ {t:'Geradengleichung zusammensetzen',ref:'Blatt Abschnitt 2: Rezept «Gerade durch zwei Punkte»'},
+ {t:'Probe: Liegt ein Punkt auf der Geraden?',ref:'Blatt Abschnitt 2: Rezept «Punktprobe»'}
+];
+function vektorStep(i){
+  const G=geo(),d=G.d,nmz=idxName(d);
+  const sc=baseScene(G,{thick:i>=3});
+  let html='';
+  const vS=hVec(G.Sp,'c-s'),vU=hVec(G.u,'c-r');
+  if(G.same){
+    return {sc,html:'<div class="warnbox"><b>Die Punkte A und B sind gleich.</b> Eine Gerade braucht zwei verschiedene Punkte. Ändern Sie einen Punkt.</div>'};
+  }
+  if(i===0){
+    html='<p>Eine Gerade ist durch <b>zwei verschiedene Punkte</b> eindeutig festgelegt. Gegeben sind</p>'+
+      '<div class="eq">'+sp('c-ab',tPt('A',G.A))+' &nbsp;und&nbsp; '+sp('c-ab',tPt('B',G.B))+'</div>'+
+      '<p class="why">Die gestrichelte Linie zeigt die Gerade <b>g</b> durch beide Punkte. Jetzt wird daraus eine <b>Gleichung</b>: Man braucht einen Punkt, bei dem man startet, und eine Richtung, in die man läuft.</p>'+
+      '<p class="tip">'+(d===2?'Ziehen Sie A und B im Bild auf andere Gitterpunkte, oder geben Sie in der Karte «Zwei Punkte eingeben» Koordinaten ein.':'Geben Sie in der Karte «Zwei Punkte eingeben» die Koordinaten ein. Ziehen Sie im Bild, um die Ansicht zu drehen.')+'</p>';
+  }
+  if(i>=1){
+    sc.vecs.push({a:dim0(d),b:vN(G.Sp),color:'s',label:'OS',w:3.2,off:-14});
+    sc.pts.push({p:vN(G.Sp),label:'S',color:'s',hollow:true,r:8,dx:-18,dy:16});
+    sc.focus.push(vN(G.Sp));
+  }
+  if(i===1){
+    html='<p>Wählen Sie in der Karte «Selbst wählen» einen <b class="c-s">Stützpunkt S</b> auf der Geraden. Der <b class="c-s">Ortsvektor OS</b> zeigt vom Ursprung O zu S. Seine Koordinaten sind die Koordinaten des Punktes:</p>'+
+      '<div class="eq big">'+sp('c-s','OS')+' = '+vS+' &nbsp;<span class="why">(S = '+tPt('',G.Sp).replace(/^\(/,'(')+')</span></div>'+
+      (S.stuetz==='frei'?'<p class="why">Dieser Punkt liegt auf der Geraden: S = A + '+tQ(S.sfree)+'·AB. Jeder Punkt der Geraden ist als Stützpunkt erlaubt.</p>':'<p class="why">Nehmen Sie A oder B oder einen beliebigen anderen Punkt der Geraden: Alle sind als Stützpunkt erlaubt.</p>');
+  }
+  if(i>=2){
+    sc.vecs.push({a:vN(G.Sp),b:vN(vadd(G.Sp,G.u)),color:'r',label:'u',w:3.4,off:14});
+    sc.focus.push(vN(vadd(G.Sp,G.u)));
+    if(S.richt!=='AB'){
+      sc.vecs.push({a:vN(G.A),b:vN(G.B),color:'r',w:1.6,dash:[5,5],label:'AB',off:-14});
+    }
+  }
+  if(i===2){
+    const first='<div class="eq"><span class="row">'+sp('c-r','AB')+' = OB − OA = '+hVec(G.B)+' − '+hVec(G.A)+' = '+hVec(G.AB)+'</span></div>';
+    let more='';
+    if(S.richt==='BA') more='<div class="eq"><span class="row">'+sp('c-r','u')+' = BA = −AB = '+vU+'</span></div><p class="why">Die umgekehrte Richtung beschreibt dieselbe Gerade.</p>';
+    else if(S.richt==='kurz') more='<div class="eq"><span class="row">'+sp('c-r','u')+' = '+vU+' &nbsp;<span class="why">(AB gekürzt)</span></span></div><p class="why">Ein gekürzter Richtungsvektor ist bequemer zum Rechnen und beschreibt dieselbe Gerade.</p>';
+    else if(S.richt==='frei') more='<div class="eq"><span class="row">'+sp('c-r','u')+' = '+hQ(S.kfac)+' · AB = '+vU+'</span></div><p class="why">Jedes Vielfache (ausser 0) von AB zeigt in dieselbe oder die Gegenrichtung.</p>';
+    else more='<div class="eq"><span class="row">'+sp('c-r','u')+' = AB = '+vU+'</span></div>';
+    html='<p>Der <b class="c-r">Richtungsvektor u</b> gibt an, in welche Richtung die Gerade läuft. Man nimmt den <b>Verbindungsvektor</b> der beiden Punkte, «Spitze minus Fuss»:</p>'+first+more+
+      '<p class="why">Der rote Pfeil beginnt im Stützpunkt S und zeigt in Richtung der Geraden. Wählen Sie in der Karte «Selbst wählen» eine andere Richtung.</p>';
+  }
+  if(i===3){
+    sc.vecs.push({a:vN(G.Sp),b:vN(G.P),color:'r',w:2.2,dash:[4,4]});
+    sc.pts.push({p:vN(G.P),label:'P',color:'p',r:7,dx:10,dy:-10});
+    sc.focus.push(vN(G.P));
+    sc.vecs.push({a:dim0(d),b:vN(G.P),color:'muted',label:'r',w:2.2,dash:[2,5],off:12});
+  }
+  if(i===3){
+    const rows=[-1,0,1,2].map(t=>{const p=vadd(G.Sp,vscale(qI(t),G.u));return '<tr><td>'+t+'</td><td>'+hVec(p)+'</td></tr>';}).join('');
+    html='<p>Jeder Punkt der Geraden entsteht so: Man startet im Stützpunkt (<b class="c-s">blau</b>) und läuft <b>t-mal</b> den Richtungsvektor (<b class="c-r">rot</b>) weiter.</p>'+
+      '<div class="eq big"><span class="row">g: &nbsp;r = '+sp('c-s','OS')+' + t · '+sp('c-r','u')+' &nbsp;=&nbsp; '+vS+' + t · '+vU+'</span></div>'+
+      '<div class="eq"><span class="row">Für <b>t = '+hQ(G.t)+'</b>: &nbsp;r = '+vS+' + '+hP(G.t)+' · '+vU+' = '+hVec(G.P,'c-p')+' &nbsp;→ Punkt '+sp('c-p','P')+'</span></div>'+
+      '<p class="why">Bewegen Sie in der Karte «Selbst wählen» den Regler für <b>t</b>: Der grüne Punkt P wandert über die Gerade. Bei t = 0 liegt er im Stützpunkt, bei t &gt; 0 in Richtung von u, bei t &lt; 0 in der Gegenrichtung.</p>'+
+      '<table class="tv"><tr><th>t</th><th>Punkt der Geraden</th></tr>'+rows+'</table>'+
+      '<p class="tip">Dieselbe Gerade hat <b>viele</b> Gleichungen (anderer Stützpunkt, anderer Richtungsvektor). Probieren Sie in der Karte «Selbst wählen» andere Wahlen aus: Die Gerade bleibt gleich.&nbsp; <button class="btn small" id="btnOther">Andere Darstellung zeigen</button></p>';
+  }
+  if(i===4){
+    const Pt=S.P.slice(0,d);
+    const on=pointOn(Pt,G.Sp,G.u);
+    sc.pts.push({p:vN(Pt),label:'P',color:on.ok?'p':'bad',r:7,hollow:!on.ok,dx:10,dy:-10});
+    sc.focus.push(vN(Pt));
+    const rows=on.rows.map((r,k)=>'<span class="row">('+['I','II','III'][k]+') &nbsp;'+nmz[k]+':&nbsp; '+r+'</span>').join('');
+    html='<p>Liegt der Punkt <b>'+sp(on.ok?'c-p':'','P')+'</b> auf der Geraden? Man setzt den Ortsvektor von P gleich der Geradengleichung und rechnet <b>Koordinate für Koordinate</b>:</p>'+
+      '<div class="eq"><span class="row">'+hVec(Pt)+' = '+vS+' + t · '+vU+'</span>'+rows+'</div>'+
+      (on.ok?'<div class="tip"><b>Alle Gleichungen stimmen</b> mit demselben t = '+hQ(on.t)+': P liegt auf g.</div>':'<div class="warnbox"><b>'+on.why+'</b> P liegt nicht auf g.</div>')+
+      '<p class="why">Ändern Sie in der Karte «Selbst wählen» die Koordinaten von P. Tipp: Aus der ersten Gleichung, in der u nicht null ist, berechnet man t und setzt es in die übrigen ein.</p>';
+  }
+  return {sc,html};
+}
+/* Punktprobe für P bei g: S + t·u */
+function pointOn(P,Sp,u){
+  const rows=[];let t=null,ok=true,why='';
+  P.forEach((p,k)=>{
+    if(q0(u[k])){
+      const eq=qeq(p,Sp[k]);
+      rows.push(hQ(p)+' = '+hQ(Sp[k])+' + t · 0 &nbsp;→ '+(eq?'<b class="c-p">stimmt für jedes t</b>':'<b style="color:var(--bad)">stimmt nicht</b>'));
+      if(!eq){ok=false;why=why||'Eine Gleichung kann nie stimmen.';}
+    }else{
+      const tk=qd(qs(p,Sp[k]),u[k]);
+      rows.push(hQ(p)+' = '+hQ(Sp[k])+' + t · '+hP(u[k])+' &nbsp;→ &nbsp;t = '+hQ(tk));
+      if(t===null) t=tk; else if(!qeq(t,tk)){ok=false;why=why||'Die t-Werte stimmen nicht überein.';}
+    }
+  });
+  if(t===null) t=qI(0);
+  return {ok,t,rows,why};
+}
+
+/* ---------- Explizite Form und Grundform (2D) ---------- */
+function planar(){
+  const A=S.A.slice(0,2),B=S.B.slice(0,2),u=vsub(B,A),same=vzero(u),vert=!same&&q0(u[0]);
+  let m=null,q=null;
+  if(!same&&!vert){m=qd(u[1],u[0]);q=qs(A[1],qm(m,A[0]));}
+  return {A,B,u,same,vert,m,q};
+}
+function grundform(pl){
+  // a x + b y + c = 0, ganzzahlig, a > 0 (oder a = 0 und b > 0)
+  if(pl.vert) return {a:qI(1),b:qI(0),c:qn(pl.A[0]),D:qI(1),flip:false,red:1,a0:qI(1),b0:qI(0),c0:qn(pl.A[0])};
+  const D=qI(pl.m.d*pl.q.d/gcd(pl.m.d,pl.q.d));
+  let a0=qm(D,pl.m),b0=qn(D),c0=qm(D,pl.q);
+  let a=a0,b=b0,c=c0,flip=false;
+  if(a.n<0||(a.n===0&&b.n<0)){a=qn(a);b=qn(b);c=qn(c);flip=true;}
+  const g=gcd(gcd(a.n,b.n),c.n);
+  if(g>1){a=qI(a.n/g);b=qI(b.n/g);c=qI(c.n/g);}
+  return {a,b,c,D,flip,red:g,a0,b0,c0};
+}
+const ESTEPS=[
+ {t:'Zwei Punkte',ref:'Blatt Abschnitt 3'},
+ {t:'Steigung: am Steigungsdreieck ablesen',ref:'Blatt Abschnitt 3: «Steigung aus dem Richtungsvektor»'},
+ {t:'Steigung: rechnen',ref:'Blatt Abschnitt 3: Rezept «Von der Parameterform zur expliziten Form»'},
+ {t:'y-Achsenabschnitt bestimmen',ref:'Blatt Abschnitt 3: Rezept «Von der Parameterform zur expliziten Form»'},
+ {t:'Ergebnis und Probe',ref:'Blatt Abschnitt 3'}
+];
+const EVSTEPS=[
+ {t:'Zwei Punkte',ref:'Blatt Abschnitt 3'},
+ {t:'Steigungsdreieck: Was ist hier anders?',ref:'Blatt Abschnitt 3: «Spezialfall: senkrechte Gerade»'},
+ {t:'Ergebnis: x = konstant',ref:'Blatt Abschnitt 3: «Spezialfall: senkrechte Gerade»'}
+];
+function explizitSteps(){return planar().vert?EVSTEPS:ESTEPS;}
+function explizitStep(i){
+  const pl=planar(),G={d:2,A:pl.A,B:pl.B,AB:pl.u,same:pl.same};
+  const sc=baseScene(G,{thick:i>=2});
+  const M=nm(),Qn=nq();
+  if(pl.same) return {sc,html:'<div class="warnbox"><b>Die Punkte A und B sind gleich.</b> Eine Gerade braucht zwei verschiedene Punkte.</div>'};
+  const A=pl.A,B=pl.B,u=pl.u,N=vN;
+  const corner=[qv(B[0]),qv(A[1])];
+  const legs=()=>{
+    sc.segs.push({a:N(A),b:corner,color:'r',dash:[6,5],w:2.4});
+    sc.segs.push({a:corner,b:N(B),color:'r',dash:[6,5],w:2.4});
+    sc.vecs.push({a:N(A),b:N(B),color:'r',w:3,label:'u',off:-14});
+    sc.texts.push({at:[(qv(A[0])+qv(B[0]))/2,qv(A[1])],text:'Δx = '+tQ(u[0]),color:'r',dy:(qv(u[1])>=0?16:-16)});
+    sc.texts.push({at:[qv(B[0]),(qv(A[1])+qv(B[1]))/2],text:'Δy = '+tQ(u[1]),color:'r',dx:(qv(u[0])>=0?12:-12),align:(qv(u[0])>=0?'left':'right')});
+  };
+  const vU=hVec(u,'c-r');
+  if(pl.vert){
+    if(i===0){return {sc,html:'<p>Gegeben sind '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+'. Beide Punkte haben dieselbe <b>x-Koordinate</b>.</p><p class="why">Bevor wir rechnen: Wie verläuft die Gerade? Schauen Sie ins Bild.</p>'+'<p class="tip">Ziehen Sie A oder B so, dass sie nicht mehr übereinander liegen: Dann geht es mit den normalen Schritten weiter.</p>'};}
+    legs();
+    if(i===1){
+      return {sc,html:'<p>Der Weg von A nach B geht <b>keinen Schritt nach rechts</b>: '+sp('c-r','Δx')+' = 0.</p>'+
+      '<div class="eq"><span class="row">'+sp('c-r','u')+' = AB = '+vU+'</span><span class="row">'+M+' = Δy / Δx = '+hQ(u[1])+' / 0 &nbsp;→ <b style="color:var(--bad)">Division durch null: keine Steigung</b></span></div>'+
+      '<p class="why">Die Gerade steigt nicht «unendlich steil», sie hat schlicht <b>keine Steigung</b>. Darum gibt es keine Gleichung der Form y = '+M+'x + '+Qn+'.</p>'};
+    }
+    sc.lines.length=0;sc.lines.push({p:N(A),u:N(u),color:'ink',w:2.8,label:'x = '+tQ(A[0])});
+    return {sc,html:'<p>Auf einer senkrechten Geraden haben <b>alle Punkte dieselbe x-Koordinate</b>:</p>'+
+      '<div class="eq big"><span class="row"><b>x = '+hQ(A[0])+'</b></span></div>'+
+      '<p class="why">Das ist die vollständige Gleichung. Das y darf beliebig sein. In der Grundform schreibt man x − '+hP(A[0])+' = 0, also a = 1, b = 0, c = '+hQ(qn(A[0]))+'.</p>'};
+  }
+  if(i===0){
+    return {sc,html:'<p>Gegeben sind '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+'. Gesucht ist die Gleichung der Geraden in der <b>expliziten Form</b> <b>y = '+M+'x + '+Qn+'</b>.</p>'+
+      '<p class="why"><b>'+M+'</b> ist die <b class="c-r">Steigung</b> und <b>'+Qn+'</b> der <b class="c-q">y-Achsenabschnitt</b>: der Wert, bei dem die Gerade die y-Achse schneidet.</p>'+
+      '<p class="tip">Ziehen Sie A und B im Bild auf andere Gitterpunkte. Am Ende der Seite sehen Sie, was bei einer senkrechten Geraden passiert.</p>'};
+  }
+  legs();
+  if(i===1){
+    return {sc,html:'<p>Gehen Sie von A nach B und zählen Sie: <b class="c-r">Δx</b> Schritte nach rechts, dann <b class="c-r">Δy</b> Schritte nach '+(qv(u[1])>=0?'oben':'unten')+'. Das ist genau der Richtungsvektor:</p>'+
+      '<div class="eq"><span class="row">'+sp('c-r','u')+' = AB = '+vU+' &nbsp;→ &nbsp;Δx = '+hQ(u[0])+', &nbsp;Δy = '+hQ(u[1])+'</span></div>'+
+      '<p>Die <b>Steigung</b> ist das Verhältnis «Höhenänderung durch Schritt nach rechts»:</p>'+
+      '<div class="eq big"><span class="row">'+M+' = '+sp('c-r','Δy / Δx')+'</span></div>'+
+      '<p class="why">'+(pl.m.n>0?'Die Gerade steigt von links nach rechts ('+M+' &gt; 0).':pl.m.n<0?'Die Gerade fällt von links nach rechts ('+M+' &lt; 0).':'Die Gerade ist waagrecht ('+M+' = 0).')+'</p>'};
+  }
+  const m=pl.m,q=pl.q;
+  if(i>=2){
+    // Einheitsdreieck
+    sc.segs.push({a:N(A),b:[qv(A[0])+1,qv(A[1])],color:'r',w:1.6,dash:[2,3]});
+    sc.segs.push({a:[qv(A[0])+1,qv(A[1])],b:[qv(A[0])+1,qv(A[1])+qv(m)],color:'r',w:1.6,dash:[2,3]});
+    sc.texts.push({at:[qv(A[0])+0.5,qv(A[1])],text:'1',color:'r',dy:(qv(m)>=0?15:-15)});
+    sc.texts.push({at:[qv(A[0])+1,qv(A[1])+qv(m)/2],text:M+' = '+tQ(m),color:'r',dx:10,align:'left'});
+  }
+  if(i===2){
+    return {sc,html:'<p>Rechnen Sie dasselbe mit den Koordinaten. Entweder mit den Punkten oder mit dem Richtungsvektor:</p>'+
+      '<div class="eq"><span class="row">'+M+' = <span class="frac"><span>y<sub>B</sub> − y<sub>A</sub></span><span>x<sub>B</sub> − x<sub>A</sub></span></span> = <span class="frac"><span>'+hQ(B[1])+' − '+hP(A[1])+'</span><span>'+hQ(B[0])+' − '+hP(A[0])+'</span></span> = <span class="frac"><span>'+hQ(u[1])+'</span><span>'+hQ(u[0])+'</span></span> = '+sp('c-r',hQ(m))+'</span>'+
+      '<span class="row">oder: &nbsp;'+M+' = <span class="frac"><span>u<sub>2</sub></span><span>u<sub>1</sub></span></span> mit '+sp('c-r','u')+' = '+vU+'</span></div>'+
+      '<p class="why">Das kleine gestrichelte Dreieck im Bild zeigt es anders: Pro <b>1</b> Schritt nach rechts geht es um <b>'+M+' = '+tQ(m)+'</b> '+(qv(m)>=0?'hinauf':'hinunter')+'.</p>'};
+  }
+  sc.pts.push({p:[0,qv(q)],label:null,color:'q',r:7});
+  sc.vecs.push({a:[0,0],b:[0,qv(q)],color:'q',w:3.4,label:Qn,off:-14});
+  sc.focus.push([0,qv(q)]);
+  if(i===3){
+    return {sc,html:'<p>Der <b class="c-q">y-Achsenabschnitt '+Qn+'</b> ist die Höhe, in der die Gerade die y-Achse schneidet. Setzen Sie dafür einen bekannten Punkt in <b>y = '+M+'x + '+Qn+'</b> ein, hier '+sp('c-ab','A')+':</p>'+
+      '<div class="eq"><span class="row">'+hQ(A[1])+' = '+sp('c-r',hP(m))+' · '+hP(A[0])+' + '+sp('c-q',Qn)+'</span><span class="row">'+Qn+' = '+hQ(A[1])+' − '+hP(qm(m,A[0]))+' = '+sp('c-q',hQ(q))+'</span></div>'+
+      '<p class="why">Formel zum Merken: '+Qn+' = y<sub>A</sub> − '+M+' · x<sub>A</sub>. Im Bild ist '+Qn+' der türkise Pfeil auf der y-Achse.</p>'};
+  }
+  // i===4
+  const eqs='y'+' = '+sp('c-r',hQ(m))+'x'+(q0(q)?'':(q.n<0?' − ':' + ')+sp('c-q',hQ(qabs(q))));
+  const prb=qeq(qa(qm(m,B[0]),q),B[1]);
+  return {sc,html:'<p>Die Gleichung der Geraden durch '+sp('c-ab','A')+' und '+sp('c-ab','B')+' lautet:</p>'+
+    '<div class="eq big"><span class="row">'+eqs+'</span></div>'+
+    '<p class="why">Probe mit dem zweiten Punkt '+sp('c-ab','B')+': '+hQ(B[1])+' = '+hP(m)+' · '+hP(B[0])+' + '+hP(q)+' = '+hQ(qa(qm(m,B[0]),q))+' '+(prb?'<b class="c-p">✓</b>':'✗')+'</p>'+
+    '<p class="tip">Umgekehrt: Die Steigung '+M+' ist die Richtung, und der Punkt (0 | '+tQ(q)+') ist ein Stützpunkt. Daraus entsteht die Vektorform r = '+hVec([qI(0),q])+' + t · '+hVec([qI(1),m])+'.</p>'};
+}
+const GSTEPS=[
+ {t:'Ausgangspunkt: die explizite Form',ref:'Blatt Abschnitt 3: Rezept «Von der expliziten Form zur Grundform»'},
+ {t:'Brüche beseitigen',ref:'Blatt Abschnitt 3: Rezept «Von der expliziten Form zur Grundform»'},
+ {t:'Alles auf eine Seite bringen',ref:'Blatt Abschnitt 3: Rezept «Von der expliziten Form zur Grundform»'},
+ {t:'Der Normalenvektor steckt in der Grundform',ref:'Blatt Abschnitt 3 und Skalarprodukt'}
+];
+const GVSTEPS=[
+ {t:'Senkrechte Gerade',ref:'Blatt Abschnitt 3: «Spezialfall: senkrechte Gerade»'},
+ {t:'Grundform: ax + by + c = 0',ref:'Blatt Abschnitt 3'},
+ {t:'Der Normalenvektor steckt in der Grundform',ref:'Blatt Abschnitt 3 und Skalarprodukt'}
+];
+function grundSteps(){return planar().vert?GVSTEPS:GSTEPS;}
+function grundStep(i){
+  const pl=planar(),G={d:2,A:pl.A,B:pl.B,AB:pl.u,same:pl.same};
+  const sc=baseScene(G,{thick:true});
+  const M=nm(),Qn=nq(),ga=GA(),gb=GB(),gc=GC();
+  if(pl.same) return {sc,html:'<div class="warnbox"><b>Die Punkte A und B sind gleich.</b> Eine Gerade braucht zwei verschiedene Punkte.</div>'};
+  const gf=grundform(pl),N=vN;
+  const eqGF=termX(gf.a,'x',true)+termX(gf.b,'y',false)+termC(gf.c,false)+' = 0';
+  const lastI=pl.vert?2:3;
+  if(i===lastI){
+    const n=[gf.a,gf.b];
+    sc.vecs.push({a:N(pl.A),b:[qv(pl.A[0])+qv(n[0]),qv(pl.A[1])+qv(n[1])],color:'n',w:3.2,label:'n',off:14});
+    sc.focus.push([qv(pl.A[0])+qv(n[0]),qv(pl.A[1])+qv(n[1])]);
+    sc.vecs.push({a:N(pl.A),b:N(pl.B),color:'r',w:2.6,label:'u',off:-14});
+    const dot=vdot(n,pl.u);
+    return {sc,html:'<p>Die Zahlen vor x und y bilden den <b class="c-n">Normalenvektor n</b> der Geraden. Er steht <b>senkrecht</b> auf der Geraden und damit auf dem Richtungsvektor '+sp('c-r','u')+':</p>'+
+      '<div class="eq"><span class="row">'+sp('c-n','n')+' = '+hVec(n,'c-n')+' &nbsp;(aus '+eqGF+')</span><span class="row">'+sp('c-r','u')+' = '+hVec(pl.u,'c-r')+'</span><span class="row"><b>Kontrolle mit dem Skalarprodukt:</b> &nbsp;'+sp('c-n','n')+' ∙ '+sp('c-r','u')+' = '+hP(n[0])+' · '+hP(pl.u[0])+' + '+hP(n[1])+' · '+hP(pl.u[1])+' = '+sp('c-p',hQ(dot))+' &nbsp;→ senkrecht ✓</span></div>'+
+      '<p class="why">Darum kommt man auch zurück: Aus der Grundform '+eqGF+' liest man den Richtungsvektor ab, indem man die Koordinaten von n tauscht und ein Vorzeichen ändert: '+sp('c-r','u')+' = '+hVec([qn(gf.b),gf.a],'c-r')+'. Das ist der Normalenvektor in der Ebene vom Blatt «Anwendungen Skalarprodukt».</p>'};
+  }
+  const y=sp('c-q',Qn);
+  const explicit='y = '+sp('c-r',hQ(pl.m||qI(0)))+'x'+(pl.q&&!q0(pl.q)?(pl.q.n<0?' − ':' + ')+sp('c-q',hQ(qabs(pl.q))):'');
+  if(pl.vert){
+    if(i===0) return {sc,html:'<p>Die Gerade durch '+sp('c-ab','A')+' und '+sp('c-ab','B')+' ist <b>senkrecht</b>. Sie hat keine explizite Form, sondern direkt die Gleichung</p><div class="eq big"><span class="row"><b>x = '+hQ(pl.A[0])+'</b></span></div>'};
+    return {sc,html:'<p>Alles auf eine Seite bringen, sodass rechts <b>0</b> steht:</p><div class="eq big"><span class="row">x − '+hP(pl.A[0])+' = 0 &nbsp;→ &nbsp;<b>'+eqGF.replace('+ 0y','')+'</b></span></div>'+
+      '<p class="why">Als Grundform '+ga+'x + '+gb+'y + '+gc+' = 0 gelesen: '+ga+' = 1, '+gb+' = 0, '+gc+' = '+hQ(gf.c)+'. Weil '+gb+' = 0 ist, kommt das y nicht vor.</p>'};
+  }
+  if(i===0){
+    return {sc,html:'<p>Wir starten mit der expliziten Form der Geraden durch '+sp('c-ab','A')+' und '+sp('c-ab','B')+' (siehe Reiter «Explizite Form»):</p>'+
+      '<div class="eq big"><span class="row">'+explicit+'</span></div>'+
+      '<p class="why">Ziel ist die <b>Grundform</b> <b>'+ga+'x + '+gb+'y + '+gc+' = 0</b> mit <b>ganzen Zahlen</b> '+ga+', '+gb+', '+gc+'.</p>'};
+  }
+  if(i===1){
+    const D=gf.D;
+    const nd=D.n===1;
+    return {sc,html:'<p>Zuerst die <b>Brüche beseitigen</b>: Man multipliziert die ganze Gleichung mit dem <b>Hauptnenner</b> '+(nd?'(hier 1: es kommen keine Brüche vor)':'= <b>'+D.n+'</b>')+'.</p>'+
+      '<div class="eq"><span class="row">y = '+hQ(pl.m)+'x'+termC(pl.q,false)+' &nbsp;&nbsp;|&nbsp; · '+D.n+'</span><span class="row">'+(D.n===1?'':D.n+'y')+(D.n===1?'y':'')+' = '+hQ(gf.a0)+'x'+termC(gf.c0,false)+'</span></div>'+
+      '<p class="why">Jeder Term wird mit '+D.n+' multipliziert, auch der ohne Bruch.</p>'};
+  }
+  const sgn=gf.flip?'<p class="tip">Damit die Zahl vor x positiv ist, wurde die ganze Gleichung noch mit <b>−1</b> multipliziert. Das ist erlaubt: Beide Seiten ändern das Vorzeichen.</p>':'';
+  const redt=gf.red>1?'<p class="why">Zusätzlich wurde mit '+gf.red+' gekürzt.</p>':'';
+  return {sc,html:'<p>Jetzt alles auf <b>eine</b> Seite bringen, sodass rechts <b>0</b> steht (y nach links, Rest bleibt):</p>'+
+    '<div class="eq"><span class="row">'+(gf.D.n===1?'':gf.D.n)+'y = '+hQ(gf.a0)+'x'+termC(gf.c0,false)+' &nbsp;&nbsp;|&nbsp; − '+(gf.D.n===1?'':gf.D.n)+'y</span><span class="row">0 = '+termX(gf.a0,'x',true)+termX(gf.b0,'y',false)+termC(gf.c0,false)+'</span></div>'+sgn+redt+
+    '<div class="eq big"><span class="row">Grundform: &nbsp;<b>'+eqGF+'</b></span></div>'+
+    '<p class="why">Also '+ga+' = '+hQ(gf.a)+', '+gb+' = '+hQ(gf.b)+', '+gc+' = '+hQ(gf.c)+'. Probe mit A: '+hQ(gf.a)+' · '+hP(pl.A[0])+' + '+hP(gf.b)+' · '+hP(pl.A[1])+' + '+hP(gf.c)+' = '+hQ(qa(qa(qm(gf.a,pl.A[0]),qm(gf.b,pl.A[1])),gf.c))+' ✓</p>'};
+}
+
+/* ---------- Lage zweier Geraden ---------- */
+const LSTEPS=[
+ {t:'Zwei Geraden',ref:'Blatt Abschnitt 4: «Lagen zweier Geraden»'},
+ {t:'Richtungsvektoren vergleichen',ref:'Blatt Abschnitt 4: Rezept «Lage zweier Geraden bestimmen»'},
+ {t:'Punktprobe oder Gleichsetzen',ref:'Blatt Abschnitt 4: Rezept «Lage zweier Geraden bestimmen»'},
+ {t:'Ergebnis und Schnittwinkel',ref:'Blatt Abschnitt 4: «Schnittwinkel zweier Geraden»'}
+];
+const KIND={ident:'identisch',par:'parallel (verschieden)',cut:'schneidend',skew:'windschief'};
+function lageStep(i){
+  const d=S.dim,A=S.A.slice(0,d),B=S.B.slice(0,d),C=S.C.slice(0,d),D=S.D.slice(0,d);
+  const u=vsub(B,A),v=vsub(D,C);
+  const sc=emptyScene();
+  const nmz=idxName(d);
+  if(vzero(u)||vzero(v)) return {sc,html:'<div class="warnbox"><b>Zwei Punkte sind gleich.</b> A ≠ B und C ≠ D sind nötig, damit beide Geraden eindeutig sind.</div>'};
+  sc.lines.push({p:vN(A),u:vN(u),color:'ink',w:2.6,label:'g'});
+  sc.lines.push({p:vN(C),u:vN(v),color:'q',w:2.6,label:'h'});
+  sc.pts.push({p:vN(A),label:'A',color:'ab',drag:d===2,key:'A'},{p:vN(B),label:'B',color:'ab',drag:d===2,key:'B'});
+  sc.pts.push({p:vN(C),label:'C',color:'q',drag:d===2,key:'C'},{p:vN(D),label:'D',color:'q',drag:d===2,key:'D'});
+  sc.focus.push(vN(A),vN(B),vN(C),vN(D));
+  const R=lagen(A,u,C,v);
+  const vu=hVec(u),vv=hVec(v);
+  if(i===0){
+    return {sc,html:'<p>Gegeben sind zwei Geraden: <b>g</b> durch '+sp('c-ab','A')+' und '+sp('c-ab','B')+', <b style="color:var(--qc)">h</b> durch '+sp('','C')+' und '+sp('','D')+'.</p>'+
+      '<div class="eq"><span class="row">g: &nbsp;r = '+hVec(A)+' + t · '+hVec(u)+'</span><span class="row"><span style="color:var(--qc);font-weight:600">h</span>: &nbsp;r = '+hVec(C)+' + s · '+hVec(v)+'</span></div>'+
+      '<p class="why">Es gibt vier Möglichkeiten: identisch, parallel, schneidend'+(d===3?' oder windschief':' (windschief gibt es nur im Raum)')+'. Mit dem Rezept entscheiden Sie, welche vorliegt.</p>'+
+      '<p class="tip">'+(d===2?'Ziehen Sie die Punkte im Bild.':'Geben Sie in der Karte «Zwei Punkte eingeben» Koordinaten ein und drehen Sie die Ansicht.')+'</p>'};
+  }
+  const ratios=u.map((_,k)=>q0(u[k])?(q0(v[k])?'0 / 0':'<span style="color:var(--bad)">'+hQ(v[k])+' / 0</span>'):hQ(qd(v[k],u[k])));
+  const par=parallel(u,v);
+  if(i===1){
+    return {sc,html:'<p><b>Schritt 1:</b> Sind die Richtungsvektoren Vielfache voneinander? Dann ist jedes v<sub>k</sub> / u<sub>k</sub> dieselbe Zahl:</p>'+
+      '<div class="eq"><span class="row">u = '+vu+' &nbsp;&nbsp; v = '+vv+'</span><span class="row">'+nmz.map((nn,k)=>nn+': &nbsp;'+ratios[k]).join(' &nbsp;&nbsp;|&nbsp;&nbsp; ')+'</span></div>'+
+      (par?'<div class="tip"><b>Ja, gleiche Richtung.</b> Die Geraden sind identisch oder parallel. Weiter mit der Punktprobe.</div>':'<div class="tip"><b>Nein, verschiedene Richtung.</b> Die Geraden schneiden sich oder sind windschief. Weiter mit Gleichsetzen.</div>')};
+  }
+  if(i===2){
+    if(par){
+      const on=pointOn(C,A,u);
+      const rows=on.rows.map((r,k)=>'<span class="row">('+['I','II','III'][k]+') &nbsp;'+nmz[k]+':&nbsp; '+r+'</span>').join('');
+      return {sc,html:'<p><b>Schritt 2:</b> Liegt der Stützpunkt <b>C</b> von h auf g? (Punktprobe)</p><div class="eq"><span class="row">'+hVec(C)+' = '+hVec(A)+' + t · '+vu+'</span>'+rows+'</div>'+(on.ok?'<div class="tip"><b>C liegt auf g</b> → die Geraden sind <b>identisch</b>.</div>':'<div class="tip"><b>C liegt nicht auf g</b> → die Geraden sind <b>parallel</b> und verschieden.</div>')};
+    }
+    const labels=['I','II','III'];
+    const rowsEq=u.map((_,k)=>'<span class="row">('+labels[k]+') &nbsp;'+hQ(A[k])+' + t · '+hP(u[k])+' = '+hQ(C[k])+' + s · '+hP(v[k])+'</span>').join('');
+    const [ii,jj]=R.eqs;
+    let res='<p class="why">Aus ('+labels[ii]+') und ('+labels[jj]+') ergeben sich <b>t = '+hQ(R.t)+'</b> und <b>s = '+hQ(R.s)+'</b>.';
+    if(d===3){const kk=[0,1,2].find(k=>k!==ii&&k!==jj);const l=qa(A[kk],qm(R.t,u[kk])),r=qa(C[kk],qm(R.s,v[kk]));res+=' Kontrolle mit ('+labels[kk]+'): '+hQ(A[kk])+' + '+hP(R.t)+' · '+hP(u[kk])+' = '+hQ(l)+' &nbsp;und&nbsp; '+hQ(C[kk])+' + '+hP(R.s)+' · '+hP(v[kk])+' = '+hQ(r)+' → '+(qeq(l,r)?'<b class="c-p">stimmt ✓</b>':'<b style="color:var(--bad)">stimmt nicht ✗</b>');}
+    res+='</p>';
+    return {sc,html:'<p><b>Schritt 2:</b> <b>Gleichsetzen</b>: <b>g = h</b>. Das gibt eine Gleichung pro Koordinate, mit den zwei Unbekannten t und s.</p><div class="eq">'+rowsEq+'</div>'+res};
+  }
+  // i===3
+  let html='<p><b>Ergebnis:</b> Die Geraden sind <b>'+KIND[R.kind]+'</b>.</p>';
+  if(R.kind==='cut'){
+    sc.pts.push({p:vN(R.S),label:'S',color:'p',r:8,dx:10,dy:-10});
+    sc.focus.push(vN(R.S));
+    const cos=Math.abs(qv(vdot(u,v)))/(lenV(u)*lenV(v));
+    const phi=Math.acos(Math.min(1,cos))*180/Math.PI;
+    html+='<div class="eq"><span class="row">Schnittpunkt: &nbsp;t = '+hQ(R.t)+' in g einsetzen: &nbsp;'+hVec(A)+' + '+hP(R.t)+' · '+vu+' = '+hVec(R.S,'c-p')+'</span><span class="row">'+sp('c-p','S')+' = '+tPt('',R.S).replace(/^\(/,'(')+'</span></div>'+
+      '<p><b>Schnittwinkel</b> (Winkel zwischen den Richtungsvektoren, mit Betrag im Zähler):</p>'+
+      '<div class="eq"><span class="row">cos φ = <span class="frac"><span>|u ∙ v|</span><span>|u| · |v|</span></span> = <span class="frac"><span>|'+hQ(vdot(u,v))+'|</span><span>'+fmtN(lenV(u),3)+' · '+fmtN(lenV(v),3)+'</span></span> = '+fmtN(cos,3)+' &nbsp;→ &nbsp;<b>φ ≈ '+fmtN(phi,1)+'°</b></span></div>';
+  }else if(R.kind==='skew'){
+    html+='<p class="why">Die Geraden haben verschiedene Richtungen, treffen sich aber nirgends: Das geht nur im Raum. Sie liegen «aneinander vorbei».</p>';
+  }else if(R.kind==='par'){
+    const cos=1;
+    html+='<p class="why">Parallele Geraden haben keinen Schnittpunkt, und der Schnittwinkel ist 0°.</p>';
+  }else html+='<p class="why">Identische Geraden haben unendlich viele gemeinsame Punkte.</p>';
+  return {sc,html};
+}
+
+function theorieContent(){
+  const tab=S.tab,i=S.tstep;
+  if(tab==='vektor'){const r=vektorStep(i);r.meta=VSTEPS;return r;}
+  if(tab==='explizit'){const arr=explizitSteps(),r=explizitStep(Math.min(i,arr.length-1));r.meta=arr;return r;}
+  if(tab==='grund'){const arr=grundSteps(),r=grundStep(Math.min(i,arr.length-1));r.meta=arr;return r;}
+  const r=lageStep(i);r.meta=LSTEPS;return r;
+}
+
+/* ============================================================
+   8. Aufgaben: Zufall, Erzeuger und Prüfung
+   ============================================================ */
+function rng(seed){let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+const hashStr=s=>[...s].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);
+function randDir(r,lvl,dim){
+  for(let n=0;n<200;n++){
+    const lim=lvl===1?2:3;
+    const u=Array.from({length:dim},()=>ri(r,-lim,lim));
+    if(u.every(x=>x===0)) continue;
+    if(lvl<3&&u.some(x=>x===0)&&dim===2) continue;
+    if(u.reduce((a,b)=>gcd(a,b),0)!==1) continue;
+    return u.map(qI);
+  }
+  return Array.from({length:dim},(_,k)=>qI(k+1));
+}
+const randPt=(r,dim,lo,hi)=>Array.from({length:dim},()=>qI(ri(r,lo,hi)));
+const inBox=(arr,lim)=>arr.every(x=>Math.abs(qv(x))<=lim);
+const vecF=(lab,pre,n)=>({label:lab,fields:Array.from({length:n},(_,k)=>({id:pre+(k+1),type:'q'}))});
+const eqVec=(p,u,t)=>'r = '+hVec(p)+' + '+(t||'t')+' · '+hVec(u);
+const Z=(n)=>qI(n);
+const qint=a=>a.d===1;
+
+function lineEqHtml(p,u,t){return eqVec(p,u,t);}
+function nameDim(d){return d===2?['x','y']:['x','y','z'];}
+
+const TYPES={
+  vek:'Gerade durch zwei Punkte (Vektorform)',steig:'Steigung berechnen',expl:'Explizite Form',grund:'Grundform',
+  g2m:'Grundform → Steigung und Achsenabschnitt',vert:'Senkrechte und waagrechte Geraden',probe:'Punktprobe',
+  lage:'Lage zweier Geraden',winkel:'Schnittwinkel',koord:'Punkt mit gegebener Koordinate',spur:'Durchstosspunkt der xy-Ebene'
+};
+const POOL={2:{1:['vek','steig','expl','grund','probe'],2:['vek','expl','grund','g2m','probe','lage','vert'],3:['grund','lage','winkel','steig','vert','probe','g2m']},
+            3:{1:['vek','probe','koord'],2:['vek','probe','koord','lage','spur'],3:['lage','winkel','spur','probe','koord','vek']}};
+const typesFor=dim=>[...new Set([].concat(POOL[dim][1],POOL[dim][2],POOL[dim][3]))];
+
+const lineDraw=(p,u,col,lab)=>({p:vN(p),u:vN(u),color:col||'ink',w:2.6,label:lab||null});
+function ptDraw(p,label,col,drag){return {p:vN(p),label,color:col||'ab'};}
+
+/* ---- 1. Gerade durch zwei Punkte (Vektorform) ---- */
+function genVek(r,lvl,dim){
+  let A,u,B;
+  for(let n=0;n<100;n++){
+    A=randPt(r,dim,-4,4);u=randDir(r,lvl,dim);
+    const k=lvl===1?1:pick(r,[1,2,3,-1]);
+    B=vadd(A,vscale(Z(k),u));
+    if(inBox(B,9)) break;
+  }
+  const AB=vsub(B,A),nz=nameDim(dim);
+  return {
+    title:'Gerade durch zwei Punkte',
+    q:'Bestimmen Sie die Gleichung der Geraden durch '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+' in Vektorform: <b>r = Stützvektor + t · Richtungsvektor</b>.',
+    rows:[vecF('Stützvektor (Ortsvektor eines Punktes der Geraden)','s',dim),vecF('Richtungsvektor','u',dim)],
+    hints:['Eine Gerade braucht einen <b>Stützpunkt</b> und einen <b>Richtungsvektor</b>. Als Stützpunkt darf man A, B oder einen anderen Punkt der Geraden nehmen.',
+           'Der Richtungsvektor ist der Verbindungsvektor <b>AB = B − A</b> («Spitze minus Fuss»). Auch ein Vielfaches davon ist erlaubt.'],
+    check(v){
+      const s=nz.map((_,k)=>parseQ(v['s'+(k+1)])),u=nz.map((_,k)=>parseQ(v['u'+(k+1)]));
+      const msgs=[];
+      if(s.some(x=>!x)||u.some(x=>!x)) return {ok:false,msgs:[{ok:false,t:'Bitte alle Felder ausfüllen (Zahlen oder Brüche wie 3/4).'}]};
+      const sOk=parallel(vsub(s,A),AB);
+      msgs.push({ok:sOk,t:sOk?'Der Stützpunkt liegt auf der Geraden.':'Der Punkt mit dem Ortsvektor '+hVec(s)+' liegt <b>nicht</b> auf der Geraden. Prüfen Sie mit der Punktprobe.'});
+      let uOk=!vzero(u)&&parallel(u,AB);
+      msgs.push({ok:uOk,t:uOk?'Der Richtungsvektor passt (parallel zu AB).':vzero(u)?'Der Richtungsvektor darf nicht der Nullvektor sein.':'Der Richtungsvektor ist nicht parallel zu AB = B − A = '+hVec(AB)+'.'});
+      return {ok:sOk&&uOk,msgs};
+    },
+    answer:()=>{const v={};A.forEach((x,k)=>v['s'+(k+1)]=tQ(x));AB.forEach((x,k)=>v['u'+(k+1)]=tQ(x));return v;},
+    sol:'<div class="eq"><span class="row">Stützpunkt A: &nbsp;'+sp('c-s','OA')+' = '+hVec(A,'c-s')+'</span><span class="row">'+sp('c-r','AB')+' = OB − OA = '+hVec(B)+' − '+hVec(A)+' = '+hVec(AB,'c-r')+'</span><span class="row"><b>g: &nbsp;r = '+hVec(A,'c-s')+' + t · '+hVec(AB,'c-r')+'</b></span></div><p class="why">Andere richtige Antworten: B als Stützpunkt, oder ein Vielfaches von AB als Richtungsvektor.</p>',
+    draw:{pts:[ptDraw(A,'A'),ptDraw(B,'B')],lines:[lineDraw(A,AB,'ink')]}
+  };
+}
+
+/* ---- 2. Steigung ---- */
+function genSteig(r,lvl){
+  const vertical=lvl===3&&r()<0.35, horizontal=lvl===3&&!vertical&&r()<0.2;
+  let u;
+  if(vertical) u=[Z(0),Z(pick(r,[-4,-3,-2,2,3,4]))];
+  else if(horizontal) u=[Z(pick(r,[-4,-3,-2,2,3,4])),Z(0)];
+  else if(lvl===1){const u1=pick(r,[1,2]);u=[Z(u1),Z(u1*pick(r,[-3,-2,-1,1,2,3]))];}
+  else {u=[Z(ri(r,2,4)),Z(pick(r,[-5,-4,-3,-2,-1,1,2,3,4,5]))];}
+  let A,B;for(let n=0;n<50;n++){A=randPt(r,2,-5,4);B=vadd(A,u);if(inBox(B,9)) break;}
+  const m=vertical?null:qd(u[1],u[0]);
+  const M=nm();
+  return {
+    title:'Steigung berechnen',
+    q:'Gegeben sind '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+'. Bestimmen Sie die Steigung <b>'+M+'</b> der Geraden durch A und B.',
+    rows:[{label:'',fields:[{id:'kind',type:'radio',opts:[['val','Die Steigung ist'],['none','Die Steigung ist nicht definiert']]},]},{label:M+' =',fields:[{id:'m',type:'q'}]}],
+    hints:['Gehen Sie von A nach B: Wie weit nach rechts (<b>Δx</b>), wie weit nach oben oder unten (<b>Δy</b>)? Das ist der Richtungsvektor AB.','Steigung <b>'+M+' = Δy / Δx</b>. Kürzen Sie den Bruch.'+(lvl===3?' Achtung: Was passiert, wenn Δx = 0 ist?':'')],
+    check(v){
+      if(vertical){
+        const ok=v.kind==='none';
+        return {ok,msgs:[{ok,t:ok?'Richtig: Δx = 0, die Gerade ist senkrecht. Division durch null geht nicht, also gibt es keine Steigung.':'Schauen Sie die x-Koordinaten an: Δx = '+tQ(u[0])+'. Durch null kann man nicht teilen.'}]};
+      }
+      if(v.kind==='none') return {ok:false,msgs:[{ok:false,t:'Hier ist Δx = '+tQ(u[0])+' nicht null, die Steigung ist also definiert.'}]};
+      const x=parseQ(v.m);
+      if(!x) return {ok:false,msgs:[{ok:false,t:'Geben Sie die Steigung als Zahl oder Bruch an (zum Beispiel 3/4 oder −2).'}]};
+      const ok=matchQ(x,m);
+      return {ok,msgs:[{ok,t:ok?'Richtig.':'Falsch. '+(qeq(x,qn(m))?'Das Vorzeichen stimmt nicht: Δy / Δx mit B − A rechnen.':qeq(x,qd(qI(1),m))&&m.n!==0?'Sie haben Δx / Δy gerechnet. Es ist Δy / Δx.':'Rechnen Sie Δy / Δx mit Δy = y<sub>B</sub> − y<sub>A</sub> und Δx = x<sub>B</sub> − x<sub>A</sub>.')}]};
+    },
+    answer:()=>vertical?{kind:'none',m:''}:{kind:'val',m:tQ(m)},
+    sol:'<div class="eq"><span class="row">Δx = '+hQ(B[0])+' − '+hP(A[0])+' = '+hQ(u[0])+' &nbsp;&nbsp; Δy = '+hQ(B[1])+' − '+hP(A[1])+' = '+hQ(u[1])+'</span><span class="row">'+(vertical?M+' = '+hQ(u[1])+' / 0 → <b>nicht definiert</b> (senkrechte Gerade, x = '+hQ(A[0])+')':M+' = <span class="frac"><span>'+hQ(u[1])+'</span><span>'+hQ(u[0])+'</span></span> = <b>'+hQ(m)+'</b>')+'</span></div>',
+    draw:{pts:[ptDraw(A,'A'),ptDraw(B,'B')],lines:[lineDraw(A,u,'ink')]}
+  };
+}
+
+/* ---- 3. Explizite Form ---- */
+function genExpl(r,lvl){
+  let A,u;
+  for(let n=0;n<100;n++){
+    if(lvl===1){A=[Z(0),Z(ri(r,-4,4))];u=[Z(pick(r,[1,2])),Z(pick(r,[-3,-2,-1,1,2,3]))];}
+    else if(lvl===2){A=randPt(r,2,-4,4);u=[Z(pick(r,[1,2])),Z(pick(r,[-3,-2,-1,1,2,3]))];}
+    else{A=randPt(r,2,-4,4);u=[Z(ri(r,2,4)),Z(pick(r,[-5,-4,-3,-2,-1,1,2,3,4,5]))];if(gcd(u[0].n,u[1].n)!==1) continue;}
+    if(inBox(vadd(A,u),9)) break;
+  }
+  const B=vadd(A,u),m=qd(u[1],u[0]),q=qs(A[1],qm(m,A[0])),M=nm(),Qn=nq();
+  return {
+    title:'Explizite Form aus zwei Punkten',
+    q:'Bestimmen Sie die explizite Form <b>y = '+M+'x + '+Qn+'</b> der Geraden durch '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+'.',
+    rows:[{label:'Steigung '+M+' =',fields:[{id:'m',type:'q'}]},{label:'y-Achsenabschnitt '+Qn+' =',fields:[{id:'q',type:'q'}]}],
+    hints:[lvl===1?'A liegt auf der y-Achse: Der y-Achsenabschnitt '+Qn+' ist die y-Koordinate von A.':'Zuerst die Steigung: '+M+' = Δy / Δx.','Danach einen Punkt in y = '+M+'x + '+Qn+' einsetzen und nach '+Qn+' auflösen: '+Qn+' = y<sub>A</sub> − '+M+' · x<sub>A</sub>.'],
+    check(v){
+      const mm=parseQ(v.m),qq=parseQ(v.q);
+      if(!mm||!qq) return {ok:false,msgs:[{ok:false,t:'Bitte beide Felder mit Zahlen oder Brüchen ausfüllen.'}]};
+      const a=matchQ(mm,m),b=matchQ(qq,q);
+      return {ok:a&&b,msgs:[{ok:a,t:a?'Die Steigung stimmt.':'Die Steigung stimmt nicht. '+M+' = (y<sub>B</sub> − y<sub>A</sub>) / (x<sub>B</sub> − x<sub>A</sub>).'},
+        {ok:b,t:b?'Der y-Achsenabschnitt stimmt.':a?'Der y-Achsenabschnitt stimmt nicht. Setzen Sie A in y = '+M+'x + '+Qn+' ein.':'Der y-Achsenabschnitt stimmt nicht (er hängt von der Steigung ab).'}]};
+    },
+    answer:()=>({m:tQ(m),q:tQ(q)}),
+    sol:'<div class="eq"><span class="row">'+M+' = <span class="frac"><span>'+hQ(u[1])+'</span><span>'+hQ(u[0])+'</span></span> = '+sp('c-r',hQ(m))+'</span><span class="row">'+Qn+' = '+hQ(A[1])+' − '+hP(m)+' · '+hP(A[0])+' = '+sp('c-q',hQ(q))+'</span><span class="row"><b>y = '+sp('c-r',hQ(m))+'x'+(q0(q)?'':(q.n<0?' − ':' + ')+sp('c-q',hQ(qabs(q))))+'</b></span></div>',
+    draw:{pts:[ptDraw(A,'A'),ptDraw(B,'B')],lines:[lineDraw(A,u,'ink')]}
+  };
+}
+
+/* ---- 4. Grundform ---- */
+function genGrund(r,lvl){
+  let A,u;
+  const vertical=lvl===3&&r()<0.3, horizontal=lvl===3&&!vertical&&r()<0.15;
+  for(let n=0;n<100;n++){
+    A=randPt(r,2,-4,4);
+    if(vertical) u=[Z(0),Z(pick(r,[-3,-2,2,3]))];
+    else if(horizontal) u=[Z(pick(r,[-3,-2,2,3])),Z(0)];
+    else if(lvl===1){A=[Z(0),Z(ri(r,-4,4))];u=[Z(1),Z(pick(r,[-3,-2,-1,1,2,3]))];}
+    else if(lvl===2){u=[Z(pick(r,[1,2])),Z(pick(r,[-3,-2,-1,1,2,3]))];}
+    else {u=[Z(ri(r,2,4)),Z(pick(r,[-5,-4,-3,-2,-1,1,2,3,4,5]))];if(gcd(u[0].n,u[1].n)!==1) continue;}
+    if(inBox(vadd(A,u),9)) break;
+  }
+  const B=vadd(A,u),ga=GA(),gb=GB(),gc=GC();
+  const pl={A,B,u,vert:q0(u[0]),m:q0(u[0])?null:qd(u[1],u[0])};
+  if(!pl.vert) pl.q=qs(A[1],qm(pl.m,A[0]));
+  const gf=grundform(pl);
+  return {
+    title:'Grundform aus zwei Punkten',
+    q:'Bestimmen Sie die Grundform <b>'+ga+'x + '+gb+'y + '+gc+' = 0</b> der Geraden durch '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+'. '+ga+', '+gb+' und '+gc+' sollen <b>ganze Zahlen</b> sein.',
+    rows:[{label:'',fields:[{id:'a',type:'q',lab:ga+' ='},{id:'b',type:'q',lab:gb+' ='},{id:'c',type:'q',lab:gc+' ='}]}],
+    hints:[lvl===3?'Bei einer senkrechten oder waagrechten Geraden geht es auch direkt: x = konstant bzw. y = konstant, dann alles auf eine Seite.':'Variante 1: Erst die explizite Form y = '+nm()+'x + '+nq()+' bestimmen, dann Brüche beseitigen und alles auf eine Seite bringen.',
+           'Variante 2: Der Normalenvektor <b>n = ('+ga+' | '+gb+')</b> steht senkrecht auf dem Richtungsvektor AB = '+tPt('',u).replace(/^\(/,'(')+'. Tauschen Sie die Koordinaten von AB und ändern Sie ein Vorzeichen, dann bestimmen Sie '+gc+' mit einem Punkt.'],
+    check(v){
+      const a=parseQ(v.a),b=parseQ(v.b),c=parseQ(v.c);
+      if(!a||!b||!c) return {ok:false,msgs:[{ok:false,t:'Bitte '+ga+', '+gb+' und '+gc+' ausfüllen.'}]};
+      if(!qint(a)||!qint(b)||!qint(c)) return {ok:false,msgs:[{ok:false,t:'Die Zahlen sollen ganz sein: Multiplizieren Sie die Gleichung mit dem Hauptnenner.'}]};
+      if(q0(a)&&q0(b)) return {ok:false,msgs:[{ok:false,t:ga+' und '+gb+' dürfen nicht beide 0 sein.'}]};
+      const chk=P=>q0(qa(qa(qm(a,P[0]),qm(b,P[1])),c));
+      const okA=chk(A),okB=chk(B);
+      const nOk=q0(qa(qm(a,u[0]),qm(b,u[1])));
+      return {ok:okA&&okB,msgs:[{ok:okA,t:okA?'Punkt A liegt auf der Geraden.':'Punkt A erfüllt die Gleichung nicht: '+hQ(a)+' · '+hP(A[0])+' + '+hP(b)+' · '+hP(A[1])+' + '+hP(c)+' = '+hQ(qa(qa(qm(a,A[0]),qm(b,A[1])),c))+' ≠ 0.'},
+        {ok:okB,t:okB?'Punkt B liegt auf der Geraden.':nOk?'Die Richtung stimmt, aber '+gc+' ist falsch. Setzen Sie A ein und lösen Sie nach '+gc+' auf.':'Punkt B erfüllt die Gleichung nicht.'}]};
+    },
+    answer:()=>({a:tQ(gf.a),b:tQ(gf.b),c:tQ(gf.c)}),
+    sol:pl.vert?'<div class="eq"><span class="row">Beide Punkte haben x = '+hQ(A[0])+': die Gerade ist senkrecht.</span><span class="row"><b>x '+(A[0].n>0?'− '+hQ(A[0]):'+ '+hQ(qabs(A[0])))+' = 0</b> &nbsp;also '+ga+' = 1, '+gb+' = 0, '+gc+' = '+hQ(gf.c)+'</span></div>':
+      '<div class="eq"><span class="row">'+nm()+' = <span class="frac"><span>'+hQ(u[1])+'</span><span>'+hQ(u[0])+'</span></span> = '+hQ(pl.m)+', &nbsp;'+nq()+' = '+hQ(pl.q)+' &nbsp;→ &nbsp;y = '+hQ(pl.m)+'x'+termC(pl.q,false)+'</span><span class="row">Mit '+hQ(gf.D)+' multiplizieren und alles auf eine Seite:</span><span class="row"><b>'+termX(gf.a,'x',true)+termX(gf.b,'y',false)+termC(gf.c,false)+' = 0</b></span></div><p class="why">Jedes ganzzahlige Vielfache ist ebenfalls richtig, zum Beispiel mit −1 multipliziert.</p>',
+    draw:{pts:[ptDraw(A,'A'),ptDraw(B,'B')],lines:[lineDraw(A,u,'ink')]}
+  };
+}
+
+/* ---- 5. Grundform → Steigung und Achsenabschnitt ---- */
+function genG2m(r,lvl){
+  let a,b,c;
+  for(let n=0;n<100;n++){
+    b=lvl===1?pick(r,[-1,1]):pick(r,[-4,-3,-2,2,3,4]);
+    a=pick(r,[-4,-3,-2,-1,1,2,3,4]);c=lvl===1?ri(r,-6,6):ri(r,-9,9);
+    if(!(a===0)) break;
+  }
+  const m=Q(-a,b),q=Q(-c,b),M=nm(),Qn=nq(),A_=Z(a),B_=Z(b),C_=Z(c);
+  const eq=termX(A_,'x',true)+termX(B_,'y',false)+termC(C_,false)+' = 0';
+  return {
+    title:'Von der Grundform zur expliziten Form',
+    q:'Gegeben ist die Gerade <b>'+eq+'</b>. Lösen Sie nach y auf und geben Sie die Steigung <b>'+M+'</b> und den y-Achsenabschnitt <b>'+Qn+'</b> an.',
+    rows:[{label:M+' =',fields:[{id:'m',type:'q'}]},{label:Qn+' =',fields:[{id:'q',type:'q'}]}],
+    hints:['Bringen Sie alles ausser dem y-Term auf die rechte Seite.','Dann durch den Faktor vor y teilen: y = −('+GA()+'/'+GB()+')x − ('+GC()+'/'+GB()+').'],
+    check(v){
+      const mm=parseQ(v.m),qq=parseQ(v.q);
+      if(!mm||!qq) return {ok:false,msgs:[{ok:false,t:'Bitte beide Felder ausfüllen.'}]};
+      const x=matchQ(mm,m),y=matchQ(qq,q);
+      return {ok:x&&y,msgs:[{ok:x,t:x?'Die Steigung stimmt.':'Die Steigung stimmt nicht. Beachten Sie die Vorzeichen beim Umstellen.'},{ok:y,t:y?'Der y-Achsenabschnitt stimmt.':'Der y-Achsenabschnitt stimmt nicht. Teilen Sie auch die Zahl '+hQ(C_)+' durch den Faktor vor y.'}]};
+    },
+    answer:()=>({m:tQ(m),q:tQ(q)}),
+    sol:'<div class="eq"><span class="row">'+eq+'</span><span class="row">'+hQ(B_)+'y = '+(q0(A_)?'':termX(qn(A_),'x',true))+termC(qn(C_),q0(A_))+'</span><span class="row">y = '+hQ(m)+'x'+termC(q,false)+' &nbsp;&nbsp;<span class="why">(durch '+hP(B_)+' teilen)</span></span><span class="row">'+M+' = <b>'+hQ(m)+'</b>, &nbsp;'+Qn+' = <b>'+hQ(q)+'</b></span></div>',
+    draw:null
+  };
+}
+
+/* ---- 6. Senkrechte und waagrechte Geraden ---- */
+function genVert(r,lvl){
+  const vertical=r()<0.5,k=ri(r,-5,5);
+  const A=vertical?[Z(k),Z(ri(r,-4,0))]:[Z(ri(r,-4,0)),Z(k)];
+  const u=vertical?[Z(0),Z(ri(r,2,5))]:[Z(ri(r,2,5)),Z(0)];
+  const B=vadd(A,u);
+  return {
+    title:'Senkrechte und waagrechte Geraden',
+    q:'Die Gerade durch '+sp('c-ab',tPt('A',A))+' und '+sp('c-ab',tPt('B',B))+' hat eine besonders einfache Gleichung. Ergänzen Sie sie.',
+    rows:[{label:'',fields:[{id:'var',type:'radio',opts:[['x','x ='],['y','y =']]},{id:'val',type:'q'}]}],
+    hints:['Schauen Sie sich die Koordinaten an: Welche stimmt bei beiden Punkten überein?','Alle Punkte der Geraden haben dann diese Koordinate. Bei gleicher x-Koordinate ist die Gerade senkrecht (Gleichung <b>x = …</b>), bei gleicher y-Koordinate waagrecht (<b>y = …</b>).'],
+    check(v){
+      const x=parseQ(v.val);
+      if(!v.var||!x) return {ok:false,msgs:[{ok:false,t:'Wählen Sie «x =» oder «y =» und tragen Sie die Zahl ein.'}]};
+      const wantVar=vertical?'x':'y',ok=v.var===wantVar&&matchQ(x,vertical?A[0]:A[1]);
+      return {ok,msgs:[{ok,t:ok?'Richtig.':v.var!==wantVar?'Prüfen Sie, welche Koordinate bei A und B gleich ist.':'Die Zahl stimmt nicht: Es ist die gemeinsame Koordinate beider Punkte.'}]};
+    },
+    answer:()=>({var:vertical?'x':'y',val:tQ(vertical?A[0]:A[1])}),
+    sol:'<div class="eq"><span class="row">'+(vertical?'Beide Punkte haben x = '+hQ(A[0])+' → senkrechte Gerade (Δx = 0, keine Steigung): <b>x = '+hQ(A[0])+'</b>':'Beide Punkte haben y = '+hQ(A[1])+' → waagrechte Gerade (Steigung 0): <b>y = '+hQ(A[1])+'</b>')+'</span></div>',
+    draw:{pts:[ptDraw(A,'A'),ptDraw(B,'B')],lines:[lineDraw(A,u,'ink')]}
+  };
+}
+
+/* ---- 7. Punktprobe (2D und 3D) ---- */
+function genProbe(r,lvl,dim){
+  let p,u,t0,P,on;
+  for(let n=0;n<100;n++){
+    p=randPt(r,dim,-4,4);u=randDir(r,lvl,dim);
+    on=r()<0.5;
+    t0=lvl===3&&u.every(x=>x.n%2===0)?pick(r,[Q(1,2),Q(-1,2),Z(2),Z(-1)]):Z(pick(r,[-2,-1,1,2,3]));
+    if(lvl===3&&!u.every(x=>x.n%2===0)) t0=Z(pick(r,[-3,-2,-1,1,2,3]));
+    P=vadd(p,vscale(t0,u));
+    if(!on){const k=ri(r,0,dim-1);P=P.map((x,i)=>i===k?qa(x,Z(pick(r,[-2,-1,1,2]))):x);}
+    if(inBox(P,12)&&!(!on&&parallel(vsub(P,p),u))) break;
+  }
+  const R=pointOn(P,p,u);on=R.ok;
+  const nz=nameDim(dim);
+  return {
+    title:'Punktprobe',
+    q:'Gegeben ist '+sp('','g')+': <b>'+eqVec(p,u)+'</b>. Liegt der Punkt '+sp('c-p',tPt('P',P))+' auf der Geraden?',
+    rows:[{label:'',fields:[{id:'kind',type:'radio',opts:[['on','P liegt auf g'],['off','P liegt nicht auf g']]}]},{label:'Falls P auf g liegt: t =',fields:[{id:'t',type:'q'}]}],
+    hints:['Setzen Sie den Ortsvektor von P gleich der Geradengleichung: '+hVec(P)+' = '+hVec(p)+' + t · '+hVec(u)+'. Das gibt <b>eine Gleichung pro Koordinate</b>.','Berechnen Sie t aus der ersten Gleichung und setzen Sie es in die anderen ein. Stimmen <b>alle</b>, liegt P auf g.'],
+    check(v){
+      if(!v.kind) return {ok:false,msgs:[{ok:false,t:'Wählen Sie, ob P auf g liegt oder nicht.'}]};
+      if(on){
+        if(v.kind!=='on') return {ok:false,msgs:[{ok:false,t:'Doch: Mit t = '+tQ(R.t)+' stimmen alle Gleichungen.'}]};
+        const t=parseQ(v.t);
+        if(!t) return {ok:false,msgs:[{ok:true,t:'Richtig: P liegt auf g.'},{ok:false,t:'Geben Sie noch den Parameter t an.'}]};
+        const ok=matchQ(t,R.t);
+        return {ok,msgs:[{ok:true,t:'Richtig: P liegt auf g.'},{ok,t:ok?'Der Parameter t stimmt.':'Der Parameter t stimmt nicht: Lösen Sie eine der Gleichungen nach t auf.'}]};
+      }
+      const ok=v.kind==='off';
+      return {ok,msgs:[{ok,t:ok?'Richtig: Die Gleichungen liefern verschiedene t-Werte, P liegt nicht auf g.':'Nein: Die Gleichungen liefern nicht überall dasselbe t.'}]};
+    },
+    answer:()=>on?{kind:'on',t:tQ(R.t)}:{kind:'off',t:''},
+    sol:'<div class="eq">'+R.rows.map((x,k)=>'<span class="row">'+nz[k]+':&nbsp; '+x+'</span>').join('')+'<span class="row"><b>'+(on?'Alle Gleichungen stimmen mit t = '+hQ(R.t)+': P liegt auf g.':'Die t-Werte widersprechen sich: P liegt nicht auf g.')+'</b></span></div>',
+    draw:{pts:[{p:vN(P),label:'P',color:'p'}],lines:[lineDraw(p,u,'ink','g')],focus:[vN(p)]}
+  };
+}
+
+/* ---- 8. Lage zweier Geraden ---- */
+function genLage(r,lvl,dim){
+  const pool=dim===2?(lvl===1?['cut','cut','par']:['cut','cut','par','ident']):(lvl===1?['cut','par','skew']:['cut','skew','skew','par','ident']);
+  const kind=pick(r,pool);
+  let p,u,q,v;
+  for(let n=0;n<300;n++){
+    p=randPt(r,dim,-4,4);u=randDir(r,lvl,dim);
+    if(kind==='cut'){
+      v=randDir(r,lvl,dim);if(parallel(u,v)) continue;
+      const S_=vadd(p,vscale(Z(ri(r,-2,2)),u));q=vsub(S_,vscale(Z(ri(r,-2,2)),v));
+    }else if(kind==='par'){
+      v=vscale(Z(pick(r,[-2,-1,2,3])),u);const w=randPt(r,dim,-3,3);q=vadd(p,w);if(parallel(w,u)) continue;
+    }else if(kind==='ident'){
+      v=vscale(Z(pick(r,[-2,-1,2,3])),u);q=vadd(p,vscale(Z(pick(r,[-2,-1,1,2,3])),u));
+    }else{
+      v=randDir(r,lvl,dim);if(parallel(u,v)) continue;q=vadd(p,randPt(r,dim,-4,4));
+    }
+    if(!inBox(q,12)) continue;
+    if(lagen(p,u,q,v).kind===kind) break;
+  }
+  const R=lagen(p,u,q,v),nz=nameDim(dim);
+  const opts=[['ident','identisch'],['par','parallel (nicht identisch)'],['cut','schneidend']];
+  if(dim===3) opts.push(['skew','windschief']);
+  const Srow={label:'Falls die Geraden sich schneiden: Schnittpunkt',fields:nz.map((_,k)=>({id:'s'+(k+1),type:'q',lab:nz[k]+' ='}))};
+  const lvec=(pp,uu,t)=>hVec(pp)+' + '+t+' · '+hVec(uu);
+  return {
+    title:'Lage zweier Geraden',
+    q:'Bestimmen Sie die gegenseitige Lage der Geraden<div class="eq"><span class="row">g: &nbsp;r = '+lvec(p,u,'t')+'</span><span class="row"><span style="color:var(--qc);font-weight:600">h</span>: &nbsp;r = '+lvec(q,v,'s')+'</span></div>',
+    rows:[{label:'',fields:[{id:'kind',type:'radio',opts}]},Srow],
+    hints:['<b>1.</b> Sind die Richtungsvektoren Vielfache voneinander? Prüfen Sie, ob alle Verhältnisse v<sub>k</sub> / u<sub>k</sub> gleich sind.','<b>Ja:</b> Punktprobe mit dem Stützpunkt von h in g (identisch oder parallel). <b>Nein:</b> g und h gleichsetzen, aus zwei Gleichungen t und s bestimmen und in die übrigen einsetzen (schneidend oder windschief).'],
+    check(v){
+      if(!v.kind) return {ok:false,msgs:[{ok:false,t:'Wählen Sie die Lage aus.'}]};
+      if(v.kind!==R.kind) return {ok:false,msgs:[{ok:false,t:'Das stimmt noch nicht. '+(parallel(u,v)?'Die Richtungsvektoren sind Vielfache voneinander. Machen Sie nun die Punktprobe.':'Die Richtungsvektoren sind keine Vielfachen. Setzen Sie gleich und prüfen Sie, ob alle Gleichungen stimmen.')}]};
+      if(R.kind!=='cut') return {ok:true,msgs:[{ok:true,t:'Richtig: '+KIND[R.kind]+'.'}]};
+      const sv=nz.map((_,k)=>parseQ(v['s'+(k+1)]));
+      if(sv.some(x=>!x)) return {ok:false,msgs:[{ok:true,t:'Richtig: schneidend.'},{ok:false,t:'Geben Sie noch den Schnittpunkt an.'}]};
+      const ok=sv.every((x,k)=>matchQ(x,R.S[k]));
+      return {ok,msgs:[{ok:true,t:'Richtig: schneidend.'},{ok,t:ok?'Der Schnittpunkt stimmt.':'Der Schnittpunkt stimmt nicht: Setzen Sie t in g ein.'}]};
+    },
+    answer:()=>{const a={kind:R.kind};if(R.kind==='cut')R.S.forEach((x,k)=>a['s'+(k+1)]=tQ(x));return a;},
+    sol:solLage(p,u,q,v,R,nz),
+    draw:{pts:[],lines:[lineDraw(p,u,'ink','g'),lineDraw(q,v,'q','h')],focus:[vN(p),vN(q)]}
+  };
+}
+function solLage(p,u,q,v,R,nz){
+  const par=parallel(u,v),lab=['I','II','III'];
+  if(par){
+    const on=pointOn(q,p,u);
+    return '<div class="eq"><span class="row">Die Richtungsvektoren sind Vielfache voneinander: '+hVec(u)+' und '+hVec(v)+'.</span><span class="row">Punktprobe mit dem Stützpunkt von h in g:</span>'+on.rows.map((x,k)=>'<span class="row">('+lab[k]+') '+nz[k]+':&nbsp; '+x+'</span>').join('')+'<span class="row"><b>→ '+KIND[R.kind]+'</b></span></div>';
+  }
+  const rows=u.map((_,k)=>'<span class="row">('+lab[k]+') &nbsp;'+hQ(p[k])+' + t · '+hP(u[k])+' = '+hQ(q[k])+' + s · '+hP(v[k])+'</span>').join('');
+  let h='<div class="eq"><span class="row">Die Richtungsvektoren sind keine Vielfachen. Gleichsetzen:</span>'+rows+'<span class="row">Aus ('+lab[R.eqs[0]]+') und ('+lab[R.eqs[1]]+'): t = '+hQ(R.t)+', s = '+hQ(R.s)+'</span>';
+  if(u.length===3){const kk=[0,1,2].find(k=>k!==R.eqs[0]&&k!==R.eqs[1]);h+='<span class="row">Kontrolle mit ('+lab[kk]+'): '+hQ(qa(p[kk],qm(R.t,u[kk])))+' '+(R.kind==='cut'?'=':'≠')+' '+hQ(qa(q[kk],qm(R.s,v[kk])))+'</span>';}
+  h+='<span class="row"><b>→ '+KIND[R.kind]+'</b>'+(R.kind==='cut'?' im Punkt S'+tPt('',R.S).replace(/^\(/,'(')+'  (t = '+hQ(R.t)+' in g einsetzen)':'')+'</span></div>';
+  return h;
+}
+
+/* ---- 9. Schnittwinkel ---- */
+function genWinkel(r,lvl,dim){
+  let u,v,p,q,expl=false,m1,m2;
+  if(dim===2&&lvl<3){
+    expl=true;
+    const ms=[Z(0),Z(1),Z(-1),Z(2),Z(-2),Z(3),Z(-3),Q(1,2),Q(-1,2)];
+    for(let n=0;n<100;n++){m1=pick(r,ms);m2=pick(r,ms);if(!qeq(m1,m2)&&(lvl>1||q0(m1)||qeq(qabs(m1),qI(1)))) break;}
+    u=[Z(1),m1];v=[Z(1),m2];
+    const q1=Z(ri(r,-4,4)),q2=Z(ri(r,-4,4));p=[Z(0),q1];q=[Z(0),q2];
+  }else{
+    for(let n=0;n<200;n++){u=randDir(r,lvl,dim);v=randDir(r,lvl,dim);if(parallel(u,v)) continue;p=randPt(r,dim,-3,3);q=randPt(r,dim,-3,3);
+      const c=Math.abs(qv(vdot(u,v)))/(lenV(u)*lenV(v));if(c<0.97&&c>0.02) break;}
+  }
+  const cos=Math.abs(qv(vdot(u,v)))/(lenV(u)*lenV(v)),phi=Math.acos(Math.min(1,cos))*180/Math.PI;
+  const M=nm(),Qn=nq();
+  const text=expl?'Gegeben sind <b>g: y = '+hQ(m1)+'x'+termC(p[1],false)+'</b> und <b>h: y = '+hQ(m2)+'x'+termC(q[1],false)+'</b>. Unter welchem Winkel schneiden sie sich? (Der Schnittwinkel liegt zwischen 0° und 90°.)':
+   'Gegeben sind <div class="eq"><span class="row">g: &nbsp;r = '+hVec(p)+' + t · '+hVec(u)+'</span><span class="row"><span style="color:var(--qc);font-weight:600">h</span>: &nbsp;r = '+hVec(q)+' + s · '+hVec(v)+'</span></div>Unter welchem Winkel schneiden sich die Geraden? (Der Schnittwinkel liegt zwischen 0° und 90°.)';
+  return {
+    title:'Schnittwinkel zweier Geraden',
+    q:text,
+    rows:[{label:'Schnittwinkel φ (in Grad, auf eine Dezimale)',fields:[{id:'phi',type:'q',lab:'φ ≈',suf:'°'}]}],
+    hints:[expl?'Zu y = '+M+'x + '+Qn+' gehört der Richtungsvektor <b>(1 | '+M+')</b>.':'Der Schnittwinkel ist der Winkel zwischen den <b>Richtungsvektoren</b> u und v.','cos φ = |u ∙ v| / (|u| · |v|). Mit dem Taschenrechner arccos (cos⁻¹) im Gradmodus.'],
+    check(v){
+      const x=parseQ(String(v.phi).replace('°','').replace(',','.'));
+      if(!x) return {ok:false,msgs:[{ok:false,t:'Geben Sie den Winkel als Zahl an, zum Beispiel 26.6.'}]};
+      const val=qv(x),ok=Math.abs(val-phi)<0.25;
+      const compl=Math.abs(val-(180-phi))<0.25||Math.abs(val-(90-phi))<0.25;
+      return {ok,msgs:[{ok,t:ok?'Richtig (φ ≈ '+fmtN(phi,1)+'°).':compl?'Fast: Der Schnittwinkel liegt zwischen 0° und 90°. Verwenden Sie den Betrag im Zähler.':'Das stimmt nicht. Rechnen Sie cos φ = |u ∙ v| / (|u| · |v|) und dann arccos. Der Taschenrechner muss auf Grad (DEG) stehen.'}]};
+    },
+    answer:()=>({phi:String(parseFloat(phi.toFixed(1)))}),
+    sol:'<div class="eq"><span class="row">'+sp('c-r','u')+' = '+hVec(u,'c-r')+', &nbsp;'+sp('c-r','v')+' = '+hVec(v,'c-r')+'</span><span class="row">u ∙ v = '+hQ(vdot(u,v))+', &nbsp;|u| = '+fmtN(lenV(u),3)+', &nbsp;|v| = '+fmtN(lenV(v),3)+'</span><span class="row">cos φ = |'+hQ(vdot(u,v))+'| / ('+fmtN(lenV(u),3)+' · '+fmtN(lenV(v),3)+') = '+fmtN(cos,4)+' &nbsp;→ &nbsp;<b>φ ≈ '+fmtN(phi,1)+'°</b></span></div>',
+    draw:{pts:[],lines:[lineDraw(p,u,'ink','g'),lineDraw(q,v,'q','h')],focus:[vN(p),vN(q)]}
+  };
+}
+
+/* ---- 10. Punkt mit gegebener Koordinate (3D) ---- */
+function genKoord(r,lvl,dim){
+  let p,u,k,t0;
+  for(let n=0;n<100;n++){
+    p=randPt(r,3,-3,3);u=randDir(r,lvl,3);k=ri(r,0,2);
+    if(q0(u[k])) continue;
+    t0=Z(pick(r,[-3,-2,-1,1,2,3,4]));
+    if(inBox(vadd(p,vscale(t0,u)),12)) break;
+  }
+  const P=vadd(p,vscale(t0,u)),nz=nameDim(3);
+  return {
+    title:'Punkt mit gegebener Koordinate',
+    q:'Gegeben ist <b>g: '+eqVec(p,u)+'</b>. Gesucht ist der Punkt <b>P</b> auf g, für den die <b>'+nz[k]+'-Koordinate '+nz[k]+' = '+tQ(P[k])+'</b> ist. Bestimmen Sie die übrigen Koordinaten von P.',
+    rows:[{label:'P',fmt:'pt',fields:nz.map((c,i)=>i===k?{id:'c'+i,type:'fixed',val:tQ(P[k])}:{id:'c'+i,type:'q'})}],
+    hints:['Setzen Sie die '+nz[k]+'-Koordinate der Geradengleichung gleich '+tQ(P[k])+': '+hQ(p[k])+' + t · '+hP(u[k])+' = '+hQ(P[k])+'. Daraus folgt t.','Setzen Sie dieses t in die ganze Geradengleichung ein.'],
+    check(v){
+      const c=nz.map((_,i)=>i===k?P[k]:parseQ(v['c'+i]));
+      if(c.some(x=>!x)) return {ok:false,msgs:[{ok:false,t:'Bitte die beiden freien Felder ausfüllen.'}]};
+      const okAll=c.every((x,i)=>matchQ(x,P[i]));
+      return {ok:okAll,msgs:[{ok:okAll,t:okAll?'Richtig.':'Das stimmt nicht. Bestimmen Sie zuerst t aus der '+nz[k]+'-Koordinate und setzen Sie es dann ein.'}]};
+    },
+    answer:()=>{const a={};P.forEach((x,i)=>{if(i!==k)a['c'+i]=tQ(x);});return a;},
+    sol:'<div class="eq"><span class="row">'+nz[k]+': &nbsp;'+hQ(p[k])+' + t · '+hP(u[k])+' = '+hQ(P[k])+' &nbsp;→ &nbsp;t = '+hQ(t0)+'</span><span class="row">'+sp('c-p','OP')+' = '+hVec(p)+' + '+hP(t0)+' · '+hVec(u)+' = '+hVec(P,'c-p')+'</span></div>',
+    draw:{pts:[{p:vN(P),label:'P',color:'p',ans:true}],lines:[lineDraw(p,u,'ink','g')],focus:[vN(p)]}
+  };
+}
+
+/* ---- 11. Durchstosspunkt der xy-Ebene (3D) ---- */
+function genSpur(r,lvl,dim){
+  let p,u,t0;
+  for(let n=0;n<100;n++){
+    u=randDir(r,lvl,3);if(q0(u[2])) continue;
+    p=randPt(r,3,-3,3);
+    if(lvl===2){p[2]=qm(u[2],Z(pick(r,[-3,-2,-1,1,2,3])));}
+    t0=qd(qn(p[2]),u[2]);
+    const P=vadd(p,vscale(t0,u));
+    if(inBox(p,9)&&inBox(P,12)&&!q0(p[2])) break;
+  }
+  const P=vadd(p,vscale(t0,u));
+  return {
+    title:'Durchstosspunkt der xy-Ebene',
+    q:'Die Gerade <b>g: '+eqVec(p,u)+'</b> durchstösst die <b>xy-Ebene</b> (dort ist z = 0). In welchem Punkt?',
+    rows:[{label:'Durchstosspunkt P',fmt:'pt',fields:[{id:'x',type:'q'},{id:'y',type:'q'},{id:'z',type:'fixed',val:'0'}]}],
+    hints:['In der xy-Ebene gilt <b>z = 0</b>. Setzen Sie die dritte Koordinate der Geradengleichung gleich 0 und lösen Sie nach t auf.','Setzen Sie dieses t in die ganze Geradengleichung ein. Das Ergebnis darf ein Bruch sein (oder eine Dezimalzahl auf zwei Stellen genau).'],
+    check(v){
+      const x=parseQ(v.x),y=parseQ(v.y);
+      if(!x||!y) return {ok:false,msgs:[{ok:false,t:'Bitte x und y ausfüllen (Bruch oder Dezimalzahl).'}]};
+      const ok=matchQ(x,P[0])&&matchQ(y,P[1]);
+      return {ok,msgs:[{ok,t:ok?'Richtig.':'Das stimmt nicht. Bestimmen Sie t aus '+hQ(p[2])+' + t · '+hP(u[2])+' = 0 und setzen Sie es in x und y ein.'}]};
+    },
+    answer:()=>({x:tQ(P[0]),y:tQ(P[1])}),
+    sol:'<div class="eq"><span class="row">z: &nbsp;'+hQ(p[2])+' + t · '+hP(u[2])+' = 0 &nbsp;→ &nbsp;t = '+hQ(t0)+'</span><span class="row">'+sp('c-p','OP')+' = '+hVec(p)+' + '+hP(t0)+' · '+hVec(u)+' = '+hVec(P,'c-p')+'</span></div>',
+    draw:{pts:[{p:vN(P),label:'P',color:'p',ans:true}],lines:[lineDraw(p,u,'ink','g')],focus:[vN(p)]}
+  };
+}
+
+const GENS={vek:genVek,steig:genSteig,expl:genExpl,grund:genGrund,g2m:genG2m,vert:genVert,probe:genProbe,lage:genLage,winkel:genWinkel,koord:genKoord,spur:genSpur};
+function makeTask(dim,lvl,type,seed){
+  const r0=rng(seed*7919+lvl*104729+dim*13+hashStr(type));
+  const r=rng(Math.floor(r0()*4294967296));
+  const pool=POOL[dim][lvl];
+  const ty=type==='zufall'?pick(r,pool):type;
+  const t=GENS[ty](r,lvl,dim);
+  t.type=ty;t.dim=dim;t.lvl=lvl;t.seed=seed;
+  return t;
+}
+
+/* ============================================================
+   9. Oberfläche: Zustand, Beispiele, Karten
+   ============================================================ */
+const P3=a=>{const r=a.map(qI);while(r.length<3)r.push(qI(0));return r;};
+const EXV={2:[
+  {n:'Standard',A:[-1,1],B:[3,4]},{n:'Bruch als Steigung',A:[-2,3],B:[4,-1]},{n:'Steigung 2',A:[0,2],B:[2,6]},
+  {n:'Waagrecht',A:[-3,1],B:[2,1]},{n:'Senkrecht',A:[3,1],B:[3,4]}],
+ 3:[{n:'Beispiel 1',A:[1,2,3],B:[4,0,5]},{n:'Beispiel 2',A:[0,0,0],B:[2,3,1]},{n:'Beispiel 3',A:[-2,1,4],B:[3,-1,-2]},{n:'Parallel zur z-Achse',A:[1,1,0],B:[1,1,4]}]};
+const EXL={2:[
+  {n:'Schneidend',A:[-1,1],B:[3,4],C:[0,5],D:[4,2]},{n:'Parallel',A:[-1,1],B:[3,4],C:[0,3],D:[4,6]},{n:'Identisch',A:[-1,1],B:[3,4],C:[-5,-2],D:[7,7]}],
+ 3:[{n:'Schneidend',A:[1,2,3],B:[4,0,5],C:[2,-2,5],D:[3,-1,5]},{n:'Windschief',A:[1,2,3],B:[4,0,5],C:[0,0,0],D:[1,1,1]},
+    {n:'Parallel',A:[1,2,3],B:[4,0,5],C:[0,0,1],D:[3,-2,3]},{n:'Identisch',A:[1,2,3],B:[4,0,5],C:[7,-2,7],D:[-2,4,1]}]};
+function setPts(e){['A','B','C','D'].forEach(k=>{if(e[k]) S[k]=P3(e[k]);});}
+function setDefaults(dim){
+  if(dim===2){setPts({A:[-1,1],B:[3,4],C:[0,5],D:[4,2]});S.P=P3([7,7]);}
+  else{setPts({A:[1,2,3],B:[4,0,5],C:[2,-2,5],D:[3,-1,5]});S.P=P3([7,-2,7]);}
+  S.stuetz='A';S.richt='AB';S.t=qI(1);S.sfree=Q(1,2);S.kfac=qI(2);S.tstep=0;
+}
+const TABS=dim=>{
+  const base=[['vektor','Vektorform']];
+  if(dim===2) base.push(['explizit','Explizite Form  y = '+nm()+'x + '+nq()],['grund','Grundform  '+GA()+'x + '+GB()+'y + '+GC()+' = 0']);
+  base.push(['lage','Lage zweier Geraden']);
+  return base;
+};
+const LEG={ink:['line','Gerade g'],s:['line','Stützvektor (Ortsvektor)'],r:['line','Richtungsvektor / Steigung'],p:['dot','Punkt auf der Geraden'],
+  ab:['dot','Punkte A, B'],n:['line','Normalenvektor'],bad:['dot','liegt nicht auf g']};
+function legendHtml(sc,tab){
+  const used={};
+  [].concat(sc.lines,sc.vecs,sc.segs).forEach(o=>used[o.color]=used[o.color]||'line');
+  sc.pts.forEach(o=>used[o.color]='dot');
+  const out=[];
+  Object.keys(used).forEach(k=>{
+    let lab,kind=used[k];
+    if(k==='q') lab=tab==='lage'||S.mode==='aufgabe'?'Gerade h (Punkte C, D)':'y-Achsenabschnitt '+nq();
+    else if(k==='muted') return;
+    else if(LEG[k]) {lab=LEG[k][1];}
+    else return;
+    if(k==='r'&&tab==='explizit') lab='Steigung (Δx, Δy)';
+    if(k==='r'&&tab==='grund') lab='Richtungsvektor';
+    if(k==='p'&&tab==='lage') lab='Schnittpunkt S';
+    if(k==='ink'&&S.mode==='aufgabe') lab='Gerade g';
+    const colv={ink:'var(--ink)',s:'var(--stuetz)',r:'var(--richt)',p:'var(--punkt)',ab:'var(--ab)',q:'var(--qc)',n:'var(--normal)',bad:'var(--bad)'}[k];
+    out.push('<span><i'+(kind==='dot'?' class="dot"':'')+' style="background:'+colv+'"></i>'+lab+'</span>');
+  });
+  return out.join('');
+}
+
+/* ---- Hilfsfunktionen für die Oberfläche ---- */
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let lastT=null;                       // letzte Theorie-Szene
+let QS={task:null,counted:false,solved:false,hints:0,sol:false,tries:0};
+const NAMES=['x','y','z'];
+/* Vektorpfeile: bekannte Vektornamen im sichtbaren Text mit Pfeil versehen */
+const VNAME=/(^|[^A-Za-zÄÖÜäöüß0-9_])(OA|OB|OC|OD|OS|OP|AB|BA|CD|DC|u|v|n|r)(?![A-Za-zÄÖÜäöüß0-9_])/g;
+function vecify(html){
+  const parts=String(html).split(/(<[^>]*>)/);
+  for(let i=0;i<parts.length;i+=2){
+    const seg=parts[i],nextTag=parts[i+1]||'';
+    parts[i]=seg.replace(VNAME,(m,pre,name,off)=>{
+      const end=off+m.length;
+      if(end===seg.length&&/^<sub/i.test(nextTag)) return m;
+      if(name==='r'&&/^\s*=/.test(seg.slice(end))) return pre+'<span class="va">r</span><sub>X</sub>';
+      return pre+'<span class="va">'+name+'</span>';
+    });
+  }
+  return parts.join('');
+}
+
+
+function renderSteps(){
+  const dl=S.step>1?(S.dim+'D'):'',ml=S.step>2?(S.mode==='theorie'?'Theorie':'Aufgaben'):'';
+  const items=[['1','Raum',dl,1],['2','Modus',ml,2],['3','Arbeiten','',3]];
+  $('#steps').innerHTML=items.map(([n,t,v,k])=>{
+    const cur=S.step===k,done=S.step>k;
+    return '<li><button class="step'+(done?' done':'')+'" '+(cur?'aria-current="step" ':'')+(k>=S.step?'disabled ':'')+'data-st="'+k+'"><span class="n">'+(done?'✓':n)+'</span><span>'+t+(v?' <span class="v">· '+v+'</span>':'')+'</span></button></li>';
+  }).join('');
+}
+function show(){
+  $('#pick1').hidden=S.step!==1;$('#pick2').hidden=S.step!==2;$('#work').hidden=S.step!==3;
+  renderSteps();
+  if(S.step!==3) return;
+  $$('#segDim button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.dim===S.dim)));
+  $$('#segMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===S.mode)));
+  $$('#segNota button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.nota===S.nota)));
+  $('#notaWrap').hidden=S.dim!==2;
+  $('#theorie').hidden=S.mode!=='theorie';$('#aufgabe').hidden=S.mode!=='aufgabe';
+  if(S.mode==='theorie'){
+    if(!TABS(S.dim).some(t=>t[0]===S.tab)) S.tab='vektor';
+    renderTabs();renderCardPts();renderCardOpts();renderSpecial();renderMain();
+  }else{
+    renderTypeSelect();$$('#segLvl button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.lvl===S.lvl)));
+    $('#seedIn').value=S.seed;loadTask();
+  }
+}
+function renderTabs(){
+  $('#tabs').innerHTML=TABS(S.dim).map(([k,l])=>'<button class="tab" role="tab" data-tab="'+k+'" aria-selected="'+(S.tab===k)+'">'+esc(l)+'</button>').join('');
+}
+
+/* ---- Karte «Punkte» ---- */
+function exampleList(){return S.tab==='lage'?EXL[S.dim]:EXV[S.dim];}
+function renderCardPts(){
+  const d=S.dim,names=S.tab==='lage'?['A','B','C','D']:['A','B'];
+  const rows=names.map(n=>'<div class="pt'+(d===2?' d2':'')+'"><b class="'+n+'">'+n+'</b>'+NAMES.slice(0,d).map((c,k)=>
+    '<input type="text" class="num" inputmode="decimal" autocomplete="off" spellcheck="false" data-p="'+n+'" data-k="'+k+'" aria-label="'+n+', '+c+'-Koordinate" value="'+tQ(S[n][k])+'">').join('')+'</div>').join('');
+  const ex=exampleList().map((e,i)=>'<button class="btn small" data-ex="'+i+'">'+esc(e.n)+'</button>').join('');
+  $('#cardPts').innerHTML='<h3>'+(S.tab==='lage'?'Zwei Geraden: Punkte':'Zwei Punkte eingeben')+'</h3>'+rows+
+    '<div class="read" id="readAB"></div><label class="l">Beispiele</label><div class="opts2">'+ex+'<button class="btn small" data-ex="rand">Zufällig</button></div>'+
+    '<p class="read" style="margin-top:8px">Zahlen, Brüche (3/4) und Dezimalzahlen sind erlaubt.</p>';
+  updateRead();
+}
+function updateRead(){
+  const el=$('#readAB');if(!el) return;
+  const d=S.dim,A=S.A.slice(0,d),B=S.B.slice(0,d),AB=vsub(B,A);
+  let h='';
+  if(vzero(AB)){h='<span class="bad">A und B sind gleich: Das ergibt keine Gerade.</span>';el.className='read bad';}
+  else{el.className='read';h='Verbindungsvektor '+sp('c-r','AB')+' = B − A = '+hVec(AB,'c-r');}
+  if(S.tab==='lage'){const C=S.C.slice(0,d),D=S.D.slice(0,d),CD=vsub(D,C);
+    h+=vzero(CD)?'<br><span style="color:var(--bad)">C und D sind gleich.</span>':'<br>Richtungsvektor von h: '+sp('c-q','CD')+' = '+hVec(CD,'c-q');}
+  el.innerHTML=vecify(h);
+}
+function updatePtInputs(){
+  $$('#cardPts input[data-p],#cardOpts input[data-p]').forEach(i=>{if(i===document.activeElement) return;i.value=tQ(S[i.dataset.p][+i.dataset.k]);i.removeAttribute('aria-invalid');});
+}
+
+/* ---- Karte «Wahlmöglichkeiten» (Vektorform) ---- */
+function renderCardOpts(){
+  const c=$('#cardOpts');
+  if(S.tab!=='vektor'){c.hidden=true;c.innerHTML='';return;}
+  c.hidden=false;
+  const d=S.dim;
+  c.innerHTML='<h3>Selbst wählen</h3>'+
+  '<div id="blkS"><label class="l">Stützpunkt S (Ortsvektor '+sp('c-s','OS')+')</label><div class="radios">'+
+    '<label><input type="radio" name="stz" value="A"> Punkt A</label><label><input type="radio" name="stz" value="B"> Punkt B</label>'+
+    '<label><input type="radio" name="stz" value="frei"> Anderer Punkt: A + s · AB</label>'+
+    '<label style="padding-left:30px"><span>s =</span><input type="range" id="rngS" min="-2" max="3" step="0.5" aria-label="Parameter s"><b id="valS" class="mono"></b></label></div></div>'+
+  '<div id="blkU"><label class="l">Richtungsvektor '+sp('c-r','u')+'</label><div class="radios">'+
+    '<label><input type="radio" name="ri" value="AB"> AB (von A nach B)</label><label><input type="radio" name="ri" value="BA"> BA (von B nach A)</label>'+
+    '<label><input type="radio" name="ri" value="kurz"> AB gekürzt</label>'+
+    '<label><input type="radio" name="ri" value="frei"> k · AB mit k =</label>'+
+    '<label style="padding-left:30px"><input type="text" id="inK" class="num" style="width:90px" inputmode="decimal" autocomplete="off" aria-label="Faktor k"></label></div></div>'+
+  '<div id="blkT"><label class="l">Parameter t: Punkt '+sp('c-p','P')+' auf der Geraden</label><div class="radios"><label><input type="range" id="rngT" min="-4" max="4" step="0.5" aria-label="Parameter t"><b id="valT" class="mono"></b></label></div></div>'+
+  '<div id="blkP"><label class="l">Punkt '+sp('c-p','P')+' für die Punktprobe</label><div class="pt'+(d===2?' d2':'')+'"><b class="A" style="color:var(--punkt)">P</b>'+NAMES.slice(0,d).map((n,k)=>'<input type="text" class="num" inputmode="decimal" autocomplete="off" data-p="P" data-k="'+k+'" aria-label="P, '+n+'-Koordinate" value="'+tQ(S.P[k])+'">').join('')+'</div>'+
+    '<div class="opts2" style="margin-top:8px"><button class="btn small" id="pOn">Punkt auf g</button><button class="btn small" id="pOff">Punkt neben g</button></div></div>';
+  c.innerHTML=vecify(c.innerHTML);
+  syncOpts();
+}
+function syncOpts(){
+  const c=$('#cardOpts');if(c.hidden) return;
+  $$('#cardOpts input[name=stz]').forEach(r=>r.checked=r.value===S.stuetz);
+  $$('#cardOpts input[name=ri]').forEach(r=>r.checked=r.value===S.richt);
+  $('#rngS').value=qv(S.sfree);$('#valS').textContent=tQ(S.sfree);$('#rngS').disabled=S.stuetz!=='frei';
+  if(document.activeElement!==$('#inK')) $('#inK').value=tQ(S.kfac);$('#inK').disabled=S.richt!=='frei';
+  $('#rngT').value=qv(S.t);$('#valT').textContent=' t = '+tQ(S.t);
+  $('#blkS').hidden=S.tstep<1;$('#blkU').hidden=S.tstep<2;$('#blkT').hidden=S.tstep<3;$('#blkP').hidden=S.tstep!==4;
+}
+
+/* ---- Spezialfall-Karte ---- */
+function renderSpecial(){
+  const c=$('#special');
+  if(S.dim===2){
+    c.innerHTML='<h3>Spezialfall: die senkrechte Gerade</h3><div class="grid2"><div class="body" style="display:grid;gap:10px">'+
+     '<p>Haben A und B <b>dieselbe x-Koordinate</b>, zum Beispiel A(3 | 1) und B(3 | 4), dann verläuft die Gerade <b>senkrecht</b>.</p>'+
+     '<p>Die Steigung '+nm()+' = Δy / Δx = 3 / 0 lässt sich nicht berechnen, denn <b>durch null darf man nicht teilen</b>. Darum gibt es für senkrechte Geraden <b>keine explizite Form</b> y = '+nm()+'x + '+nq()+'. Das passt zum Bild: Zu x = 3 gehören <i>alle</i> y-Werte, die Gerade ist keine Funktion.</p>'+
+     '<p>Die Gleichung ist trotzdem sehr einfach: Alle Punkte der Geraden haben x = 3. Also lautet sie <b>x = 3</b>. In der Grundform '+GA()+'x + '+GB()+'y + '+GC()+' = 0 ist das '+GA()+' = 1, '+GB()+' = 0, '+GC()+' = −3.</p>'+
+     '<p>Die <b>Vektorform</b> kennt dieses Problem nicht: r = <span class="vec c-s"><span>3</span><span>1</span></span> + t · <span class="vec c-r"><span>0</span><span>3</span></span>. Eine <b>waagrechte</b> Gerade (Δy = 0) macht dagegen keine Schwierigkeiten: Die Steigung ist 0 und die Gleichung lautet y = konstant.</p>'+
+     '<div class="opts2"><button class="btn" id="btnVert">Senkrechtes Beispiel einsetzen</button></div><div id="spStat"></div></div>'+
+     '<canvas id="cvSp" aria-label="Beispiel einer senkrechten Geraden"></canvas></div>';
+  }else{
+    c.innerHTML='<h3>Im Raum gibt es nur die Vektorform</h3><div class="body" style="display:grid;gap:10px;max-width:84ch">'+
+     '<p>In der Ebene reicht <b>eine</b> Gleichung '+GA()+'x + '+GB()+'y + '+GC()+' = 0 für eine Gerade. Im Raum beschreibt eine Gleichung der Form ax + by + cz + d = 0 dagegen eine <b>Ebene</b>, keine Gerade. Eine Gerade im Raum wäre der Schnitt zweier Ebenen und braucht deshalb zwei Gleichungen.</p>'+
+     '<p>Auch eine «Steigung» gibt es nicht: Von einem Punkt aus kann man in sehr viele Richtungen «ansteigen». Eine einzige Zahl reicht nicht, man braucht den ganzen <b>Richtungsvektor</b>.</p>'+
+     '<p>Darum ist die <b>Vektorform</b> die Darstellung der Wahl: <b>Stützvektor + t · Richtungsvektor</b>. Sie funktioniert für jede Gerade, auch für solche parallel zu einer Achse, zum Beispiel r = (1 | 1 | 0) + t · (0 | 0 | 1).</p>'+
+     '<div class="opts2"><button class="btn" id="btnAxis">Beispiel parallel zur z-Achse einsetzen</button></div></div>';
+  }
+  c.innerHTML=vecify(c.innerHTML);
+}
+function drawSpecial(){
+  const cv=$('#cvSp');if(!cv||S.dim!==2) return;
+  const sc=emptyScene();
+  sc.lines.push({p:[3,1],u:[0,3],color:'ink',w:2.6});
+  sc.pts.push({p:[3,1],label:'A',color:'ab',dx:-18,dy:14},{p:[3,4],label:'B',color:'ab',dx:-18,dy:-4});
+  sc.texts.push({at:[3,5.2],text:'x = 3',color:'ink',dx:34,align:'left'});
+  sc.texts.push({at:[3,2.5],text:'Δy = 3',color:'r',dx:10,align:'left'});
+  sc.texts.push({at:[3,4],text:'Δx = 0',color:'r',dx:12,dy:-2,align:'left'});
+  sc.focus.push([0,0],[7,6]);
+  draw2D(cv,sc,'SP');
+  const st=$('#spStat');
+  if(st){const pl=planar();st.innerHTML=pl.vert?'<div class="tip">Ihre aktuellen Punkte A und B haben dieselbe x-Koordinate: Sie befinden sich genau in diesem Spezialfall.</div>':'';}
+}
+
+/* ---- Hauptdarstellung der Theorie ---- */
+function renderMain(){
+  const c=theorieContent();lastT=c;
+  redrawT();
+  $('#legT').innerHTML=legendHtml(c.sc,S.tab);
+  $('#barT').innerHTML=S.dim===3?'<button class="btn small" id="btnAuto">'+(S.auto?'❚❚ Drehung anhalten':'▶ Ansicht drehen')+'</button><button class="btn small" id="btnCam">Ansicht zurücksetzen</button><span>Ziehen mit der Maus dreht die Ansicht.</span>':
+    '<span>Tipp: '+(S.tab==='lage'?'Die Punkte A bis D':'Die Punkte A und B')+' lassen sich mit der Maus auf Gitterpunkte ziehen.</span>';
+  renderExplain(c);
+  syncOpts();
+  const st=$('#spStat');drawSpecial();
+}
+function redrawT(){
+  if(!lastT) return;
+  const cv=$('#cvT');
+  if(S.dim===2) draw2D(cv,lastT.sc,'T'); else draw3D(cv,lastT.sc);
+}
+function renderExplain(c){
+  const meta=c.meta,n=meta.length,i=Math.min(S.tstep,n-1),m=meta[i];
+  const dots=meta.map((_,k)=>'<button data-go="'+k+'" aria-label="Schritt '+(k+1)+'" title="'+esc(meta[k].t)+'"'+(k===i?' aria-current="step"':'')+(k<i?' class="done"':'')+'></button>').join('');
+  $('#explain').innerHTML=vecify('<div class="head"><span class="badge">Schritt '+(i+1)+' von '+n+'</span><h2 style="font-size:18px">'+m.t+'</h2><span class="sheetref">'+m.ref+'</span></div>'+
+    '<div class="body">'+c.html+'</div><div class="nav"><button class="btn" id="prevS"'+(i===0?' disabled':'')+'>← Zurück</button><div class="dots">'+dots+'</div><button class="btn primary" id="nextS"'+(i===n-1?' disabled':'')+'>Weiter →</button></div>');
+}
+function goStep(k){
+  const n=(theorieContent().meta||[]).length;
+  S.tstep=Math.max(0,Math.min(n-1,k));renderMain();
+}
+function other(){
+  const sOpts=['A','B','frei'],rOpts=['AB','BA','kurz','frei'];
+  const sF=[Q(-1,2),Q(1,2),Q(3,2),qI(2),qI(-1)],kF=[qI(2),qI(-1),qI(3),qI(-2)];
+  const r=a=>a[Math.floor(Math.random()*a.length)];
+  let s,u;do{s=r(sOpts);u=r(rOpts);}while(s===S.stuetz&&u===S.richt);
+  S.stuetz=s;S.richt=u;S.sfree=r(sF);S.kfac=r(kF);S.tstep=Math.max(S.tstep,3);
+  syncOpts();renderMain();
+}
+
+/* ============================================================
+   10. Aufgaben-Oberfläche
+   ============================================================ */
+const LVN=['','Einfach','Mittel','Schwierig'];
+function renderTypeSelect(){
+  const ts=['zufall'].concat(typesFor(S.dim));
+  if(!ts.includes(S.type)) S.type='zufall';
+  $('#selType').innerHTML=ts.map(t=>'<option value="'+t+'"'+(t===S.type?' selected':'')+'>'+(t==='zufall'?'Gemischt (zufällig)':TYPES[t])+'</option>').join('');
+}
+function fieldHtml(f,rowIdx){
+  if(f.type==='radio') return f.opts.map(o=>'<label class="chk"><input type="radio" name="r_'+f.id+'" value="'+o[0]+'"> '+o[1]+'</label>').join('');
+  if(f.type==='fixed') return (f.lab?'<span class="fl">'+f.lab+'</span>':'')+'<span class="fx">'+f.val+'</span>';
+  return (f.lab?'<span class="fl">'+f.lab+'</span>':'')+'<input type="text" data-f="'+f.id+'" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc((f.lab||'Eingabe')+'')+'">'+(f.suf?'<span class="fl">'+f.suf+'</span>':'');
+}
+function rowHtml(r){
+  if(r.fmt==='pt') return '<div class="frow"><span class="fl">'+r.label.replace(/ P$/,'')+'</span><span class="sep">(</span>'+r.fields.map(f=>fieldHtml(f)).join('<span class="sep">|</span>')+'<span class="sep">)</span></div>';
+  const stack=r.fields.length>=2&&r.fields.every(f=>!f.lab&&f.type==='q');
+  if(stack) return '<div class="frow"><span class="fl">'+r.label+'</span><span class="vin">'+r.fields.map(f=>fieldHtml(f)).join('')+'</span></div>';
+  return '<div class="frow">'+(r.label?'<span class="fl">'+r.label+'</span>':'')+r.fields.map(f=>fieldHtml(f)).join('')+'</div>';
+}
+function loadTask(){
+  let t;
+  try{t=makeTask(S.dim,S.lvl,S.type,S.seed);}
+  catch(e){console.error(e);t=null;}
+  QS={task:t,counted:false,solved:false,hints:0,sol:false,tries:0};
+  const el=$('#qcard');
+  if(!t){el.innerHTML='<p>Diese Aufgabe konnte nicht erzeugt werden. Wählen Sie eine andere Nummer.</p>';return;}
+  el.innerHTML=vecify('<div class="qhead"><span class="lvl l'+t.lvl+'">'+LVN[t.lvl]+'</span><span class="badge">Aufgabe Nr. '+t.seed+' · '+TYPES[t.type]+'</span></div>'+
+    '<h2 style="font-size:19px">'+t.title+'</h2><div class="qtext">'+t.q+'</div>'+
+    '<div class="form" id="qform">'+t.rows.map(rowHtml).join('')+'</div>'+
+    '<div class="frow"><button class="btn primary" id="qCheck">Prüfen</button><button class="btn" id="qHint">Hinweis</button><button class="btn" id="qSol">Lösung zeigen</button><button class="btn" id="qNext">Nächste Aufgabe →</button></div>'+
+    '<div class="fbox" id="qfb" aria-live="polite"></div><div class="hints" id="qhints"></div><div id="qsol"></div>');
+  $('#seedIn').value=t.seed;
+  drawQ();
+}
+function taskScene(t){
+  if(!t||!t.draw) return null;
+  const sc=emptyScene(),reveal=QS.solved||QS.sol;
+  t.draw.pts.forEach(p=>{if(p.ans&&!reveal) return;sc.pts.push(Object.assign({},p,{drag:false}));sc.focus.push(p.p);});
+  t.draw.lines.forEach(l=>sc.lines.push(l));
+  (t.draw.focus||[]).forEach(f=>sc.focus.push(f));
+  return sc;
+}
+function drawQ(){
+  const t=QS.task,sc=taskScene(t),pan=$('#panQ');
+  const showIt=!!sc&&$('#chkSketch').checked;
+  pan.hidden=!showIt;
+  if(!showIt) return;
+  const cv=$('#cvQ');
+  if(S.dim===2) draw2D(cv,sc,'Q'); else draw3D(cv,sc);
+  $('#legQ').innerHTML=legendHtml(sc,'aufgabe');
+  $('#barQ').innerHTML=S.dim===3?'<span>Ziehen mit der Maus dreht die Ansicht.</span>':'<span>Skizze zur Aufgabe (nicht massstäblich beschriftet).</span>';
+}
+function collect(){
+  const v={};
+  QS.task.rows.forEach(r=>r.fields.forEach(f=>{
+    if(f.type==='radio'){const c=$('input[name="r_'+f.id+'"]:checked');v[f.id]=c?c.value:'';}
+    else if(f.type==='q'){const i=$('#qform input[data-f="'+f.id+'"]');v[f.id]=i?i.value:'';}
+  }));
+  return v;
+}
+function fill(v){
+  QS.task.rows.forEach(r=>r.fields.forEach(f=>{
+    if(f.type==='radio'){const c=$('input[name="r_'+f.id+'"][value="'+v[f.id]+'"]');if(c) c.checked=true;}
+    else if(f.type==='q'){const i=$('#qform input[data-f="'+f.id+'"]');if(i) i.value=v[f.id]===undefined?'':v[f.id];}
+  }));
+}
+function renderScore(){
+  const s=S.score;
+  $('#score').textContent=s.tried?('Richtig gelöst: '+s.solved+' von '+s.tried+' bearbeiteten Aufgaben.'):'Noch keine Aufgabe bearbeitet.';
+}
+function doCheck(){
+  const t=QS.task;if(!t) return;
+  let res;
+  try{res=t.check(collect());}catch(e){console.error(e);res={ok:false,msgs:[{ok:false,t:'Die Eingabe konnte nicht ausgewertet werden.'}]};}
+  const html='<div class="fb '+(res.ok?'ok':'no')+'">'+(res.ok?'<b>Richtig!</b>':'')+res.msgs.map(m=>'<div class="m '+(m.ok?'ok':'no')+'">'+m.t+'</div>').join('')+'</div>';
+  
+  $('#qfb').innerHTML=vecify(html);
+  QS.tries++;
+  if(!QS.counted){QS.counted=true;S.score.tried++;}
+  if(res.ok&&!QS.solved){
+    QS.solved=true;
+    if(!QS.sol&&QS.tries<=99){S.score.solved++;}
+    drawQ();$('#qNext').classList.add('primary');
+  }
+  renderScore();
+}
+function showHint(){
+  const t=QS.task;if(!t) return;
+  if(QS.hints>=t.hints.length) return;
+  QS.hints++;
+  $('#qhints').innerHTML=t.hints.slice(0,QS.hints).map((h,i)=>'<div class="tip"><b>Hinweis '+(i+1)+':</b> '+vecify(h)+'</div>').join('');
+  if(QS.hints>=t.hints.length) $('#qHint').disabled=true;
+}
+function showSol(){
+  const t=QS.task;if(!t) return;
+  QS.sol=true;
+  if(!QS.counted){QS.counted=true;S.score.tried++;renderScore();}
+  $('#qsol').innerHTML='<div class="explain"><div class="head"><span class="badge">Lösungsweg</span></div><div class="body">'+vecify(t.sol)+'</div></div>';
+  fill(t.answer());drawQ();
+}
+function nextTask(){S.seed++;$('#seedIn').value=S.seed;loadTask();}
+
+/* ============================================================
+   11. Ereignisse
+   ============================================================ */
+function redrawAll(){
+  if(S.step!==3) return;
+  if(S.mode==='theorie'){redrawT();drawSpecial();}else drawQ();
+}
+let rafId=0;
+function tick(){
+  if(!S.auto||S.dim!==3||S.mode!=='theorie'||S.step!==3){S.auto=false;return;}
+  S.cam.az+=0.008;redrawT();rafId=requestAnimationFrame(tick);
+}
+function bindCanvas(cv,key,getDim,onMove){
+  let drag=null;
+  const pos=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
+  cv.addEventListener('pointerdown',e=>{
+    const [x,y]=pos(e);
+    if(getDim()===2){
+      const T=T2[key];if(!T) return;
+      let best=null,bd=20;
+      T.sc.pts.forEach(o=>{if(!o.drag) return;const d=Math.hypot(T.X(o.p[0])-x,T.Y(o.p[1])-y);if(d<bd){bd=d;best=o;}});
+      if(best){drag={pt:best.key};S.lock={key,v:T.v};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';e.preventDefault();}
+    }else{
+      drag={cam:true,x:e.clientX,y:e.clientY};S.auto=false;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';e.preventDefault();
+    }
+  });
+  cv.addEventListener('pointermove',e=>{
+    const [x,y]=pos(e);
+    if(!drag){
+      if(getDim()===2){const T=T2[key];let near=false;if(T) T.sc.pts.forEach(o=>{if(o.drag&&Math.hypot(T.X(o.p[0])-x,T.Y(o.p[1])-y)<20) near=true;});cv.style.cursor=near?'grab':'default';}
+      else cv.style.cursor='grab';
+      return;
+    }
+    if(drag.pt){
+      const v=S.lock.v;
+      const cx=Math.max(-30,Math.min(30,Math.round(v.x0+(x-v.L.ml)/v.pw*(v.x1-v.x0))));
+      const cy=Math.max(-30,Math.min(30,Math.round(v.y1-(y-v.L.mt)/v.ph*(v.y1-v.y0))));
+      const P=S[drag.pt];
+      if(!qeq(P[0],qI(cx))||!qeq(P[1],qI(cy))){P[0]=qI(cx);P[1]=qI(cy);onMove();updatePtInputs();}
+    }else{
+      S.cam.az-=(e.clientX-drag.x)*0.01;S.cam.el=Math.max(-0.35,Math.min(1.45,S.cam.el+(e.clientY-drag.y)*0.01));
+      drag.x=e.clientX;drag.y=e.clientY;onMove(true);
+    }
+  });
+  const end=e=>{if(!drag) return;const was=drag;drag=null;S.lock=null;cv.style.cursor='';if(was.pt) onMove();};
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+}
+
+function init(){
+  setDefaults(2);
+  S.seed=1+Math.floor(Math.random()*899);
+  // Thema
+  try{const th=localStorage.getItem('gl-theme');if(th) document.documentElement.setAttribute('data-theme',th);}catch(e){}
+  $('#themeBtn').addEventListener('click',()=>{
+    const root=document.documentElement,cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);
+    try{localStorage.setItem('gl-theme',nx);}catch(e){}
+    redrawAll();
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener&&matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+  // Auswahl
+  $('#pick1').addEventListener('click',e=>{const b=e.target.closest('[data-dim]');if(!b) return;S.dim=+b.dataset.dim;setDefaults(S.dim);S.tab='vektor';S.step=2;show();});
+  $('#pick2').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b) return;S.mode=b.dataset.mode;S.step=3;show();});
+  $('#back1').addEventListener('click',()=>{S.step=1;show();});
+  $('#steps').addEventListener('click',e=>{const b=e.target.closest('[data-st]');if(!b||b.disabled) return;S.step=+b.dataset.st;show();});
+  $('#segDim').addEventListener('click',e=>{const b=e.target.closest('button');if(!b) return;const d=+b.dataset.dim;if(d===S.dim) return;S.dim=d;setDefaults(d);if(!TABS(d).some(t=>t[0]===S.tab)) S.tab='vektor';S.auto=false;show();});
+  $('#segMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.mode===S.mode) return;S.mode=b.dataset.mode;S.auto=false;show();});
+  $('#segNota').addEventListener('click',e=>{const b=e.target.closest('button');if(!b) return;S.nota=b.dataset.nota;show();});
+  // Tabs
+  $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b) return;S.tab=b.dataset.tab;S.tstep=0;renderTabs();renderCardPts();renderCardOpts();renderMain();});
+  // Erklärung
+  $('#explain').addEventListener('click',e=>{
+    const t=e.target;
+    if(t.closest('#prevS')) goStep(S.tstep-1);
+    else if(t.closest('#nextS')) goStep(S.tstep+1);
+    else if(t.closest('[data-go]')) goStep(+t.closest('[data-go]').dataset.go);
+    else if(t.closest('#btnOther')) other();
+  });
+  // Punkte
+  $('#cardPts').addEventListener('input',e=>{
+    const i=e.target.closest('input[data-p]');if(!i) return;
+    const q=parseQ(i.value);
+    if(!q||Math.abs(qv(q))>1000){i.setAttribute('aria-invalid','true');i.style.borderColor='var(--bad)';return;}
+    i.removeAttribute('aria-invalid');i.style.borderColor='';
+    S[i.dataset.p][+i.dataset.k]=q;updateRead();renderMain();
+  });
+  $('#cardPts').addEventListener('click',e=>{
+    const b=e.target.closest('[data-ex]');if(!b) return;
+    if(b.dataset.ex==='rand'){
+      const d=S.dim,R=()=>qI(Math.floor(Math.random()*13)-6);
+      const mk=()=>{const a=[R(),R(),d===3?R():qI(0)];return a;};
+      let A,B,C,D;do{A=mk();B=mk();}while(vzero(vsub(B,A)));
+      S.A=A;S.B=B;if(S.tab==='lage'){do{C=mk();D=mk();}while(vzero(vsub(D,C)));S.C=C;S.D=D;}
+    }else setPts(exampleList()[+b.dataset.ex]);
+    updatePtInputs();updateRead();renderMain();
+  });
+  // Optionen
+  const oc=$('#cardOpts');
+  oc.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.name==='stz'){S.stuetz=t.value;}
+    else if(t.name==='ri'){S.richt=t.value;}
+    else return;
+    syncOpts();renderMain();
+  });
+  oc.addEventListener('input',e=>{
+    const t=e.target;
+    if(t.id==='rngS'){S.sfree=Q(Math.round(+t.value*2),2);}
+    else if(t.id==='rngT'){S.t=Q(Math.round(+t.value*2),2);}
+    else if(t.id==='inK'){const q=parseQ(t.value);if(!q||q.n===0) return;S.kfac=q;}
+    else if(t.dataset.p==='P'){const q=parseQ(t.value);if(!q) return;S.P[+t.dataset.k]=q;}
+    else return;
+    renderMain();
+  });
+  oc.addEventListener('click',e=>{
+    const t=e.target;
+    if(t.id==='pOn'){const G=geo();S.P=P3(vadd(G.Sp,vscale(qI(2),G.u)).map(qv));if(S.dim===2)S.P[2]=qI(0);renderMain();$$('#cardOpts input[data-p="P"]').forEach(i=>{i.value=tQ(S.P[+i.dataset.k]);});}
+    if(t.id==='pOff'){const G=geo();const P=vadd(G.Sp,vscale(qI(2),G.u));P[1]=qa(P[1],qI(1));S.P=P.concat(S.dim===2?[qI(0)]:[]);renderMain();$$('#cardOpts input[data-p="P"]').forEach(i=>{i.value=tQ(S.P[+i.dataset.k]);});}
+  });
+  // Spezialfall
+  $('#special').addEventListener('click',e=>{
+    if(e.target.closest('#btnVert')){setPts({A:[3,1],B:[3,4]});if(S.tab==='vektor'||S.tab==='lage') {S.tab='explizit';S.tstep=0;renderTabs();renderCardPts();renderCardOpts();} updatePtInputs();updateRead();renderMain();}
+    if(e.target.closest('#btnAxis')){setPts({A:[1,1,0],B:[1,1,4]});S.tab='vektor';renderTabs();renderCardPts();renderCardOpts();renderMain();}
+  });
+  // Leiste unter der Zeichnung
+  $('#barT').addEventListener('click',e=>{
+    if(e.target.closest('#btnAuto')){S.auto=!S.auto;if(S.auto) rafId=requestAnimationFrame(tick);renderMain();}
+    if(e.target.closest('#btnCam')){S.cam={az:0.55,el:0.4};S.auto=false;renderMain();}
+  });
+  bindCanvas($('#cvT'),'T',()=>S.dim,(camOnly)=>{if(camOnly) redrawT(); else renderMain();});
+  bindCanvas($('#cvQ'),'Q',()=>S.dim,()=>drawQ());
+  // Aufgaben
+  $('#segLvl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b) return;S.lvl=+b.dataset.lvl;$$('#segLvl button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));loadTask();});
+  $('#selType').addEventListener('change',e=>{S.type=e.target.value;loadTask();});
+  const go=()=>{const n=parseInt($('#seedIn').value,10);if(n>0){S.seed=n;loadTask();}else $('#seedIn').value=S.seed;};
+  $('#seedGo').addEventListener('click',go);
+  $('#seedIn').addEventListener('keydown',e=>{if(e.key==='Enter') go();});
+  $('#chkSketch').addEventListener('change',drawQ);
+  $('#qcard').addEventListener('click',e=>{
+    const t=e.target;
+    if(t.closest('#qCheck')) doCheck();
+    else if(t.closest('#qHint')) showHint();
+    else if(t.closest('#qSol')) showSol();
+    else if(t.closest('#qNext')) nextTask();
+  });
+  $('#qcard').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input[type=text]')){e.preventDefault();doCheck();}});
+  // Grösse
+  if(window.ResizeObserver){
+    let pend=0;const ro=new ResizeObserver(()=>{if(pend) return;pend=requestAnimationFrame(()=>{pend=0;redrawAll();});});
+    ['#cvT','#cvQ'].forEach(s=>ro.observe($(s)));
+    new MutationObserver(()=>{const c=$('#cvSp');if(c) ro.observe(c);}).observe($('#special'),{childList:true});
+  }
+  show();
+}
+
+/* ============================================================
+   12. Selbsttest (Konsole: __selftest())
+   ============================================================ */
+window.__selftest=function(nSeeds){
+  nSeeds=nSeeds||40;
+  const fails=[];let n=0;
+  const bad=s=>/undefined|NaN|\[object/.test(s);
+  [2,3].forEach(dim=>{
+    [1,2,3].forEach(lvl=>{
+      ['zufall'].concat(typesFor(dim)).forEach(type=>{
+        for(let seed=1;seed<=nSeeds;seed++){
+          n++;
+          const tag=dim+'D/L'+lvl+'/'+type+'/#'+seed;
+          try{
+            const t=makeTask(dim,lvl,type,seed);
+            const a=t.answer(),r=t.check(a);
+            if(!r.ok) fails.push(tag+': Musterlösung nicht akzeptiert: '+JSON.stringify(a)+' '+r.msgs.map(m=>m.t).join(' | '));
+            if(bad(t.q+t.sol+t.title)) fails.push(tag+': undefined/NaN im Text');
+            if(!t.hints||t.hints.length<1||bad(t.hints.join(''))) fails.push(tag+': Hinweise');
+            const e=t.check({});if(e.ok) fails.push(tag+': leere Eingabe akzeptiert');
+          }catch(err){fails.push(tag+': Fehler '+err.message);}
+        }
+      });
+    });
+  });
+  // Theorie
+  const save=JSON.stringify([S.dim,S.tab,S.tstep]);
+  [2,3].forEach(dim=>{
+    S.dim=dim;
+    [EXV[dim],EXL[dim]].forEach((list,li)=>list.forEach(ex=>{
+      setPts(ex);
+      TABS(dim).forEach(([tab])=>{
+        S.tab=tab;
+        for(let st=0;st<6;st++){
+          S.tstep=st;
+          ['A','B','frei'].forEach(sz=>['AB','BA','kurz','frei'].forEach(ri=>{
+            S.stuetz=sz;S.richt=ri;
+            try{const c=theorieContent();if(bad(c.html)) fails.push('Theorie '+dim+'D '+tab+' Schritt '+st+' '+ex.n+': '+c.html.match(/.{0,30}(undefined|NaN|null).{0,30}/)[0]);}
+            catch(err){fails.push('Theorie '+dim+'D '+tab+' '+st+' '+ex.n+': '+err.message);}
+          }));
+        }
+      });
+    }));
+  });
+  [2,3].forEach(dim=>EXL[dim].forEach(ex=>{const d=dim;const R=lagen(ex.A.slice(0,d).map(qI),vsub(ex.B.map(qI),ex.A.map(qI)),ex.C.map(qI),vsub(ex.D.map(qI),ex.C.map(qI)));const want={Schneidend:'cut',Parallel:'par',Identisch:'ident',Windschief:'skew'}[ex.n];if(R.kind!==want) fails.push('Beispiel '+dim+'D '+ex.n+' ergibt '+R.kind);}));
+  const o=JSON.parse(save);S.dim=o[0];S.tab=o[1];S.tstep=o[2];
+  return {tasks:n,fails:fails.slice(0,40),failCount:fails.length};
+};
+
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+<script src="../../feedback.js" defer></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 mathdrian - Anleitung
 
 NEUES WERKZEUG HINZUFUEGEN
-1. HTML-Datei in den passenden Ordner legen (z. B. 4-differentialrechnung/43-polynomfunktionen/).
+1. HTML-Datei in den passenden Ordner legen (z. B. 4-differentialrechnung/3-polynomfunktionen/).
 2. In index.html die Liste TOOLS suchen und eine Zeile ergaenzen (Beispiel ist dort als Kommentar).
 3. Auf GitHub hochladen (Add file > Upload files, dann Commit). Nach 1 bis 2 Minuten ist es online.
 
