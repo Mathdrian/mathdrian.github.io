@@ -141,6 +141,12 @@ input[type=range]{width:100%;height:28px;accent-color:var(--accent)}
       </section>
       <div class="btnrow"><button class="btn primary" id="btnCalc">Rechnung anzeigen</button><span class="read" id="calcHint" style="margin:0"></span></div>
       <div class="steps" id="calc" hidden></div>
+      <details class="card" id="archi" style="margin-top:12px">
+        <summary style="cursor:pointer;font-weight:700">Zusatz: Das Grabmal des Archimedes (Kegel, Kugel, Zylinder)</summary>
+        <p class="note" style="margin:10px 0">Drei Rotationskörper mit demselben Radius <span id="aR"></span> und derselben Höhe <span id="aH"></span>. Archimedes entdeckte: Die Volumina verhalten sich wie 1 : 2 : 3. Ziehen zum Drehen.</p>
+        <canvas id="cvA" style="width:100%;height:300px;display:block;touch-action:none;cursor:grab" aria-label="Kegel, Kugel und Zylinder mit gleichem Radius und gleicher Höhe"></canvas>
+        <div id="aTex" style="text-align:center;margin-top:8px;overflow-x:auto"></div>
+      </details>
     </div>
 
     <aside class="side">
@@ -758,7 +764,73 @@ function draw3(){
     seg([x0,-yr,0],[x0,yr,0],'y');
   }
 }
-function draw(){draw2();draw3();}
+
+// ---- Zusatz: Grabmal des Archimedes ----
+const AR={yaw:-0.5,pitch:0.28};
+function drawArchi(){
+  const cv=$('cvA');if(!cv||!$('archi').open)return;
+  const {g,w,h}=fitCanvas(cv);
+  g.clearRect(0,0,w,h);g.fillStyle=css('--surface');g.fillRect(0,0,w,h);
+  const dark=isDark();
+  const cyw=Math.cos(AR.yaw),syw=Math.sin(AR.yaw),cp=Math.cos(AR.pitch),sp=Math.sin(AR.pitch);
+  const D=40,sc=Math.min(w/7.2,h/3.9);
+  const T=(X,Y,Z)=>{const x1=X*cyw+Z*syw,z1=-X*syw+Z*cyw;const y2=Y*cp-z1*sp,z2=Y*sp+z1*cp;const k=D/(D-z2);return [w/2+x1*k*sc,h*0.44-y2*k*sc,z2];};
+  const Rt=(X,Y,Z)=>{const x1=X*cyw+Z*syw,z1=-X*syw+Z*cyw;return [x1,Y*cp-z1*sp,Y*sp+z1*cp];};
+  const Lx=-0.35,Ly=0.65,Lz=0.7,Ln=Math.hypot(Lx,Ly,Lz);
+  const lit=n=>Math.max(0,(n[0]*Lx+n[1]*Ly+n[2]*Lz)/Ln);
+  const bodies=[
+    {name:'Kegel',cx:-2.3,r:y=>(y+1)/2},          // Spitze unten, Radius 1 oben
+    {name:'Kugel',cx:0,r:y=>Math.sqrt(Math.max(0,1-y*y))},
+    {name:'Zylinder',cx:2.3,r:y=>1}
+  ];
+  const N=70,M=36,cs=[],sn=[];for(let j=0;j<=M;j++){cs.push(Math.cos(2*PI*j/M));sn.push(Math.sin(2*PI*j/M));}
+  // Körper nach Tiefe sortieren (hinten zuerst)
+  bodies.forEach(b=>{b.z=T(b.cx,0,0)[2];});
+  bodies.sort((p,q)=>p.z-q.z);
+  g.globalAlpha=0.84;
+  const side=dark?58:50;
+  bodies.forEach(b=>{
+    const up=sp>0; // Blick von oben: unten zuerst zeichnen
+    for(let ii=0;ii<N;ii++){
+      const i=up?ii:N-1-ii;
+      const y0=-1+2*i/N,y1=-1+2*(i+1)/N,r0=b.r(y0),r1=b.r(y1);
+      for(let j=0;j<M;j++){
+        const th=2*PI*(j+.5)/M,nv=Rt(Math.cos(th),0,Math.sin(th));
+        if(nv[2]<=0)continue;
+        const l=lit(nv);
+        const A=T(b.cx+r0*cs[j],y0,r0*sn[j]),B=T(b.cx+r0*cs[j+1],y0,r0*sn[j+1]),C=T(b.cx+r1*cs[j+1],y1,r1*sn[j+1]),Dd=T(b.cx+r1*cs[j],y1,r1*sn[j]);
+        g.fillStyle='hsl(215,'+(62+l*10)+'%,'+(dark?30+l*34:(side-18)+l*28)+'%)';
+        g.beginPath();g.moveTo(A[0],A[1]);g.lineTo(B[0],B[1]);g.lineTo(C[0],C[1]);g.lineTo(Dd[0],Dd[1]);g.closePath();g.fill();
+        g.strokeStyle=g.fillStyle;g.lineWidth=.35;g.stroke();
+      }
+    }
+    // Deckfläche (oben bzw. unten, je nach Blickwinkel)
+    const yc=up?1:-1,rc=b.r(yc);
+    if(rc>0.001){
+      const nrm=Rt(0,up?1:-1,0),l=lit(nrm);
+      g.fillStyle='hsl(28,90%,'+(dark?44+l*14:50+l*12)+'%)';
+      g.beginPath();for(let j=0;j<=M;j++){const P=T(b.cx+rc*cs[j],yc,rc*sn[j]);j?g.lineTo(P[0],P[1]):g.moveTo(P[0],P[1]);}g.closePath();g.fill();
+    }
+    // Beschriftung
+    const lab=[T(b.cx,0,0)[0],h-16];
+    g.globalAlpha=1;g.fillStyle=css("--ink")||(dark?'#e8ecf6':'#18202f');g.font='700 14px '+css('--font-body');g.textAlign='center';g.textBaseline='middle';
+    g.fillText(b.name,lab[0],lab[1]);g.globalAlpha=0.84;
+  });
+  g.globalAlpha=1;
+}
+(function(){
+  const d=$('archi');if(!d)return;
+  try{katex.render(String.raw`r`,$('aR'),{throwOnError:false});katex.render(String.raw`2r`,$('aH'),{throwOnError:false});
+  katex.render(String.raw`V_{\text{Kegel}}=\tfrac23\pi r^3,\quad V_{\text{Kugel}}=\tfrac43\pi r^3,\quad V_{\text{Zylinder}}=2\pi r^3\qquad\Rightarrow\qquad 1:2:3`,$('aTex'),{throwOnError:false,strict:'ignore'});}catch(e){}
+  d.addEventListener('toggle',()=>{drawArchi();});
+  const cv=$('cvA');let dr=null;
+  cv.addEventListener('pointerdown',e=>{dr={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);e.preventDefault();});
+  cv.addEventListener('pointermove',e=>{if(!dr)return;AR.yaw+=(e.clientX-dr.x)*0.01;AR.pitch=Math.max(-1.4,Math.min(1.4,AR.pitch+(e.clientY-dr.y)*0.01));dr={x:e.clientX,y:e.clientY};drawArchi();});
+  const en=()=>{dr=null;};cv.addEventListener('pointerup',en);cv.addEventListener('pointercancel',en);
+  if(window.ResizeObserver){new ResizeObserver(()=>drawArchi()).observe(cv);}
+})();
+
+function draw(){draw2();draw3();drawArchi();}
 
 /* ============================================================
    Formeln, Kacheln, Rechnung
@@ -988,6 +1060,5 @@ function init(){
 init();
 })();
 </script>
-<script src="../../feedback.js" defer></script>
 </body>
 </html>
