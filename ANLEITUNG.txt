@@ -7,3 +7,10 @@ NEUES WERKZEUG HINZUFUEGEN
 
 NUR DATEINAMEN OHNE UMLAUTE UND LEERZEICHEN VERWENDEN (z. B. Ableitungsreise.html).
 PDF-Blaetter: nur Schuelerversionen ohne Loesungen hochladen, alles hier ist oeffentlich.
+
+LOGO OBEN LINKS UND KNOPF "FEHLER MELDEN"
+Beides kommt automatisch aus feedback.js (Logo = Link zurueck zur Startseite, Knopf = Mail an Adrian).
+Jede HTML-Datei braucht dafuer eine Zeile direkt vor </body>:
+  <script src="../../feedback.js" defer></script>
+Die Zeile steckt in Vorlage_HTML.html. Nach dem Neu-Speichern einer App kurz pruefen, dass sie noch da ist.
+Keine eigenen "Zurueck"-Links und keine eigenen Fehler-Knoepfe in die Apps bauen.
