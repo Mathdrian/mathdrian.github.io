@@ -73,7 +73,8 @@ button{cursor:pointer}
 .pre:hover{background:var(--surface2)}
 .pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
 .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.rand{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.gen{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.rand{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
 .seg button{border:0;background:var(--surface);padding:7px 14px;font-weight:500;border-right:1px solid var(--line)}
 .seg button:last-child{border-right:0}
@@ -134,6 +135,9 @@ details.musterl .when-open{display:none}details.musterl[open] .when-open{display
 details.musterl>h2{margin-top:12px}
 details.k{margin-top:14px}
 details.k summary{cursor:pointer;font-weight:600}
+details.k .methods{margin-top:12px}
+.method.wip{opacity:.62;cursor:default;border-style:dashed}
+.method.wip:hover{border-color:var(--line);background:var(--surface)}
 .teacher{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
 .teacher .inner{padding:0 18px 14px;max-width:80ch;display:grid;gap:8px}
@@ -160,12 +164,13 @@ details.k summary{cursor:pointer;font-weight:600}
     <div class="grid2">
       <div class="card">
         <h2>Beispiele</h2>
+        <div class="gen">
+          <div class="rand"><span class="muted">Zufällige Aufgabe:</span>
+            <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button><button class="btn small" data-lvl="s" title="Nur Spezialfälle: keine oder unendlich viele Lösungen.">Spezialfälle</button><button class="btn small" data-lvl="m" title="Zufällige Stufe, gelegentlich mit einem Spezialfall.">gemischt</button></div>
+          <form id="codeform" class="codeform"><label class="muted" for="codein">Aufgabe aufrufen:</label><input id="codein" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 104-821"><button class="btn small" type="submit">Los</button></form>
+          <p class="codeerr" id="codeerr" role="alert"></p>
+        </div>
         <div id="presets"></div>
-        <div class="rand"><span class="muted">Zufällige Aufgabe:</span>
-          <button class="btn small" data-lvl="0">leicht</button><button class="btn small" data-lvl="1">mittel</button><button class="btn small" data-lvl="2">schwer</button>
-          <button class="btn small" id="special" aria-pressed="false" title="Dann kann beim Erzeugen auch ein Sonderfall (keine oder unendlich viele Lösungen) vorkommen.">mit Spezialfällen</button></div>
-        <form id="codeform" class="codeform"><label class="muted" for="codein">Aufgabe aufrufen:</label><input id="codein" type="text" inputmode="numeric" autocomplete="off" placeholder="z. B. 104-821"><button class="btn small" type="submit">Los</button></form>
-        <p class="codeerr" id="codeerr" role="alert"></p>
       </div>
       <div class="card">
         <h2>Eigenes System</h2>
@@ -193,6 +198,7 @@ details.k summary{cursor:pointer;font-weight:600}
       <h2>Welche Methode wählst du?</h2>
       <p class="muted" style="margin-bottom:10px">Die Anzeige sagt dir, wie geschickt jede Methode für dieses System ist. Du darfst trotzdem jede wählen.</p>
       <div class="methods" id="methods"></div>
+      <details class="k" id="moreM"><summary>Weitere Methoden</summary><div class="methods" id="methods2"></div></details>
     </div>
     <div class="nav"><button class="btn" id="back1">← Anderes System</button></div>
   </section>
@@ -232,9 +238,10 @@ details.k summary{cursor:pointer;font-weight:600}
       <p>Die Seite läuft im Browser, ohne Anmeldung. Die Lernenden wählen die Methode selbst und erhalten sofort eine Rückmeldung samt Probe.</p>
       <ul>
         <li><b>Methodenwahl üben:</b> Gleiches System mit zwei Methoden lösen lassen und vergleichen, welche geschickter war.</li>
-        <li><b>Sonderfälle:</b> Keine Lösung (parallele Geraden) und unendlich viele Lösungen (gleiche Gerade) sind unter «Sonderfälle» vorbereitet.</li>
+        <li><b>Weitere Methoden:</b> Unter «Weitere Methoden» steht das Gleichsetzungsverfahren bereit, besonders geschickt bei zwei Gleichungen der Form y = … Das Gauss-Eliminationsverfahren und die Substitutionsmethode sind noch in Arbeit.</li>
+        <li><b>Sonderfälle:</b> Keine Lösung (parallele Geraden) und unendlich viele Lösungen (gleiche Gerade) sind unter «Sonderfälle» vorbereitet. Mit «Spezialfälle» lassen sich beliebig viele davon zum gezielten Üben erzeugen.</li>
         <li><b>Graphisch:</b> Zeigt die Grenzen des Ablesens, besonders beim Beispiel mit Bruchlösung.</li>
-        <li><b>Übungsmaterial:</b> «Zufällige Aufgabe» erzeugt unbegrenzt neue Systeme in drei Stufen.</li>
+        <li><b>Übungsmaterial:</b> «Zufällige Aufgabe» erzeugt unbegrenzt neue Systeme in den Stufen leicht, mittel und schwer, auf Wunsch nur als Spezialfälle oder gemischt.</li>
       </ul>
     </div>
   </details>
@@ -715,6 +722,56 @@ function pathGraph(sys){
   return endSteps(sys,steps);
 }
 
+/* ---------- Gleichsetzungsverfahren ---------- */
+/* Aufwand, die Gleichung e nach v aufzulösen (null = geht nicht, weil v fehlt) */
+function eqCost(e,v){
+  const p=v==='x'?e.a:e.b,r=v==='x'?e.b:e.a;
+  if(fIs0(p)) return null;
+  if(e.iso===v) return -1;
+  if(fEq(p,ONE)) return 0;
+  if(fEq(p,fNeg(ONE))) return .5;
+  if(fDiv(r,p).d===1&&fDiv(e.c,p).d===1) return 1;
+  return 2+((isTerm(fDiv(r,p))&&isTerm(fDiv(e.c,p)))?0:1);
+}
+/* Variable, nach der beide Gleichungen am leichtesten aufgelöst werden (bei Gleichstand y) */
+function eqChoice(sys){
+  const E=[sys.e1,sys.e2];let best=null;
+  ['y','x'].forEach(v=>{
+    const c=E.map(e=>eqCost(e,v));
+    if(c[0]===null||c[1]===null) return;
+    const tot=c[0]+c[1];
+    if(!best||tot<best.tot) best={v,tot,c,both:E[0].iso===v&&E[1].iso===v};
+  });
+  return best;
+}
+function pathEq(sys){
+  const ch=eqChoice(sys);
+  if(!ch){
+    const st=pathSub(sys);
+    st.unshift({t:'Gleichsetzen geht hier nicht',p:'Es gibt keine Variable, die in beiden Gleichungen vorkommt. Darum lassen sich nicht beide Gleichungen nach derselben Variablen auflösen. Der Lösungsweg zeigt deshalb das Einsetzungsverfahren.'});
+    return st;
+  }
+  const v=ch.v,w=v==='x'?'y':'x',E=[sys.e1,sys.e2],steps=[];
+  const od=orderStep(E,[0,1].filter(k=>needsOrder(E[k])&&E[k].iso!==v));
+  if(od) steps.push(od);
+  const sv=E.map((e,i)=>solveRows(e,v,nm(i))),ex=sv.map(q=>lin([[q.m,w],[q.q,'']]));
+  steps.push({t:ch.both?'Beide Gleichungen sind schon nach '+v+' aufgelöst':'Beide Gleichungen nach '+v+' auflösen',
+    p:ch.both?'Auf beiden Seiten steht '+v+' allein. Das ist die ideale Ausgangslage zum Gleichsetzen.':'Gleichsetzen geht, sobald in beiden Gleichungen '+v+' allein steht.',
+    blocks:E.map((e,i)=>e.iso===v?[{h:nm(i)+' '+v+' = '+ex[i]}]:sv[i].rows)});
+  const m1=sv[0].m,q1=sv[0].q,m2=sv[1].m,q2=sv[1].q,rows=[],last=()=>rows[rows.length-1];
+  rows.push({h:ex[0]+' = '+ex[1]});
+  const A=fSub(m1,m2);
+  if(!fIs0(m2)){last().op=opPlus2(fNeg(m2),w);rows.push({h:lin([[A,w],[q1,'']])+' = '+numHTML(q2)});}
+  const fin=finishEq(rows,w,A,q1,q2);
+  const stB={t:'Gleichsetzen',p:'Beide Terme sind gleich '+v+'. Also sind sie auch untereinander gleich.',rows};
+  steps.push(stB);
+  if(fin.degenerate){stB.v=degenVerdict(fin);return endSteps(sys,steps);}
+  const W=fin.val,vval=fAdd(fMul(m1,W),q1),vals={};vals[w]=W;
+  steps.push({t:v+' berechnen',p:(fIs0(m1)?v+' ist schon bekannt.':'Den Wert von '+w+' in '+v+' = '+ex[0]+' einsetzen.'),
+    rows:fIs0(m1)?[{h:v+' = '+numHTML(q1)}]:[{h:v+' = '+linSub([[m1,w],[q1,'']],vals)},{h:v+' = '+numHTML(vval)}]});
+  return endSteps(sys,steps);
+}
+
 /* ---------- Eignung der Methoden ---------- */
 function rate(sys){
   const E=[sys.e1,sys.e2],I=[sys.i1,sys.i2],nmS=i=>nm(i);
@@ -742,11 +799,17 @@ function rate(sys){
   const s=sys.sol,integer=s.type==='one'&&s.x.d===1&&s.y.d===1;
   const gr={score:0,why:'Du liest den Schnittpunkt aus der Zeichnung ab. Das ist anschaulich, aber ungenau.'+(s.type==='one'&&!integer?' Hier ist die Lösung keine ganze Zahl, ablesen wird besonders ungenau.':'')};
   const mx=Math.max(sub.score,add.score);
-  return {sub:{...sub,rec:sub.score===mx},add:{...add,rec:add.score===mx},graph:gr};
+  const ch=eqChoice(sys);let eq;
+  if(!ch) eq={score:-1,na:true,why:'Hier nicht sinnvoll: Keine Variable kommt in beiden Gleichungen vor.'};
+  else if(ch.both) eq={score:5,why:'Beide Gleichungen sind schon nach '+ch.v+' aufgelöst: Du kannst sofort gleichsetzen.'};
+  else if(Math.max(...ch.c)<=1) eq={score:3,why:'Beide Gleichungen lassen sich ohne Brüche nach '+ch.v+' auflösen. Dann kannst du gleichsetzen.'};
+  else eq={score:2,why:'Du musst zuerst beide Gleichungen nach '+ch.v+' auflösen. Das ist umständlich, es können Brüche entstehen.'};
+  return {sub:{...sub,rec:sub.score===mx},add:{...add,rec:add.score===mx},graph:gr,eq:{...eq,rec:!eq.na&&eq.score>=mx}};
 }
 const badge=sc=>sc>=4?['good','sehr geschickt']:sc===3?['ok2','geschickt']:['meh','umständlich'];
-const MNAME={sub:'Einsetzungsverfahren',add:'Additionsverfahren',graph:'Graphische Methode'};
-const MHOW={sub:'Eine Gleichung nach einer Variablen auflösen und in die andere einsetzen.',add:'Die Gleichungen so vorbereiten, dass beim Addieren oder Subtrahieren eine Variable verschwindet.',graph:'Beide Gleichungen als Geraden zeichnen. Der Schnittpunkt ist die Lösung.'};
+const MNAME={sub:'Einsetzungsverfahren',add:'Additionsverfahren',graph:'Graphische Methode',eq:'Gleichsetzungsverfahren',gauss:'Gauss-Eliminationsverfahren',subst:'Substitutionsmethode'};
+const MHOW={sub:'Eine Gleichung nach einer Variablen auflösen und in die andere einsetzen.',add:'Die Gleichungen so vorbereiten, dass beim Addieren oder Subtrahieren eine Variable verschwindet.',graph:'Beide Gleichungen als Geraden zeichnen. Der Schnittpunkt ist die Lösung.',
+  eq:'Beide Gleichungen nach derselben Variablen auflösen und die beiden Terme gleichsetzen.',gauss:'Das System Schritt für Schritt auf Stufenform bringen und von unten nach oben auflösen.',subst:'Einen ganzen Term durch eine neue Variable ersetzen.'};
 
 /* ---------- Grafik ---------- */
 function colors(){const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
@@ -821,6 +884,7 @@ function hookHover(c,out,show){
 }
 
 /* ---------- Beispiele und Zufall ---------- */
+/* Neue Beispiele immer hinten anfügen: Die Aufgabennummer 9000nn entspricht der Position, so bleiben bestehende Nummern gültig. */
 const PRESETS=[
   {g:'Leicht',e:['y = 2x - 1','x + y = 5']},
   {g:'Leicht',e:['x = 3y','x + y = 8']},
@@ -835,7 +899,9 @@ const PRESETS=[
   {g:'Sonderfälle',e:['2x + 3y = 6','4x + 6y = 5']},
   {g:'Sonderfälle',e:['x + 2y = 4','3x + 6y = 12']},
   {g:'Sonderfälle',e:['y = 2x + 1','y = 2x - 3']},
-  {g:'Sonderfälle',e:['y = 0.5x + 1','x - 2y = -2']}
+  {g:'Sonderfälle',e:['y = 0.5x + 1','x - 2y = -2']},
+  {g:'Leicht',e:['y = -x + 4','2x + y = 7']},
+  {g:'Mittel',e:['4x + 3y = 5','2x - 3y = 7']}
 ];
 let RNG=Math.random;
 function seedRNG(n){let a=n>>>0;RNG=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -896,9 +962,12 @@ function sysFromCode(c){
   seedRNG(parseInt(c,10));
   return {preset:-1,src:sp?specialSys(l):randomSys(l)};
 }
-function newRandom(l,withSpecial){
-  const sp=withSpecial&&Math.random()<.3?1:0;
-  return String(l+1)+sp+String(Math.floor(Math.random()*10000)).padStart(4,'0');
+function newRandom(mode){
+  /* mode: 0, 1, 2 = Stufe ohne Spezialfall; 's' = nur Spezialfälle (Stufe zufällig); 'm' = gemischt (Stufe zufällig, etwa jede dritte Aufgabe ein Spezialfall) */
+  const rnd=n=>Math.floor(Math.random()*n);
+  const l=/^[012]$/.test(mode)?+mode:rnd(3);
+  const sp=mode==='s'?1:(mode==='m'&&Math.random()<.3?1:0);
+  return String(l+1)+sp+String(rnd(10000)).padStart(4,'0');
 }
 function applyCode(c){
   const r=sysFromCode(c);if(!r) return false;
@@ -980,6 +1049,9 @@ function renderS2(){
   const r=rate(S.sys);$('#rec2').innerHTML=sysHTML(S.sys);
   const card=(k,b,why,rec)=>'<button class="method" data-m="'+k+'">'+(rec?'<span class="rec">Empfohlen</span>':'')+'<h3>'+MNAME[k]+'</h3><span class="badge '+b[0]+'">'+b[1]+'</span><span class="why">'+why+'</span><span class="how">'+MHOW[k]+'</span></button>';
   $('#methods').innerHTML=mathify(card('sub',badge(r.sub.score),r.sub.why,r.sub.rec)+card('add',badge(r.add.score),r.add.why,r.add.rec)+card('graph',['warn','ungenau'],'<b>Achtung, ungenau:</b> '+r.graph.why,false));
+  const wip=(k,why)=>'<div class="method wip" aria-disabled="true"><h3>'+MNAME[k]+'</h3><span class="badge warn">in Arbeit</span><span class="why">'+why+'</span><span class="how">'+MHOW[k]+'</span></div>';
+  $('#methods2').innerHTML=mathify(card('eq',r.eq.na?['warn','hier nicht sinnvoll']:badge(r.eq.score),r.eq.why,r.eq.rec)+wip('gauss','Noch in Arbeit.')+wip('subst','Noch in Arbeit. Gut, wenn man einen ganzen Term ersetzen möchte.'));
+  if(['eq','gauss','subst'].includes(S.method)) $('#moreM').open=true;
 }
 function renderS3(){
   $('#rec3').innerHTML=sysHTML(S.sys);
@@ -1035,7 +1107,7 @@ function check(){
     }
   }
   fb.innerHTML=mathify(html);
-  const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):pathGraph(sys);
+  const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):S.method==='eq'?pathEq(sys):pathGraph(sys);
   $('#path').innerHTML=stepsHTML(steps);$('#pdet').open=false;$('#pcard').hidden=false;S.checked=true;
   if(S.method==='graph') drawGraph($('#cvG'),true);
   else requestAnimationFrame(()=>drawGraph($('#cvK'),true));
@@ -1049,9 +1121,7 @@ function init(){
   refreshSys();renderS1();
   $('#steps').addEventListener('click',e=>{const b=e.target.closest('.step');if(b&&!b.disabled)show(+b.dataset.p);});
   $('#presets').addEventListener('click',e=>{const b=e.target.closest('.pre');if(b)loadPreset(+b.dataset.i);});
-  let withSpecial=false;
-  $('#special').onclick=e=>{withSpecial=!withSpecial;e.currentTarget.setAttribute('aria-pressed',String(withSpecial));};
-  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{$('#codeerr').textContent='';applyCode(newRandom(+b.dataset.lvl,withSpecial));});
+  document.querySelectorAll('.rand button[data-lvl]').forEach(b=>b.onclick=()=>{$('#codeerr').textContent='';applyCode(newRandom(b.dataset.lvl));});
   [0,1].forEach(i=>{
     $('#q'+i).addEventListener('input',e=>{S.src[i]=e.target.value;S.preset=-1;S.code=null;renderCode();refreshSys();renderPrev();renderPresets();});
     [0,1,2].forEach(k=>$('#c'+i+k).addEventListener('input',e=>{S.co[i][k]=e.target.value;S.preset=-1;S.code=null;renderCode();refreshSys();renderPrev();renderPresets();}));
@@ -1082,7 +1152,8 @@ function init(){
   renderCode();
   $('#to2').onclick=()=>{if(S.sys)show(2);};
   $('#back1').onclick=()=>show(1);
-  $('#methods').addEventListener('click',e=>{const b=e.target.closest('.method');if(b){S.method=b.dataset.m;show(3);}});
+  const pickM=e=>{const b=e.target.closest('.method');if(b&&!b.classList.contains('wip')){S.method=b.dataset.m;show(3);}};
+  $('#methods').addEventListener('click',pickM);$('#methods2').addEventListener('click',pickM);
   $('#amode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setAM(b.dataset.m);});
   $('#check').onclick=check;
   ['ax','ay','al'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')check();}));
@@ -1096,7 +1167,7 @@ function init(){
   $('#kdet').addEventListener('toggle',redraw);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
   new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  window.LGS={specialSys,parseEq,analyse,pathSub,pathAdd,pathGraph,rate,stepsHTML,randomSys,S};
+  window.LGS={specialSys,parseEq,analyse,pathSub,pathAdd,pathGraph,pathEq,rate,stepsHTML,randomSys,S};
 }
 init();
 })();
