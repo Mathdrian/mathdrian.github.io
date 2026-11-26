@@ -136,8 +136,7 @@ details.musterl>h2{margin-top:12px}
 details.k{margin-top:14px}
 details.k summary{cursor:pointer;font-weight:600}
 details.k .methods{margin-top:12px}
-.method.wip{opacity:.62;cursor:default;border-style:dashed}
-.method.wip:hover{border-color:var(--line);background:var(--surface)}
+.matr{overflow-x:auto;padding:2px 0}.matr .katex{font-size:1.12em}
 .teacher{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .teacher summary{cursor:pointer;padding:11px 16px;font-weight:600}
 .teacher .inner{padding:0 18px 14px;max-width:80ch;display:grid;gap:8px}
@@ -238,7 +237,7 @@ details.k .methods{margin-top:12px}
       <p>Die Seite läuft im Browser, ohne Anmeldung. Die Lernenden wählen die Methode selbst und erhalten sofort eine Rückmeldung samt Probe.</p>
       <ul>
         <li><b>Methodenwahl üben:</b> Gleiches System mit zwei Methoden lösen lassen und vergleichen, welche geschickter war.</li>
-        <li><b>Weitere Methoden:</b> Unter «Weitere Methoden» steht das Gleichsetzungsverfahren bereit, besonders geschickt bei zwei Gleichungen der Form y = … Das Gauss-Eliminationsverfahren und die Substitutionsmethode sind noch in Arbeit.</li>
+        <li><b>Weitere Methoden:</b> Unter «Weitere Methoden» stehen das Gleichsetzungsverfahren (besonders geschickt bei zwei Gleichungen der Form y = …) und das Gauss-Eliminationsverfahren (mit erweiterter Matrix) bereit.</li>
         <li><b>Sonderfälle:</b> Keine Lösung (parallele Geraden) und unendlich viele Lösungen (gleiche Gerade) sind unter «Sonderfälle» vorbereitet. Mit «Spezialfälle» lassen sich beliebig viele davon zum gezielten Üben erzeugen.</li>
         <li><b>Graphisch:</b> Zeigt die Grenzen des Ablesens, besonders beim Beispiel mit Bruchlösung.</li>
         <li><b>Übungsmaterial:</b> «Zufällige Aufgabe» erzeugt unbegrenzt neue Systeme in den Stufen leicht, mittel und schwer, auf Wunsch nur als Spezialfälle oder gemischt.</li>
@@ -501,7 +500,7 @@ function rowsHTML(rows){return '<div class="calc">'+rows.map(r=>'<div class="cr"
 function stepsHTML(steps){
   return '<ol class="path">'+steps.map(s=>'<li><h4>'+mathify(s.t)+'</h4>'+(s.p?'<p>'+mathify(s.p)+'</p>':'')
     +(s.blocks?s.blocks.map(rowsHTML).join('<div style="height:6px"></div>'):(s.rows?rowsHTML(s.rows):''))
-    +mathify(s.html||'')+(s.v?'<p class="verdict">'+mathify(s.v)+'</p>':'')+'</li>').join('')+'</ol>';
+    +mathify(s.html||'')+(s.raw||'')+(s.v?'<p class="verdict">'+mathify(s.v)+'</p>':'')+'</li>').join('')+'</ol>';
 }
 function solveRows(e,v,tag){
   const w=v==='x'?'y':'x',p=v==='x'?e.a:e.b,r=v==='x'?e.b:e.a;
@@ -772,7 +771,81 @@ function pathEq(sys){
   return endSteps(sys,steps);
 }
 
+/* ---------- Gauss-Eliminationsverfahren ---------- */
+/* Zeilen als ganze Zahlen [a,b,c]; Pivot-Variable u (x, sonst y), oben die Gleichung mit passendem Pivot */
+function gaussPlan(sys){
+  const R=[sys.i1,sys.i2].map(i=>[i.A,i.B,i.C]);
+  const ui=(R[0][0]!==0||R[1][0]!==0)?0:1,u=ui?'y':'x',w=ui?'x':'y';
+  const a=Math.abs(R[0][ui]),b=Math.abs(R[1][ui]);
+  const swap=a===0||(b===1&&a!==1);
+  return {R,ui,oi:1-ui,u,w,swap,P:swap?[R[1],R[0]]:R};
+}
+/* erweiterte Koeffizientenmatrix mit Zeilennamen und optionalen Umformungen rechts */
+function matTex(R,lab,ops){
+  const cs=getComputedStyle(document.documentElement),col=[cs.getPropertyValue('--e1').trim(),cs.getPropertyValue('--e2').trim()];
+  const L='\\begin{array}{r}'+lab.map((l,i)=>{const pr=l.endsWith("'");return '\\textcolor{'+col[i]+'}{\\small\\textbf{('+l.replace("'",'')+')}'+(pr?"'":'')+'}';}).join('\\\\')+'\\end{array}';
+  const M='\\left(\\begin{array}{rr|r}'+R.map(r=>r.join('&')).join('\\\\')+'\\end{array}\\right)';
+  const O=ops?'\\begin{array}{l}'+ops.map(o=>'\\small '+o).join('\\\\')+'\\end{array}':'';
+  return L+'\\;'+M+(O?'\\;\\;\\;'+O:'');
+}
+const matBox=l=>'<div class="calc">'+l.map(t=>'<div class="matr">'+KT(t)+'</div>').join('')+'</div>';
+function pathGauss(sys){
+  const E=[sys.e1,sys.e2],I=[sys.i1,sys.i2],steps=[];
+  const prepIdx=[0,1].filter(k=>needsOrder(E[k])||I[k].L!==1);
+  if(prepIdx.length){
+    const blocks=[];
+    prepIdx.forEach(k=>{
+      const rows=[],ord=needsOrder(E[k]),sc=I[k].L!==1;
+      if(ord) rows.push({h:nm(k)+' '+pretty(E[k].orig),op:'| ordnen'});
+      rows.push({h:nm(k)+' '+eqStr(E[k].a,E[k].b,E[k].c),op:sc?'| · '+I[k].L:''});
+      if(sc) rows.push({h:nm(k)+' '+eqStr(FI(I[k].A),FI(I[k].B),FI(I[k].C))});
+      if(!ord&&!sc) return;
+      blocks.push(rows);
+    });
+    steps.push({t:'Gleichungen vorbereiten',p:'Variablen nach links, Zahlen nach rechts'+(prepIdx.some(k=>I[k].L!==1)?'; Brüche und Dezimalzahlen mit einer passenden Zahl wegmultiplizieren.':'.'),blocks});
+  }
+  const gp=gaussPlan(sys),{u,w,ui,oi,P}=gp;
+  const eqR=r=>(r[0]===0&&r[1]===0)?'0 = '+numHTML(FI(r[2])):eqStr(FI(r[0]),FI(r[1]),FI(r[2]));
+  steps.push({t:'Erweiterte Koeffizientenmatrix aufstellen',p:'Jede Gleichung wird zu einer Zeile: links von der Linie stehen die Zahlen vor x und y, rechts davon die Zahl der rechten Seite.',raw:matBox([matTex(gp.R,['I','II'])])});
+  if(gp.swap){
+    steps.push({t:'Zeilen vertauschen',
+      p:gp.R[0][ui]===0?'In '+nm(0)+' kommt '+u+' nicht vor. Oben muss eine Gleichung mit '+u+' stehen, darum werden beide vertauscht. Die obere heisst danach wieder '+nm(0)+'.':'Die Gleichung mit dem Koeffizienten ±1 bei '+u+' kommt nach oben: Das erspart Brüche. Die obere heisst danach wieder '+nm(0)+'.',
+      raw:matBox([matTex(gp.R,['I','II'],['\\mathrm{(I)}\\leftrightarrow\\mathrm{(II)}','\\phantom{I}']),matTex(P,['I','II'])])});
+  }
+  const p1=P[0][ui],p2=P[1][ui];let Q=P[1],qn=nm(1);
+  if(p2===0){
+    steps.push({t:'Stufenform',p:u+' kommt in '+nm(1)+' nicht vor: Die Matrix hat schon Stufenform (unten steht links eine Null).',raw:matBox([matTex(P,['I','II'])])});
+  }else{
+    const L=Math.abs(p1)*Math.abs(p2)/gcd(p1,p2),kI=L/Math.abs(p1),kII=L/Math.abs(p2),same=Math.sign(p1)===Math.sign(p2);
+    Q=P[1].map((c,j)=>kII*c+(same?-1:1)*kI*P[0][j]);qn=nmP(1);
+    const op="\\mathrm{(II)}' = "+(kII===1?'':kII+'\\cdot ')+'\\mathrm{(II)}'+(same?' - ':' + ')+(kI===1?'':kI+'\\cdot ')+'\\mathrm{(I)}';
+    steps.push({t:'Stufenform: '+u+' in '+nm(1)+' entfernen',
+      p:'Ziel: Links unten soll eine Null stehen, also fällt '+u+' in der unteren Zeile weg. Dazu rechnet man die Zeile '+nm(1)+' mit der Zeile '+nm(0)+' um; '+nm(0)+' bleibt unverändert.',
+      raw:matBox([matTex(P,['I','II'],['\\phantom{I}',op]),matTex([P[0],Q],['I',"II'"])])});
+  }
+  const rows=[{h:qn+' '+eqR(Q)}];
+  const fin=finishEq(rows,w,FI(Q[oi]),ZERO,FI(Q[2]));
+  const stB={t:w+' berechnen',p:'Von unten nach oben: Die untere Zeile der Matrix, als Gleichung geschrieben, enthält nur noch '+w+'.',rows};
+  steps.push(stB);
+  if(fin.degenerate){stB.v=degenVerdict(fin);return endSteps(sys,steps);}
+  const W=fin.val,vals={};vals[w]=W;
+  const pv=FI(P[0][ui]),rw=FI(P[0][oi]),Ct=FI(P[0][2]),rwW=fMul(rw,W);
+  const prow=[{h:nm(0)+' '+linSub([[pv,u],[rw,w]],vals)+' = '+numHTML(Ct)}];
+  const lp=()=>prow[prow.length-1];
+  if(!fIs0(rw)){prow.push({h:lin([[pv,u],[rwW,'']])+' = '+numHTML(Ct)});lp().op=opPlus2(fNeg(rwW),'');prow.push({h:lin([[pv,u]])+' = '+numHTML(fSub(Ct,rwW))});}
+  if(!fEq(pv,ONE)){lp().op=opDiv(pv);prow.push({h:u+' = '+numHTML(fDiv(fSub(Ct,rwW),pv))});}
+  steps.push({t:w+' = '+numHTML(W)+' in '+nm(0)+' einsetzen',p:'Damit erhält man auch '+u+'.',rows:prow});
+  return endSteps(sys,steps);
+}
+
 /* ---------- Eignung der Methoden ---------- */
+function gaussR(sys){
+  const gp=gaussPlan(sys),a=Math.abs(gp.P[0][gp.ui]),b=Math.abs(gp.P[1][gp.ui]);
+  if(b===0) return {score:4,why:gp.u+' kommt nur in einer Gleichung vor: Die Stufenform ist schon da.'};
+  if(a===b) return {score:4,why:gp.u+' hat gleich grosse Koeffizienten: Eine einzige Umformung genügt.'};
+  if(a%b===0||b%a===0) return {score:3,why:'Eine Gleichung wird vervielfacht, dann fällt '+gp.u+' in der unteren weg.'};
+  return {score:2,why:'Beide Gleichungen müssen vervielfacht werden, bevor '+gp.u+' wegfällt.'};
+}
 function rate(sys){
   const E=[sys.e1,sys.e2],I=[sys.i1,sys.i2],nmS=i=>nm(i);
   let sub={score:2,why:'Keine Variable hat den Faktor 1: Beim Auflösen entstehen Brüche.'};
@@ -804,12 +877,12 @@ function rate(sys){
   else if(ch.both) eq={score:5,why:'Beide Gleichungen sind schon nach '+ch.v+' aufgelöst: Du kannst sofort gleichsetzen.'};
   else if(Math.max(...ch.c)<=1) eq={score:3,why:'Beide Gleichungen lassen sich ohne Brüche nach '+ch.v+' auflösen. Dann kannst du gleichsetzen.'};
   else eq={score:2,why:'Du musst zuerst beide Gleichungen nach '+ch.v+' auflösen. Das ist umständlich, es können Brüche entstehen.'};
-  return {sub:{...sub,rec:sub.score===mx},add:{...add,rec:add.score===mx},graph:gr,eq:{...eq,rec:!eq.na&&eq.score>=mx}};
+  return {sub:{...sub,rec:sub.score===mx},add:{...add,rec:add.score===mx},graph:gr,eq:{...eq,rec:!eq.na&&eq.score>=mx},gauss:{...gaussR(sys),rec:false}};
 }
 const badge=sc=>sc>=4?['good','sehr geschickt']:sc===3?['ok2','geschickt']:['meh','umständlich'];
-const MNAME={sub:'Einsetzungsverfahren',add:'Additionsverfahren',graph:'Graphische Methode',eq:'Gleichsetzungsverfahren',gauss:'Gauss-Eliminationsverfahren',subst:'Substitutionsmethode'};
+const MNAME={sub:'Einsetzungsverfahren',add:'Additionsverfahren',graph:'Graphische Methode',eq:'Gleichsetzungsverfahren',gauss:'Gauss-Eliminationsverfahren'};
 const MHOW={sub:'Eine Gleichung nach einer Variablen auflösen und in die andere einsetzen.',add:'Die Gleichungen so vorbereiten, dass beim Addieren oder Subtrahieren eine Variable verschwindet.',graph:'Beide Gleichungen als Geraden zeichnen. Der Schnittpunkt ist die Lösung.',
-  eq:'Beide Gleichungen nach derselben Variablen auflösen und die beiden Terme gleichsetzen.',gauss:'Das System Schritt für Schritt auf Stufenform bringen und von unten nach oben auflösen.',subst:'Einen ganzen Term durch eine neue Variable ersetzen.'};
+  eq:'Beide Gleichungen nach derselben Variablen auflösen und die beiden Terme gleichsetzen.',gauss:'Das System als erweiterte Matrix schreiben, mit Zeilenumformungen auf Stufenform bringen und von unten nach oben auflösen.'};
 
 /* ---------- Grafik ---------- */
 function colors(){const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
@@ -1049,9 +1122,8 @@ function renderS2(){
   const r=rate(S.sys);$('#rec2').innerHTML=sysHTML(S.sys);
   const card=(k,b,why,rec)=>'<button class="method" data-m="'+k+'">'+(rec?'<span class="rec">Empfohlen</span>':'')+'<h3>'+MNAME[k]+'</h3><span class="badge '+b[0]+'">'+b[1]+'</span><span class="why">'+why+'</span><span class="how">'+MHOW[k]+'</span></button>';
   $('#methods').innerHTML=mathify(card('sub',badge(r.sub.score),r.sub.why,r.sub.rec)+card('add',badge(r.add.score),r.add.why,r.add.rec)+card('graph',['warn','ungenau'],'<b>Achtung, ungenau:</b> '+r.graph.why,false));
-  const wip=(k,why)=>'<div class="method wip" aria-disabled="true"><h3>'+MNAME[k]+'</h3><span class="badge warn">in Arbeit</span><span class="why">'+why+'</span><span class="how">'+MHOW[k]+'</span></div>';
-  $('#methods2').innerHTML=mathify(card('eq',r.eq.na?['warn','hier nicht sinnvoll']:badge(r.eq.score),r.eq.why,r.eq.rec)+wip('gauss','Noch in Arbeit.')+wip('subst','Noch in Arbeit. Gut, wenn man einen ganzen Term ersetzen möchte.'));
-  if(['eq','gauss','subst'].includes(S.method)) $('#moreM').open=true;
+  $('#methods2').innerHTML=mathify(card('eq',r.eq.na?['warn','hier nicht sinnvoll']:badge(r.eq.score),r.eq.why,r.eq.rec)+card('gauss',badge(r.gauss.score),r.gauss.why,false));
+  if(['eq','gauss'].includes(S.method)) $('#moreM').open=true;
 }
 function renderS3(){
   $('#rec3').innerHTML=sysHTML(S.sys);
@@ -1107,7 +1179,7 @@ function check(){
     }
   }
   fb.innerHTML=mathify(html);
-  const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):S.method==='eq'?pathEq(sys):pathGraph(sys);
+  const steps=S.method==='sub'?pathSub(sys):S.method==='add'?pathAdd(sys):S.method==='eq'?pathEq(sys):S.method==='gauss'?pathGauss(sys):pathGraph(sys);
   $('#path').innerHTML=stepsHTML(steps);$('#pdet').open=false;$('#pcard').hidden=false;S.checked=true;
   if(S.method==='graph') drawGraph($('#cvG'),true);
   else requestAnimationFrame(()=>drawGraph($('#cvK'),true));
@@ -1152,7 +1224,7 @@ function init(){
   renderCode();
   $('#to2').onclick=()=>{if(S.sys)show(2);};
   $('#back1').onclick=()=>show(1);
-  const pickM=e=>{const b=e.target.closest('.method');if(b&&!b.classList.contains('wip')){S.method=b.dataset.m;show(3);}};
+  const pickM=e=>{const b=e.target.closest('.method');if(b){S.method=b.dataset.m;show(3);}};
   $('#methods').addEventListener('click',pickM);$('#methods2').addEventListener('click',pickM);
   $('#amode').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setAM(b.dataset.m);});
   $('#check').onclick=check;
@@ -1167,7 +1239,7 @@ function init(){
   $('#kdet').addEventListener('toggle',redraw);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
   new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  window.LGS={specialSys,parseEq,analyse,pathSub,pathAdd,pathGraph,pathEq,rate,stepsHTML,randomSys,S};
+  window.LGS={specialSys,parseEq,analyse,pathSub,pathAdd,pathGraph,pathEq,pathGauss,rate,stepsHTML,randomSys,S};
 }
 init();
 })();
