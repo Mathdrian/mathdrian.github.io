@@ -128,7 +128,7 @@ th{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-t
 #cvG{cursor:crosshair;touch-action:none;-webkit-user-select:none;user-select:none}
 .fb{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .fb li{display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:14px}
-.fb .ic{font-weight:700}.fb .ok .ic{color:var(--ok)}.fb .part .ic{color:var(--note)}.fb .bad .ic{color:var(--bad)}
+.fb .ic{font-weight:700}.fb .ok .ic{color:var(--ok)}.fb .part .ic{color:var(--note)}.fb .bad .ic{color:var(--bad)}.fb .hint .ic{color:var(--muted)}.fb .hint{color:var(--muted)}
 .verdict{font-family:var(--font-head);font-size:17px;margin:0 0 8px}
 .side{display:grid;gap:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:5px}
@@ -156,7 +156,7 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
   </header>
   <section class="task">
     <div class="task-head"><span class="badge" id="tBadge">Aufgabe 1</span><h2 id="tH">Skizziere f′ im unteren Feld</h2><button class="btn small" id="bNxt0" hidden></button></div>
-    <p>Frage dich: Wo hat f eine waagrechte Tangente? Wo steigt f (f′ positiv), wo fällt f (f′ negativ)? Wo ist f besonders steil? Es muss nicht genau sein, aber die Nullstellen und die Form sollten stimmen.</p>
+    <p>Frage dich: Wo hat f eine waagrechte Tangente? Wo steigt f (f′ positiv), wo fällt f (f′ negativ)? Wo ist f besonders steil? Zeichne die Linie in einem Zug, ohne den Stift abzusetzen. Die Nullstellen sollten genau unter den Extrempunkten von f liegen, und Stücke, die waagrecht sein müssen, zeichnest du waagrecht. Bei der Höhe darfst du etwas abweichen.</p>
   </section>
   <main class="layout" style="margin-top:12px">
     <div class="stage">
@@ -210,7 +210,7 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
     </aside>
   </main>
   <details class="teacher"><summary>Für Lehrpersonen: Einsatz im Unterricht</summary><div class="inner">
-    <p>Die Lernenden skizzieren f′ mit Stift oder Maus. Geprüft werden die Nullstellen (waagrechte Tangenten von f), das Vorzeichen (steigt oder fällt f) und die Form (Korrelation mit der echten Ableitung, Toleranz bewusst grosszügig).</p>
+    <p>Die Lernenden skizzieren f′ mit Stift oder Maus. Geprüft werden die Nullstellen (waagrechte Tangenten von f, Toleranz ca. 3 % der Breite, bis 6 % als halber Punkt), das Vorzeichen (steigt oder fällt f) und die Form: eine durchgehende Linie ohne Lücken, Sprünge und Doppelstriche (ausser beim Knick von f), waagrechte Stücke waagrecht, passende Anzahl Hoch- und Tiefpunkte. Abweichungen bei der Höhe und der Steigung von f′ werden nur als Hinweis mit Begründung genannt und nicht bewertet, ausser wenn die Ausschläge insgesamt weniger als halb oder mehr als doppelt so gross sind.</p>
     <ul><li>Die Hilfslinien zeigen die x-Werte der waagrechten Tangenten in beiden Feldern.</li>
     <li>Die Lösung wird erst auf Wunsch blass eingeblendet. So können die Lernenden zuerst selbst nachbessern.</li>
     <li>Die Challenge zum Funktionstyp ist bewusst weich bewertet, denn man sieht nur einen Ausschnitt. Mehrere Typen oder Grade können passen.</li>
@@ -384,51 +384,142 @@ cv.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&S.penSeen)retu
 function up(){S.erasing=false;if(S.cur){if(S.cur.length>1)S.strokes.push(S.cur);S.cur=null;draw();}}
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 /* Auswertung */
-function analyse(){const p=S.p,N=120,W=p.b-p.a,tol=.07*W,span=S.dr[1]-S.dr[0];
-  const cols=Array.from({length:N},()=>[]);const colOf=x=>Math.min(N-1,Math.max(0,Math.floor((x-p.a)/W*N)));
+function turns(a,prom){const out=[];let dir=0,hi=a[0],hiI=0,lo=a[0],loI=0;
+  for(let i=1;i<a.length;i++){const v=a[i];if(v>hi){hi=v;hiI=i;}if(v<lo){lo=v;loI=i;}
+    if(dir===0){if(hi-lo>=prom)dir=hiI>loI?1:-1;}
+    else if(dir===1){if(hi-v>=prom){out.push({i:hiI,t:'max'});dir=-1;lo=v;loI=i;}}
+    else if(v-lo>=prom){out.push({i:loI,t:'min'});dir=1;hi=v;hiI=i;}}
+  return out;}
+function turnsS(a,cuts,prom){const out=[];let s=0;cuts.concat([a.length]).forEach(c=>{if(c-s>=3)turns(a.slice(s,c),prom).forEach(t=>out.push({i:t.i+s,t:t.t}));s=c;});return out;}
+function analyse(){const p=S.p,N=200,W=p.b-p.a,span=S.dr[1]-S.dr[0],sing=p.sing||[];
+  const cx=i=>p.a+(i+.5)*W/N,colOf=x=>Math.min(N-1,Math.max(0,Math.floor((x-p.a)/W*N)));
+  const nearS=(x,t)=>sing.some(s=>Math.abs(x-s)<t*W);
+  const cuts=[];for(let i=0;i<N-1;i++)if(sing.some(s=>cx(i)<s&&cx(i+1)>=s))cuts.push(i+1);
+  const T=[];for(let i=0;i<N;i++){const v=p.d(cx(i));T.push(isFinite(v)?v:(T.length?T[T.length-1]:0));}
+  /* Spalten füllen */
+  const cols=Array.from({length:N},()=>[]);
   S.strokes.forEach(st=>{for(let k=0;k<st.length;k++){const u=st[k];if(u.x>=p.a&&u.x<=p.b)cols[colOf(u.x)].push(u.y);
     if(k>0){const v=st[k-1],c0=colOf(Math.min(u.x,v.x)),c1=colOf(Math.max(u.x,v.x));if(c1-c0>1&&Math.abs(u.x-v.x)>1e-12)for(let c=c0+1;c<c1;c++){const x=p.a+(c+.5)*W/N;if(x<Math.min(u.x,v.x)||x>Math.max(u.x,v.x))continue;cols[c].push(v.y+(u.y-v.y)*(x-v.x)/(u.x-v.x));}}}});
+  const cov=cols.map(c=>c.length>0),spr=cols.map(c=>c.length?Math.max(...c)-Math.min(...c):0);
   let g=cols.map(c=>c.length?c.reduce((u,v)=>u+v,0)/c.length:null);
-  for(let i=0;i<N;i++){if(g[i]!==null)continue;let l=i-1;while(l>=0&&g[l]===null)l--;let r=i+1;while(r<N&&g[r]===null)r++;if(l>=0&&r<N&&r-l-1<=8){g[i]=g[l]+(g[r]-g[l])*(i-l)/(r-l);}}
-  const have=g.filter(v=>v!==null).length;if(have<.6*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts. Lücken sind erlaubt, aber nicht zu grosse. Mit «Standard» siehst du wieder den Ausgangsausschnitt.'};
-  g=g.map((v,i)=>{if(v===null)return null;const a=g[i-1],b=g[i+1];return (a!=null&&b!=null)?(a+v+b)/3:v;});
-  const cx=i=>p.a+(i+.5)*W/N,eps=.012*span,zs=[];
-  const sr=[];for(let i=0;i<N;i++){if(g[i]===null||Math.abs(g[i])<eps)continue;const s=Math.sign(g[i]),r=sr[sr.length-1];if(r&&r.s===s&&i-r.e<=3){r.e=i;r.n++;}else sr.push({s,b:i,e:i,n:1});}
-  const R=sr.filter(r=>r.n>=3),M=[];R.forEach(r=>{const m=M[M.length-1];if(m&&m.s===r.s)m.e=r.e;else M.push({...r});});
-  for(let q=1;q<M.length;q++){let k=M[q-1].e;while(k<M[q].b-1&&!(g[k]!==null&&g[k+1]!==null&&g[k]*g[k+1]<=0))k++;const d=(g[k]!==null&&g[k+1]!==null)?g[k]-g[k+1]:0,t=d?g[k]/d:.5;zs.push(cx(k)+t*W/N);}
-  const sing=p.sing||[],badCol=x=>sing.some(s=>Math.abs(x-s)<tol*.8);
-  for(let j=zs.length-1;j>=0;j--)if(sing.some(z=>Math.abs(zs[j]-z)<tol))zs.splice(j,1);
+  const have=cov.filter(Boolean).length;
+  if(have<.75*N)return {err:'Zeichne f′ über die ganze Breite, von links bis rechts, in einem Zug. Mit «Standard» siehst du wieder den Ausgangsausschnitt.'};
+  const f0=cov.indexOf(true),l0=N-1-cov.slice().reverse().indexOf(true);
+  /* Unterbrüche: Randlücken, Lücken, Sprünge, doppelte Linien */
+  const edges=[];if(f0>8)edges.push({side:'l',x:cx(f0)});if(N-1-l0>8)edges.push({side:'r',x:cx(l0)});
+  const gaps=[];for(let i=f0;i<=l0;i++){if(cov[i])continue;let e=i;while(e+1<=l0&&!cov[e+1])e++;
+    if(e-i+1>=4&&!nearS(cx((i+e)/2),.05)&&!nearS(cx(i-1),.05)&&!nearS(cx(e+1),.05))gaps.push({a:cx(i),b:cx(e)});i=e;}
+  for(let i=0;i<N;i++){if(g[i]!==null)continue;let l=i-1;while(l>=0&&g[l]===null)l--;let r=i+1;while(r<N&&g[r]===null)r++;
+    g[i]=l<0?g[r]:r>=N?g[l]:g[l]+(g[r]-g[l])*(i-l)/(r-l);}
+  const jumps=[];for(let i=0;i<N-1;i++){if(!cov[i]||!cov[i+1]||nearS(cx(i),.05))continue;
+    if(Math.abs(g[i+1]-g[i])>.04*span+2.5*Math.abs(T[i+1]-T[i])){const x=cx(i),l=jumps[jumps.length-1];if(l&&x-l<.03*W)continue;jumps.push(x);}}
+  const dbl=[];{let run=null;for(let i=0;i<N;i++){const bad=cov[i]&&!nearS(cx(i),.05)&&spr[i]>.06*span+2*Math.abs(T[Math.min(N-1,i+1)]-T[Math.max(0,i-1)]);
+    if(bad){if(run&&i-run.e<=2)run.e=i;else{if(run)dbl.push(run);run={b:i,e:i};}}}if(run)dbl.push(run);}
+  const dbls=dbl.filter(r=>r.e-r.b>=5).map(r=>({a:cx(r.b),b:cx(r.e)}));
+  /* Glätten */
+  const sm=(a,k)=>a.map((_,i)=>{let s=0,w=0;for(let d=-k;d<=k;d++){const j=Math.min(N-1,Math.max(0,i+d)),wt=k+1-Math.abs(d);s+=wt*a[j];w+=wt;}return s/w;});
+  const g3=sm(g,1),g5=sm(g,2);
   /* Nullstellen */
-  const miss=[],used=new Set();S.Z.forEach(z=>{let bi=-1,bd=1e9;zs.forEach((q,j)=>{if(used.has(j))return;const d=Math.abs(q-z);if(d<bd){bd=d;bi=j;}});if(bi>=0&&bd<=tol)used.add(bi);else miss.push(z);});
-  const extra=zs.filter((q,j)=>!used.has(j)&&!sing.some(z=>Math.abs(q-z)<tol));
+  let hump=1e9;{const zz=S.Z.slice().sort((u,v)=>u-v);for(let q=1;q<zz.length;q++){let m=0;for(let i=0;i<N;i++)if(cx(i)>zz[q-1]&&cx(i)<zz[q])m=Math.max(m,Math.abs(T[i]));if(m>0)hump=Math.min(hump,m);}}
+  const eps=Math.max(.004*span,Math.min(.012*span,.3*hump)),sr=[];for(let i=0;i<N;i++){if(Math.abs(g3[i])<eps)continue;const s=Math.sign(g3[i]),r=sr[sr.length-1];if(r&&r.s===s&&i-r.e<=5){r.e=i;r.n++;}else sr.push({s,b:i,e:i,n:1});}
+  const R=sr.filter(r=>r.n>=4),M=[];R.forEach(r=>{const m=M[M.length-1];if(m&&m.s===r.s)m.e=r.e;else M.push({...r});});
+  const zs=[];for(let q=1;q<M.length;q++){let k=M[q-1].e;while(k<M[q].b-1&&!(g3[k]*g3[k+1]<=0))k++;const d=g3[k]-g3[k+1],t=d?g3[k]/d:.5;zs.push(cx(k)+t*W/N);}
+  for(let j=zs.length-1;j>=0;j--)if(nearS(zs[j],.07)||(Math.abs(p.d(zs[j]))<.05*span&&!S.Z.some(z=>Math.abs(z-zs[j])<.1*W)))zs.splice(j,1);
+  const used=new Set(),hits=[],miss=[],hz=.01*W;
+  const tolOf=z=>{const sl=Math.abs(p.d(z+hz)-p.d(z-hz))/(2*hz)||1e-9;return Math.min(.07*W,Math.max(.03*W,.03*span/sl));};
+  S.Z.forEach(z=>{const tz=tolOf(z),tz2=Math.min(.12*W,2*tz);let bi=-1,bd=1e9;zs.forEach((q,j)=>{if(used.has(j))return;const d=Math.abs(q-z);if(d<bd){bd=d;bi=j;}});
+    if(bi>=0&&bd<=tz2){used.add(bi);hits.push({z,q:zs[bi],dx:zs[bi]-z,ok:bd<=tz});}else miss.push(z);});
+  const extra=zs.filter((q,j)=>!used.has(j));
   /* Vorzeichen */
   let tot=0,agree=0;const runs=[];let run=null;
-  for(let i=0;i<N;i++){if(g[i]===null)continue;const x=cx(i),tv=p.d(x);if(badCol(x)||Math.abs(tv)<.08*span||S.Z.some(z=>Math.abs(x-z)<tol*.8))continue;tot++;if(Math.sign(tv)===Math.sign(g[i])&&Math.abs(g[i])>=.0){agree++;if(run){runs.push(run);run=null;}}else{if(!run)run={a:x,b:x};run.b=x;}}
-  if(run)runs.push(run);const badRuns=runs.filter(r=>r.b-r.a>=.05*W);
-  const sgnFrac=tot?agree/tot:1;
-  /* Form */
-  let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;for(let i=0;i<N;i++){if(g[i]===null)continue;const x=cx(i);if(badCol(x))continue;const u=g[i],v=p.d(x);n++;sx+=u;sy+=v;sxx+=u*u;syy+=v*v;sxy+=u*v;}
-  const vu=sxx/n-(sx/n)**2,vv=syy/n-(sy/n)**2;let r=null,ratio=1;
-  if(vv<1e-9*span*span){let dev=0;for(let i=0;i<N;i++)if(g[i]!==null)dev+=Math.abs(g[i]-sy/n);r=1-Math.min(1,(dev/n)/(.25*span))*0.3-(dev/n>.2*span?.5:0);ratio=1;}
+  for(let i=f0;i<=l0;i++){const x=cx(i),tv=T[i];if(nearS(x,.05)||Math.abs(tv)<.06*span||S.Z.some(z=>Math.abs(x-z)<.035*W))continue;tot++;
+    if(Math.sign(tv)===Math.sign(g3[i])){if(run){runs.push(run);run=null;}}else{if(!run)run={a:x,b:x};run.b=x;}}
+  if(run)runs.push(run);const badRuns=runs.filter(r=>r.b-r.a>=.03*W);const sgnFrac=tot?(tot-runs.reduce((s,r)=>s+Math.max(1,Math.round((r.b-r.a)/W*N)),0))/tot:1;
+  /* Form: Korrelation und Höhenverhältnis */
+  let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;for(let i=f0;i<=l0;i++){if(nearS(cx(i),.05))continue;const u=g3[i],v=T[i];n++;sx+=u;sy+=v;sxx+=u*u;syy+=v*v;sxy+=u*v;}
+  const vu=sxx/n-(sx/n)**2,vv=syy/n-(sy/n)**2;let r,ratio;
+  if(vv<1e-9*span*span){r=1;ratio=Math.abs(sy/n)>1e-9?Math.max(0,(sx/n)/(sy/n)):1;}
   else{r=vu<1e-12?0:(sxy/n-sx/n*sy/n)/Math.sqrt(vu*vv);ratio=Math.sqrt(Math.max(vu,0)/vv);}
-  return {zs,miss,extra,sgnFrac,badRuns,r,ratio,tol};}
-function xr(v){return fmt(Math.round(v*2)/2);}
+  /* Hoch-/Tiefpunkte von f′ (Wendepunkte von f) */
+  const Tf=turnsS(T,cuts,.02*span),Tr=turnsS(T,cuts,.08*span),D=turnsS(g3,cuts,.07*span);
+  const edgeNear=i=>i<8||i>N-9||cuts.some(c=>Math.abs(i-c)<8);
+  const dUsed=new Set(),tMiss=[],tOff=[];
+  Tr.forEach(t=>{let bj=-1,bd=1e9;D.forEach((d,j)=>{if(dUsed.has(j)||d.t!==t.t)return;const dd=Math.abs(d.i-t.i);if(dd<bd){bd=dd;bj=j;}});
+    if(bj>=0&&bd<=24){dUsed.add(bj);if(bd>12)tOff.push({x:cx(t.i),dx:cx(D[bj].i)-cx(t.i),t:t.t});}else if(!edgeNear(t.i))tMiss.push({x:cx(t.i),t:t.t});});
+  const tExtra=[];D.forEach((d,j)=>{if(dUsed.has(j)||edgeNear(d.i))return;if(Tf.some(t=>t.t===d.t&&Math.abs(t.i-d.i)<=24))return;tExtra.push({x:cx(d.i),t:d.t});});
+  /* Waagrechte Stücke */
+  const jumpAt=j=>cuts.includes(j+1);const flats=[];
+  {let i=0;while(i<N){let j=i,lo=T[i],hi=T[i];while(j+1<N&&!jumpAt(j)){const a=Math.min(lo,T[j+1]),b=Math.max(hi,T[j+1]);if(b-a>.02*span)break;lo=a;hi=b;j++;}
+    if(j-i+1>=26){const i0=i+3+(cuts.includes(i)?10:0),i1=j-3-(cuts.includes(j+1)?10:0),len=i1-i0+1;if(len<20){i=j+1;continue;}let sx2=0,sy2=0,sxx2=0,sxy2=0,ty2=0,txy2=0;for(let k=i0;k<=i1;k++){const q=k-i0;sx2+=q;sy2+=g3[k];sxx2+=q*q;sxy2+=q*g3[k];ty2+=T[k];txy2+=q*T[k];}
+      const sl=(len*sxy2-sx2*sy2)/(len*sxx2-sx2*sx2),slT=(len*txy2-sx2*ty2)/(len*sxx2-sx2*sx2),mean=sy2/len;let res=0;for(let k=i0;k<=i1;k++){const q=k-i0,e=g3[k]-(mean+sl*(q-sx2/len));res+=e*e;}
+      flats.push({a:cx(i),b:cx(j),rise:(sl-slT)*(len-1)/span,wob:Math.sqrt(res/len)/span});i=j+1;}else i++;}}
+  /* Steigung und Höhe in Abschnitten (nur Hinweise) */
+  const w=24,step=12,cls=[];
+  const slope=(a,i0)=>{let sx3=0,sy3=0,sxx3=0,sxy3=0;for(let k=0;k<w;k++){const y=a[i0+k];sx3+=k;sy3+=y;sxx3+=k*k;sxy3+=k*y;}return (w*sxy3-sx3*sy3)/(w*sxx3-sx3*sx3);};
+  for(let i0=0;i0+w<=N;i0+=step){if(i0<f0||i0+w-1>l0||cuts.some(c=>c>i0&&c<i0+w)||nearS(cx(i0),.05)||nearS(cx(i0+w-1),.05))continue;
+    const md=slope(g5,i0)*N/span,mt=slope(T,i0)*N/span,am=Math.abs(md),at=Math.abs(mt);let k=null;
+    if(md*mt<0&&Math.min(am,at)>=.6)k='um';
+    else if(at>=.6&&md*mt>0&&am>1.9*at)k='steil';
+    else if(at<.6&&am>1.1)k='steil';
+    else if(at>=.8&&am<.45*at&&!(md*mt<0&&am>=.6))k='flach';
+    if(k)cls.push({k,i0,s:Math.sign(mt)||1});}
+  const mergeC=kk=>{const out=[];cls.filter(c=>c.k===kk).forEach(c=>{const l=out[out.length-1];if(l&&c.i0-l.i1<=step&&l.s===c.s){l.i1=c.i0;}else out.push({i0:c.i0,i1:c.i0,s:c.s});});
+    return out.filter(o=>o.i1-o.i0>=step).map(o=>({a:cx(o.i0),b:cx(o.i1+w-1),s:o.s}));};
+  const slopeUm=mergeC('um'),slopeSteil=mergeC('steil'),slopeFlach=mergeC('flach');
+  const lev=[];if(ratio>=.75&&ratio<=1.33){let rn=null;for(let i=f0;i<=l0;i++){const dv=g3[i]-T[i],ok=!nearS(cx(i),.05)&&Math.abs(dv)>.12*span;
+      if(ok&&rn&&Math.sign(dv)===rn.s&&i-rn.e<=2)rn.e=i;else{if(rn&&rn.e-rn.b>=19)lev.push(rn);rn=ok?{b:i,e:i,s:Math.sign(dv),t:T[i]}:null;}}
+    if(rn&&rn.e-rn.b>=19)lev.push(rn);}
+  const levR=lev.map(o=>({a:cx(o.b),b:cx(o.e),s:o.s,t:o.t}));
+  return {zs,hits,miss,extra,sgnFrac,badRuns,r,ratio,edges,gaps,jumps,dbls,tMiss,tExtra,tOff,flats,slopeUm,slopeSteil,slopeFlach,levR};}
 function check(){const p=S.p,A=analyse(),out=$('#fbOut');$('#fbBox').hidden=false;
   if(A.err){out.innerHTML='<p class="verdict">Noch nicht auswertbar</p><p>'+A.err+'</p>';MATH.apply(out);return;}
-  const L=[];let score=0;
-  if(S.Z.length===0){if(A.zs.length===0){L.push(['ok','Nullstellen: f hat keine waagrechte Tangente, und deine Skizze schneidet die x-Achse auch nicht.']);score++;}else{L.push(['bad','Nullstellen: Deine Skizze schneidet die x-Achse bei x ≈ '+A.zs.map(xr).join(', ')+'. Hat f dort eine waagrechte Tangente?']);}}
-  else if(!A.miss.length&&!A.extra.length){L.push(['ok',S.Z.length===1?'Nullstellen: Die Nullstelle von f′ stimmt (dort hat f eine waagrechte Tangente).':'Nullstellen: Alle '+S.Z.length+' Nullstellen von f′ stimmen (dort hat f eine waagrechte Tangente).']);score++;}
-  else{const t=[];if(A.miss.length)t.push((A.miss.length>1?'Es fehlen Nullstellen':'Es fehlt eine Nullstelle')+' in der Nähe von x ≈ '+A.miss.map(xr).join(' und '));if(A.extra.length)t.push('Deine Skizze schneidet die x-Achse bei x ≈ '+A.extra.map(xr).join(' und ')+', obwohl f dort keine waagrechte Tangente hat');L.push([A.miss.length+A.extra.length>1?'bad':'part','Nullstellen: '+t.join('. ')+'.']);}
-  if(A.sgnFrac>=.85&&!A.badRuns.length){L.push(['ok','Vorzeichen: f′ ist positiv, wo f steigt, und negativ, wo f fällt.']);score++;}
-  else if(A.sgnFrac>=.65){L.push(['part','Vorzeichen: Fast. Prüfe '+A.badRuns.map(r=>'den Bereich x ≈ '+xr(r.a)+' bis '+xr(r.b)).join(' und ')+' (steigt oder fällt f dort?).']);}
+  const st=(p.b-p.a)<5?.25:.5,xr=v=>fmt(Math.round(v/st)*st),at=x=>'x ≈ '+xr(x),rg=(a,b)=>'x ≈ '+xr(a)+' bis '+xr(b),lst=(a,f)=>a.slice(0,2).map(f).join(' und ');
+  const L=[],H=[],hasS=(p.sing||[]).length>0;let score=0;
+  /* Nullstellen */
+  const nz=S.Z.length,off=A.hits.filter(h=>!h.ok);
+  if(nz===0){if(!A.zs.length){L.push(['ok','Nullstellen: f hat keine waagrechte Tangente, und deine Skizze schneidet die x-Achse auch nicht.']);score++;}
+    else L.push(['bad','Nullstellen: Deine Skizze schneidet die x-Achse bei '+lst(A.zs,at)+'. Hat f dort eine waagrechte Tangente?']);}
+  else if(!A.miss.length&&!A.extra.length&&!off.length){L.push(['ok',nz===1?'Nullstellen: Die Nullstelle von f′ sitzt genau (dort hat f eine waagrechte Tangente).':'Nullstellen: Alle '+nz+' Nullstellen von f′ sitzen genau (dort hat f eine waagrechte Tangente).']);score++;}
+  else{const t=[];
+    if(A.miss.length)t.push((A.miss.length>1?'Es fehlen Nullstellen':'Es fehlt eine Nullstelle')+' bei '+lst(A.miss,at));
+    if(A.extra.length)t.push('Deine Skizze schneidet die x-Achse bei '+lst(A.extra,at)+', obwohl f dort keine waagrechte Tangente hat');
+    if(off.length)t.push(lst(off,h=>'bei '+at(h.z)+' liegt deine Nullstelle zu weit '+(h.dx>0?'rechts':'links')));
+    const bad=A.miss.length+A.extra.length>1;if(!A.miss.length&&!A.extra.length)score+=.5;
+    L.push([bad?'bad':'part','Nullstellen: '+t.join('. ')+'. Die Nullstellen von f′ gehören genau unter die Extrempunkte von f (Tipp: «Hilfslinien» einblenden).']);}
+  /* Vorzeichen */
+  if(A.sgnFrac>=.93&&!A.badRuns.length){L.push(['ok','Vorzeichen: f′ ist positiv, wo f steigt, und negativ, wo f fällt.']);score++;}
+  else if(A.sgnFrac>=.75){L.push(['part','Vorzeichen: Fast. Prüfe '+lst(A.badRuns.length?A.badRuns:[{a:0,b:0}],r=>r.b>r.a?'den Bereich '+rg(r.a,r.b):'einzelne Stellen')+' (steigt oder fällt f dort?).']);}
   else L.push(['bad','Vorzeichen: Bei vielen Stellen liegt deine Skizze auf der falschen Seite der x-Achse. Wo steigt f (f′ > 0), wo fällt f (f′ < 0)?']);
-  if(A.r>=.88&&A.ratio>.5&&A.ratio<2&&A.sgnFrac>=.85){L.push(['ok','Form: Der Verlauf von f′ passt gut.']);score++;}
-  else if(A.r>=.88&&A.sgnFrac>=.85){L.push(['part','Form: Der Verlauf stimmt, aber die Höhe der Ausschläge passt noch nicht ganz (Skala links beachten).']);score+=.5;}
-  else if(A.r>=.65){L.push(['part','Form: Ungefähr richtig. Achte auf die Steilheit von f: Wo f am steilsten ist, hat f′ ihren grössten Betrag.']);score+=.5;}
-  else L.push(['bad','Form: Der Verlauf weicht noch deutlich ab. Wo ist f steil, wo flach? Das bestimmt die Höhe von f′.']);
-  const ic={ok:'✓',part:'◐',bad:'✗'};
-  const v=score>=3?'Super, deine Skizze stimmt!':score>=2?'Fast, noch eine Kleinigkeit.':'Noch nicht ganz, versuche es nochmals.';
-  out.innerHTML='<p class="verdict">'+v+'</p><ul class="fb">'+L.map(l=>'<li class="'+l[0]+'"><span class="ic">'+ic[l[0]]+'</span><span>'+l[1]+'</span></li>').join('')+'</ul>';
+  /* Form */
+  const I=[];
+  if(A.edges.length)I.push({s:1,m:'Durchgehend: Deine Linie '+A.edges.map(e=>e.side==='l'?'beginnt erst bei '+at(e.x):'endet schon bei '+at(e.x)).join(' und ')+'. Zeichne von ganz links bis ganz rechts.'});
+  if(A.gaps.length)I.push({s:1,m:'Durchgehend: Bei '+lst(A.gaps,g=>rg(g.a,g.b))+' fehlt ein Stück deiner Linie. '+(hasS?'Nur dort, wo f einen Knick hat, darf f′ springen. Sonst':'f ist überall differenzierbar, also')+' hat f′ keine Lücken: zeichne die Linie in einem Zug.'});
+  if(A.jumps.length)I.push({s:1,m:'Durchgehend: Bei '+lst(A.jumps,at)+' springt deine Linie. '+(hasS?'Ausser beim Knick von f':'f hat keinen Knick, also')+' ist f′ eine zusammenhängende Linie ohne Sprung.'});
+  if(A.dbls.length)I.push({s:1,m:'Durchgehend: Bei '+lst(A.dbls,g=>rg(g.a,g.b))+' liegen mehrere Striche übereinander oder es gibt einen senkrechten Strich. Radiere Überflüssiges weg, damit nur eine Linie bleibt.'});
+  A.flats.forEach(f=>{const tilt=Math.abs(f.rise)>.08,wob=f.wob>.03;if(!tilt&&!wob)return;
+    I.push({s:1,m:'Waagrecht: Bei '+rg(f.a,f.b)+' verläuft f′ fast waagrecht (die Steigung von f ändert sich dort kaum oder gar nicht). Deine Linie '+(tilt?(f.rise>0?'steigt':'fällt')+' dort':'wackelt dort')+'. Zeichne sie möglichst waagrecht.'});});
+  if(A.tMiss.length||A.tExtra.length){const t=[];
+    if(A.tMiss.length)t.push('Es fehlt '+lst(A.tMiss,u=>(u.t==='max'?'ein Hochpunkt':'ein Tiefpunkt')+' von f′ bei '+at(u.x))+' (dort ist f am steilsten, also hat f einen Wendepunkt)');
+    if(A.tExtra.length)t.push('Bei '+lst(A.tExtra,u=>at(u.x))+' hat deine Linie '+(A.tExtra.length>1?'einen Zacken oder eine Welle':'einen Zacken oder eine Welle')+', die f′ nicht hat. Hat f dort einen Wendepunkt? Wenn nicht, muss die Linie glatt weiterlaufen');
+    I.push({s:1.5,m:'Verlauf: '+t.join('. ')+'.'});}
+  if(A.slopeUm.length)I.push({s:1,m:'Verlauf: Bei '+lst(A.slopeUm,o=>rg(o.a,o.b))+' läuft deine Linie in die falsche Richtung (sie '+(A.slopeUm[0].s>0?'fällt, müsste aber steigen':'steigt, müsste aber fallen')+'). Die Steigung von f′ ist f″, also die Krümmung von f: Linkskurve von f heisst f′ steigt, Rechtskurve heisst f′ fällt.'});
+  if(A.r<.82&&!A.tMiss.length&&!A.tExtra.length&&!A.slopeUm.length)I.push({s:A.r<.6?2:1.5,m:'Verlauf: Der Verlauf weicht noch deutlich von f′ ab. Wo ist f steil, wo flach? Das bestimmt den Betrag von f′.'});
+  if(A.ratio<.5||A.ratio>2)I.push({s:1,m:'Höhe: Deine Ausschläge sind insgesamt '+(A.ratio>2?'viel zu gross':'viel zu klein')+'. Lies die Skala am linken Rand ab: Der Betrag von f′ ist gross, wo f steil ist.'});
+  const sum=I.reduce((s,i)=>s+i.s,0);
+  if(!I.length){L.push(['ok','Form: Die Linie ist durchgehend und ruhig, die waagrechten Stücke sind waagrecht und die Hoch- und Tiefpunkte passen.']);score++;}
+  else{if(sum<2)score+=.5;I.forEach(i=>L.push([i.s>=1.5?'bad':'part',i.m]));}
+  /* Hinweise (nicht bewertet): Höhe und Steigung */
+  if(A.ratio>1.33&&A.ratio<=2)H.push('Höhe: Deine Ausschläge sind insgesamt etwas zu gross (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Ist f weniger steil, bleibt f′ näher bei der x-Achse.');
+  if(A.ratio<.75&&A.ratio>=.5)H.push('Höhe: Deine Ausschläge sind insgesamt etwas zu klein (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Wo f steil ist, muss f′ weiter von der x-Achse weg.');
+  A.levR.slice(0,2).forEach(o=>H.push('Höhe: Bei '+rg(o.a,o.b)+' liegt deine Linie etwas zu '+(o.s>0?'hoch':'tief')+'. Der Betrag von f′ ist die Steilheit von f: '+((o.s>0)===(o.t>=0)?'f ist dort weniger steil, als deine Linie zeigt.':'f ist dort steiler, als deine Linie zeigt.')));
+  A.slopeSteil.slice(0,2).forEach(o=>H.push('Steigung: Bei '+rg(o.a,o.b)+' verläuft deine Linie zu steil. Die Steigung von f′ ist die Krümmung von f: Ist f dort nur schwach gekrümmt, darf f′ nur langsam '+(o.s>0?'steigen':o.s<0?'fallen':'ansteigen oder abfallen')+'.'));
+  A.slopeFlach.slice(0,2).forEach(o=>H.push('Steigung: Bei '+rg(o.a,o.b)+' verläuft deine Linie zu flach. Dort ist f stärker gekrümmt ('+(o.s>0?'Linkskurve':'Rechtskurve')+'), deshalb muss f′ schneller '+(o.s>0?'steigen':'fallen')+'.'));
+  A.tOff.slice(0,1).forEach(o=>H.push('Lage: Der '+(o.t==='max'?'Hochpunkt':'Tiefpunkt')+' von f′ bei '+at(o.x)+' liegt etwas zu weit '+(o.dx>0?'rechts':'links')+'. Er gehört unter die steilste Stelle von f (Wendepunkt).'));
+  H.splice(4);
+  const ic={ok:'✓',part:'◐',bad:'✗',hint:'→'};
+  const v=score>=3?(H.length?'Sehr gut: Nullstellen und Form stimmen. Beachte die Hinweise.':'Super, deine Skizze stimmt!'):score>=2?'Fast, noch eine Kleinigkeit.':'Noch nicht ganz, versuche es nochmals.';
+  const rows=L.concat(H.map(h=>['hint',h]));
+  out.innerHTML='<p class="verdict">'+v+'</p><ul class="fb">'+rows.map(l=>'<li class="'+l[0]+'"><span class="ic">'+ic[l[0]]+'</span><span>'+l[1]+'</span></li>').join('')+'</ul>';
   MATH.apply(out,'li span:last-child,.verdict');
   $('#bNext').hidden=false;if(score>=3){done.add(S.n);const b=document.querySelector('#grid button[data-n="'+S.n+'"]');if(b)b.classList.add('done');}}
 /* Challenge */
