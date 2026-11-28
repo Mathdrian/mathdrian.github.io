@@ -199,7 +199,7 @@ footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:v
 'use strict';
 /* =====================================================================
    NEUES WERKZEUG HINZUFÜGEN: eine Zeile in TOOLS ergänzen, Datei in den Ordner legen. Mehr nicht.
-   k = Kapitel (1 bis 8), u = Unterordner wie im Ordner «Material» (z. B. '43 Polynomfunktionen'),
+   k = Kapitel (1 bis 8), u = Unterordner wie im Ordner «Material» (z. B. '3 Polynomfunktionen'),
    nr = Nummer wie im Ordner Material, z. B. '1401H' (H = HTML-Werkzeug, T = Theorie). Sortiert und durchsuchbar.
    loesung = (optional) Pfad zur Lösungsdatei. Sie erscheint erst, wenn «Lösungen anzeigen» angehakt ist.
    typ = 'tool' (interaktives Werkzeug) oder 'pdf' (Blatt).
@@ -209,41 +209,41 @@ const KAPITEL=[
   {n:5,t:'Vektorgeometrie'},{n:6,t:'Integralrechnung'},{n:7,t:'Stochastik'},{n:8,t:'Höhere Mathematik'}
 ];
 const TOOLS=[
-  {k:1,u:'14 Gleichungssysteme',typ:'tool',nr:'1401H',titel:'LGS-Werkstatt',
+  {k:1,u:'4 Gleichungssysteme',typ:'tool',nr:'1401H',titel:'LGS-Werkstatt',
    text:'Lineare Gleichungssysteme mit zwei Unbekannten: Methode wählen, Lösungsmenge eingeben und mit dem schnellsten Lösungsweg vergleichen.',
    tags:['Einsetzen','Gleichsetzen','Addieren','Gauss','Graphisch','Üben'],href:'1-algebra/4-gleichungssysteme/1401H_LGS_Werkstatt.html'},
-  {k:1,u:'15 Potenzen und Wurzeln',typ:'tool',nr:'1501H',titel:'Potenzen und Wurzeln',
+  {k:1,u:'5 Potenzen und Wurzeln',typ:'tool',nr:'1501H',titel:'Potenzen und Wurzeln',
    text:'Potenzgesetze, Wurzeln und wissenschaftliche Schreibweise selbstständig üben, mit Musterlösung zu jeder Aufgabe.',
    tags:['Potenzen','Wurzeln','Zehnerpotenzen','Üben'],href:'1-algebra/5-potenzen_wurzeln/1501H_Potenzen_Wurzeln.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4301H',titel:'Ableitungs-Reise',
+  {k:4,u:'3 Polynomfunktionen',typ:'tool',nr:'4301H',titel:'Ableitungs-Reise',
    text:'Als Wanderer die Steigung, als Autofahrer die Krümmung erleben. Ableitung und zweite Ableitung entstehen Punkt für Punkt.',
    tags:['Ableitung','Krümmung','Entdecken'],href:'4-differentialrechnung/3-polynomfunktionen/4301H_Ableitungsreise.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'pdf',nr:'4302T',titel:'Theorie Extrema und Wendepunkte',
+  {k:4,u:'3 Polynomfunktionen',typ:'pdf',nr:'4302T',titel:'Theorie Extrema und Wendepunkte',
    text:'Mögliche Extrempunkte, Hoch- und Tiefpunkte, Wende- und Sattelpunkte. Mit Definitionen, Beispielen und Rechenverfahren.',
    tags:['Theorie','Extrema','Wendepunkte'],loesung:'4-differentialrechnung/3-polynomfunktionen/4302T_Extrema_Wendepunkte_L.pdf',
    href:'4-differentialrechnung/3-polynomfunktionen/4302T_Extrema_Wendepunkte.pdf'},
   /* Vorläufig ausgeblendet (zum Wieder-Einblenden die Kommentarzeichen entfernen):
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4302H',titel:'Kurven-Labor',
+  {k:4,u:'3 Polynomfunktionen',typ:'tool',nr:'4302H',titel:'Kurven-Labor',
    text:'Waagrechte Tangenten und Wendepunkte am Graphen markieren, Ableitungen selbst berechnen und die Eingabe prüfen lassen.',
    tags:['Extrema','Wendepunkte','Üben'],href:'4-differentialrechnung/3-polynomfunktionen/4302H_Kurvenlabor.html'},
   */
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4303H',titel:'Graphenanalyse',
+  {k:4,u:'3 Polynomfunktionen',typ:'tool',nr:'4303H',titel:'Graphenanalyse',
    text:'Kurvendiskussion Schritt für Schritt: Verhalten im Unendlichen, Symmetrie, Nullstellen, Extrem- und Wendepunkte, am Schluss der Graph. Mit nummerierten Aufgaben (gleiche Nummer = gleiche Funktion), Muster-Rechenweg unter dem Graphen und Dezimalzahlen zum Zuschalten.',
    tags:['Kurvendiskussion','Extrema','Wendepunkte','Üben'],href:'4-differentialrechnung/3-polynomfunktionen/4303H_Graphenanalyse.html'},
-  {k:4,u:'43 Polynomfunktionen',typ:'tool',nr:'4304H',titel:'Grafisches Ableiten',
+  {k:4,u:'3 Polynomfunktionen',typ:'tool',nr:'4304H',titel:'Grafisches Ableiten',
    text:'Den Graphen von f ansehen und die Ableitung f′ von Hand skizzieren. Die Seite prüft streng Nullstellen, Vorzeichen und Form (durchgehende Linie, waagrechte Stücke waagrecht) und gibt Hinweise zur Höhe. Mit Challenge zum Funktionstyp.',
    tags:['Ableitung','Skizzieren','Funktionstyp','Üben'],href:'4-differentialrechnung/3-polynomfunktionen/4304H_Grafisches_Ableiten.html'},
-  {k:5,u:'52 Geraden',typ:'tool',nr:'5201H',titel:'Geraden-Labor',
+  {k:5,u:'2 Geraden',typ:'tool',nr:'5201H',titel:'Geraden-Labor',
    text:'Geradengleichungen aus zwei Punkten entwickeln, in 2D und 3D. Mit Aufgaben in drei Stufen, die sofort geprüft werden.',
    tags:['2D und 3D','Vektorform','Grundform','Üben'],href:'5-vektorgeometrie/2-geraden/5201H_Geradenlabor.html'},
-   {k:6,u:'62 Flächenberechnung',typ:'tool',nr:'6201H',titel:'Flächen-Labor',
+   {k:6,u:'2 Flächenberechnung',typ:'tool',nr:'6201H',titel:'Flächen-Labor',
    text:'Integral oder Flächeninhalt? Fläche zur x-Achse oder zwischen zwei Graphen: Nullstellen, Teilintegrale, Beträge und Flächenbilanz Schritt für Schritt.',
    tags:['Integral','Flächeninhalt','Flächenbilanz','Üben'],href:'6-integralrechnung/2-flaechenberechnung/6201H_Flaechenlabor.html'},
-  {k:6,u:'64 Volumenberechnung',typ:'tool',nr:'6401H',titel:'Volumen-Labor',
+  {k:6,u:'4 Volumenberechnung',typ:'tool',nr:'6401H',titel:'Volumen-Labor',
    text:'Eine Fläche um die x-Achse drehen und den Körper in Kreisscheiben schneiden. Mit Ober- und Untersumme, n gegen unendlich und Rechnung bis zum Integral.',
    tags:['Rotationskörper','Volumen','Summe und Integral','Üben'],href:'6-integralrechnung/4-volumenberechnung/6401H_Volumenlabor.html'}
   /* Beispiel für ein Blatt:
-  ,{k:5,u:'52 Geraden',typ:'pdf',nr:'5201T',titel:'Theorieblatt Geraden',text:'Parameterform, Steigung, Lage zweier Geraden.',tags:['Theorie'],href:'5-vektorgeometrie/2-geraden/5201T_Geraden_Theorie.pdf'} */
+  ,{k:5,u:'2 Geraden',typ:'pdf',nr:'5201T',titel:'Theorieblatt Geraden',text:'Parameterform, Steigung, Lage zweier Geraden.',tags:['Theorie'],href:'5-vektorgeometrie/2-geraden/5201T_Geraden_Theorie.pdf'} */
 ];
 
 const $=s=>document.querySelector(s);
