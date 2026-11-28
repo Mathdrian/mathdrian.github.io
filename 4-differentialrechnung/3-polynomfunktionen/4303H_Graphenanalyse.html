@@ -63,10 +63,15 @@ button{cursor:pointer}
 .step[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
 
 /* Layout */
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:16px;align-items:start}
-@media (max-width:1020px){.layout{grid-template-columns:minmax(0,1fr)}}
-.left{display:grid;gap:10px;min-width:0;position:sticky;top:12px}
-@media (max-width:1020px){.left{position:static}}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;grid-template-areas:"g c" "s c";grid-template-rows:auto 1fr;gap:16px;align-items:start}
+@media (max-width:1020px){.layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"g" "c" "s";grid-template-rows:auto}}
+.left{grid-area:g;display:grid;gap:10px;min-width:0}
+.stepcard{grid-area:c}
+.solbox{grid-area:s;display:grid;gap:8px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.solbox[hidden]{display:none}
+.solbox h3{font-size:15px;color:var(--muted);font-weight:600}
+.solbox details.inline>summary{font-size:15px}
+.solbox details.inline>.in{font-size:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
 .panel canvas{display:block;width:100%;height:470px;touch-action:pan-y}
 @media (max-width:560px){.panel canvas{height:320px}}
@@ -91,7 +96,8 @@ button{cursor:pointer}
 .task-nav .r{display:flex;gap:8px}
 label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
 input[type=text],select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0}
-input.mono{font-family:var(--font-mono);font-size:15px}
+input.mono{font-family:var(--font-math);font-size:18px}
+input.mono::placeholder{font-family:var(--font-body);font-size:14px}
 .fieldrow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
 .fieldrow>label{margin:0;font-family:var(--font-math);font-size:17px;color:var(--ink);white-space:nowrap}
 .fieldrow.three{grid-template-columns:auto 1fr auto}
@@ -121,11 +127,11 @@ details.inline{border:1px solid var(--line);border-radius:8px;background:var(--s
 details.inline>summary{cursor:pointer;padding:8px 12px;font-weight:500;font-size:14px}
 details.inline>.in{padding:2px 12px 12px;display:grid;gap:6px;font-size:14px}
 .chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-family:var(--font-mono);font-size:13px;background:var(--bg)}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-family:var(--font-math);font-size:15px;background:var(--bg)}
 .chip.ok{border-color:var(--ok);color:var(--ok)} .chip.no{border-color:var(--bad);color:var(--bad)} .chip.miss{border-style:dashed;border-color:var(--right);color:var(--right)}
 .rows{display:grid;gap:8px}
 .prow{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:7px}
-.prow .ph{font-family:var(--font-mono);font-size:14px}
+.prow .ph{font-family:var(--font-math);font-size:16px}
 .prow.ok{border-color:var(--ok)} .prow.bad{border-color:var(--bad)}
 .prow .why{font-size:13.5px}
 .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -138,7 +144,9 @@ details.inline>.in{padding:2px 12px 12px;display:grid;gap:6px;font-size:14px}
 .pre small{color:var(--muted);font-size:11.5px}
 .pre:hover{background:var(--surface2)}
 .pre[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
-.pre b{font-family:var(--font-math);font-weight:400;font-size:14px}
+.pre b{font-family:var(--font-math);font-weight:400;font-size:18px;line-height:1.3}
+.pre .mi,.opt .mi,summary .mi{font-family:var(--font-math);font-size:1.07em}
+.pre small{font-family:var(--font-body)}
 .gen{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .gen button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;font-weight:600;display:grid;gap:1px;justify-items:center}
 .gen button small{font-weight:400;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.25}
@@ -150,7 +158,7 @@ details.inline>.in{padding:2px 12px 12px;display:grid;gap:6px;font-size:14px}
 .calc .ln{padding:3px 0;line-height:1.9}
 .calc .sec{margin-top:8px;font-weight:600;font-family:var(--font-head);font-size:13.5px;color:var(--accent)}
 .cm{color:var(--muted);font-size:.9em}
-.pt{font-family:var(--font-mono);font-weight:500}
+.pt{font-family:var(--font-math);font-weight:600}
 .fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px;font-size:.92em}
 .fr>span:first-child{border-bottom:1.2px solid currentColor;padding:0 3px 1px}
 .fr>span:last-child{padding:1px 3px 0}
@@ -199,7 +207,18 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface2);bor
 .cm,.fb b.t,.ask b,.merke b:first-child,.sum td:first-child,button,label,details>summary{font-family:var(--font-body)}
 .ask,.fb,.merke{font-family:var(--font-body)}
 .ask .mi,.fb .mi,.merke .mi{font-family:var(--font-math);font-size:1.07em}
-.rbtn{margin-left:auto}
+.tgl{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.dc{color:var(--muted);font-size:.86em;white-space:nowrap}
+.fbar .dc{font-size:.6em}
+.read b{font-size:1.25em;font-weight:400}
+.nrbadge{font:600 12.5px/1 var(--font-body);color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--surface);white-space:nowrap}
+.codeform{display:flex;gap:8px;align-items:center;margin-top:4px}
+.codeform input{flex:1;max-width:200px}
+.read .mi,.tipbox .mi,.exc .mi,.fieldrow .mi{font-family:var(--font-math);font-size:1.07em}
+.lvl{display:grid;gap:4px;margin-top:6px}
+.lvlh{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pre .no{font-size:11px;font-weight:700;color:var(--accent)}
+.fbar .num{font-weight:700;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -225,6 +244,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface2);bor
       </div>
     </div>
     <section class="card stepcard" id="card" aria-live="polite"></section>
+    <section class="solbox" id="sol" aria-label="Musterlösung" hidden></section>
   </main>
   </div>
 
@@ -233,9 +253,10 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface2);bor
     <div class="inner">
       <p><b>Ablauf.</b> Du gehst sieben Schritte durch. Rechne jeweils zuerst selbst (auf Papier oder im Kopf), gib dann dein Ergebnis ein und lass es prüfen. Danach siehst du die Lösung, bei Bedarf mit dem ausführlichen Rechenweg.</p>
       <ul>
-        <li><b>Funktion:</b> Wähle ein Beispiel, tippe eine eigene Funktion ein oder lass dir eine Übungsfunktion (leicht, mittel, schwer) erzeugen. Schreibweise: <code>x^3</code> für x³, <code>2x</code> oder <code>2*x</code>, <code>1/2*x^4</code> für ein halbes x⁴.</li>
+        <li><b>Funktion:</b> Wähle eine Beispielaufgabe, rufe eine Aufgabe über ihre Nummer auf (alle in der Klasse rechnen dann dieselbe Funktion), lass dir eine zufällige Aufgabe (leicht, mittel, schwierig) erzeugen oder tippe selbst eine Funktion ein. Schreibweise: <code>x^3</code> für x³, <code>2x</code> oder <code>2*x</code>, <code>1/2*x^4</code> für ein halbes x⁴.</li>
         <li><b>Zahlen eingeben:</b> Brüche als <code>1/2</code>, Wurzeln als <code>√5</code> oder <code>sqrt(5)</code>, Dezimalzahlen mit Punkt oder Komma. Mehrere Werte trennst du mit einem Strichpunkt: <code>-2; 2; 3</code>. Gibt es keine Lösung, schreibe <code>keine</code>.</li>
-        <li><b>Rechenweg:</b> Wer den Stoff schon kennt, kann Rechnungen eingeklappt lassen. Klappe sie auf, wenn du etwas nachlesen willst.</li>
+        <li><b>Musterlösung:</b> Der Rechenweg steht unter dem Koordinatensystem und lässt sich auf- und zuklappen. Wer den Stoff schon kennt, lässt ihn zu.</li>
+        <li><b>Dezimalzahlen:</b> Oben neben der Funktion schaltest du «Dezimalzahlen» ein. Dann steht hinter Brüchen und Wurzeln zusätzlich der Näherungswert.</li>
         <li><b>Zum Schluss</b> zeichnet die Graphenanalyse die ganze Funktion für dich und fasst alles in einem Steckbrief zusammen.</li>
       </ul>
     </div>
@@ -245,7 +266,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface2);bor
     <summary>Hinweise für Lehrpersonen</summary>
     <div class="inner">
       <ul>
-        <li><b>Funktionen:</b> Die Übungsfunktionen sind so erzeugt, dass sich alle Gleichungen von Hand lösen lassen (Ausklammern, Mitternachtsformel, Substitution, rationales Probieren). Leicht: Grad 3 oder 4 mit lauter rationalen Lösungen. Mittel: Grad 3 bis 4, auch Wurzeln und Polynomdivision. Schwierig: Grad 4 bis 5, Brüche, Sattelpunkte, häufig Polynomdivision. Unter den Beispielen stehen drei Ausnahmefälle (Grad 5), bei denen sich Nullstellen, Extrem- bzw. Wendestellen nicht von Hand berechnen lassen. Dort werden die Werte angegeben und mit dem Taschenrechner bestimmt.</li>
+        <li><b>Aufgabennummer:</b> Wie in der LGS-Werkstatt hat jede Aufgabe eine sechsstellige Nummer (zum Beispiel 104-821). Wer die Nummer eingibt oder den Link öffnet (Adresse mit <code>#104821</code> am Ende), rechnet genau dieselbe Funktion, so lassen sich Fehler oder Probleme gezielt nachvollziehen. Die zwölf Beispielaufgaben (vier pro Stufe) haben die Nummern 900-000 bis 900-011 und zeigen, was an ihnen speziell ist. Die zufälligen Aufgaben (Stufe leicht, mittel oder schwer) bekommen ebenfalls eine Nummer, aber keinen Hinweis. Leicht: Grad 2 bis 4, ohne Polynomdivision (Ausklammern, Mitternachtsformel, Substitution). Mittel und schwierig: ab Grad 3 sind die Lösungen von f, f′ und f″ so gewählt, dass man sie von Hand findet. Mittel: alle ganzzahlig im Bereich −3 bis 3 erratbar (oder Ausklammern bzw. Substitution z = x²). Schwierig: genug erratbare ganzzahlige Lösungen, um mit Polynomdivision auf Grad 2 zu kommen.</li>
         <li><b>Eingaben:</b> Exakte Werte werden exakt verglichen (1/2 = 0.5 = 0,5). Wurzelwerte gelten als richtig, wenn sie auf 2 Nachkommastellen stimmen.</li>
         <li><b>Rückmeldung:</b> Bei Auswahlaufgaben (Verhalten im Unendlichen, Symmetrie) sind zwei Versuche möglich. Bei Berechnungen wird nach der Prüfung immer die Lösung gezeigt. Am Ende steht, wie viele Schritte im ersten Versuch richtig waren.</li>
         <li><b>Voraussetzungen:</b> Ableitungsregeln (Potenzregel). Grenzwerte sind nicht nötig, die Rechnung dazu ist optional.</li>
@@ -459,8 +480,14 @@ function substHTML(p, x, v) { // Term mit eingesetztem Wert
   if (!parts.length) return '0';
   return parts.map((t, i) => (i === 0 ? (t.neg ? MINUS : '') + t.body : ' ' + (t.neg ? MINUS : '+') + ' ' + t.body)).join('');
 }
+let DEC = false; // Dezimalzahlen zusätzlich anzeigen
+const frExactDec = f => (10000n * f.n) % f.d === 0n;
+const dcTag = (v, exact) => DEC ? ' <span class="dc">' + (exact ? '=' : '≈') + ' ' + dec(v, exact ? 4 : 3) + '</span>' : '';
+const frTag = f => (DEC && !f.isInt) ? dcTag(f.num(), frExactDec(f)) : '';
+const frD = f => frHTML(f) + frTag(f);
 const dec = (v, d) => { d = d === undefined ? 3 : d; if (!isFinite(v)) return '–'; if (Math.abs(v) < 5 * Math.pow(10, -d - 1)) return '0'; return String(parseFloat(v.toFixed(d))).replace('-', MINUS); };
-const numText = f => { // einfacher Text (Canvas): Bruch als a/b
+const numText = f => { // einfacher Text (Canvas): Bruch als a/b, mit Dezimalschalter als Dezimalzahl
+  if (DEC && !f.isInt) return dec(f.num(), 3);
   if (f.isInt) return (f.sign < 0 ? MINUS : '') + babs(f.n);
   return (f.sign < 0 ? MINUS : '') + babs(f.n) + '/' + f.d;
 };
@@ -538,7 +565,7 @@ function go(q, v, lines, out) {
     lines.push(() => polyHTML(q, v) + ' = 0 ' + cm('| ' + (c.sign < 0 ? '+ ' : MINUS + ' ') + frHTML(c.abs())));
     const x = c.neg().div(b);
     if (!b.eq(ONE)) lines.push(() => frHTML(b) + v + ' = ' + frHTML(c.neg()) + ' ' + cm(kText(b)));
-    lines.push(() => '<b>' + v + ' = ' + frHTML(x) + '</b>');
+    lines.push(() => '<b>' + v + ' = ' + frHTML(x) + '</b>' + frTag(x));
     roots.push(mkRoot(x));
     return roots;
   }
@@ -552,14 +579,14 @@ function go(q, v, lines, out) {
     const sq = sqrtFr(D);
     if (D.isZero) {
       const x = b.neg().div(fr(2).mul(a));
-      lines.push(() => 'D = 0 ⇒ genau eine (doppelte) Lösung: ' + v + ' = ' + fracHTML(frHTML(b.neg()), frHTML(fr(2).mul(a))) + ' = <b>' + frHTML(x) + '</b>');
+      lines.push(() => 'D = 0 ⇒ genau eine (doppelte) Lösung: ' + v + ' = ' + fracHTML(frHTML(b.neg()), frHTML(fr(2).mul(a))) + ' = <b>' + frHTML(x) + '</b>' + frTag(x));
       roots.push(mkRoot(x), mkRoot(x)); return roots;
     }
     if (sq) {
       const x1 = b.neg().add(sq).div(fr(2).mul(a)), x2 = b.neg().sub(sq).div(fr(2).mul(a));
       lines.push(() => v + ' = ' + fracHTML(frHTML(b.neg()) + ' ± ' + radHTML(frHTML(D)), frHTML(fr(2).mul(a))) + ' = ' + fracHTML(frHTML(b.neg()) + ' ± ' + frHTML(sq), frHTML(fr(2).mul(a))));
       const lo = x1.cmp(x2) < 0 ? x1 : x2, hi = x1.cmp(x2) < 0 ? x2 : x1;
-      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + frHTML(lo) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + frHTML(hi) + '</b>');
+      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + frHTML(lo) + '</b>' + frTag(lo) + ' &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + frHTML(hi) + '</b>' + frTag(hi));
       roots.push(mkRoot(lo), mkRoot(hi)); return roots;
     }
     const form = quadForm(a, b, c);
@@ -587,11 +614,11 @@ function go(q, v, lines, out) {
     };
     if (even) {
       const lo = mk(true), hi = mk(false);
-      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + rootHTML(lo) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + rootHTML(hi) + '</b>' + (ex ? '' : ' ' + cm('(≈ ' + dec(lo.v) + ' und ≈ ' + dec(hi.v) + ')')));
+      lines.push(() => '<b>' + v + '<sub>1</sub> = ' + rootHTML(lo) + '</b> &nbsp;und&nbsp; <b>' + v + '<sub>2</sub> = ' + rootHTML(hi) + '</b>' + (ex ? frTag(lo.x) + ' ' + frTag(hi.x) : ' ' + cm('(≈ ' + dec(lo.v) + ' und ≈ ' + dec(hi.v) + ')')));
       roots.push(lo, hi);
     } else {
       const rt = mk(r.sign < 0);
-      lines.push(() => '<b>' + v + ' = ' + rootHTML(rt) + '</b>' + (ex ? '' : ' ' + cm('≈ ' + dec(rt.v))));
+      lines.push(() => '<b>' + v + ' = ' + rootHTML(rt) + '</b>' + (ex ? frTag(rt.x) : ' ' + cm('≈ ' + dec(rt.v))));
       roots.push(rt);
     }
     return roots;
@@ -928,13 +955,19 @@ const valHTML = (f, v) => (f ? frHTML(f) : '≈ ' + dec(v));
 function pointHTML(name, r) {
   const xs = r.x ? frHTML(r.x) : (r.form ? rootHTML(r) : dec(r.v));
   const ys = r.y ? frHTML(r.y) : dec(r.yv);
-  return '<b class="pt">' + name + '</b>(' + xs + ' | ' + ys + ')';
+  let tg = '';
+  if (DEC) {
+    const xn = r.x ? !r.x.isInt : !!r.form && !ROUND, yn = r.y ? !r.y.isInt : false;
+    if (xn || yn) { const ex = !!r.x && !!r.y && frExactDec(r.x) && frExactDec(r.y); tg = ' <span class="dc">' + (ex ? '=' : '≈') + ' (' + dec(r.x ? r.x.num() : r.v, ex ? 4 : 3) + ' | ' + dec(r.y ? r.y.num() : r.yv, ex ? 4 : 3) + ')</span>'; }
+  }
+  return '<b class="pt">' + name + '</b>(' + xs + ' | ' + ys + ')' + tg;
 }
 function pointText(name, r) {
   const xs = r.x ? numText(r.x) : dec(r.v); const ys = r.y ? numText(r.y) : dec(r.yv);
   return name + '(' + xs + '|' + ys + ')';
 }
 const xLabel = r => (r.x ? frHTML(r.x) : (r.form ? rootHTML(r) : dec(r.v)));
+const xLabelD = r => xLabel(r) + (r.x ? frTag(r.x) : (r.form && !ROUND ? dcTag(r.v, false) : ''));
 
 const EXC = what => '<div class="exc"><b>Ausnahme:</b> Gleichungen vom Grad 3 und höher lassen sich im Normalfall nicht von Hand lösen. Bei dieser Funktion gibt es keinen gangbaren Weg (' + what + '). Deshalb stehen die Werte hier als Näherung, bestimmt mit dem Taschenrechner (Solver oder Graph).</div>';
 /* ---------- Schritt 1: Verhalten im Unendlichen ---------- */
@@ -1001,7 +1034,7 @@ function explainSym(T) {
 function explainY(T) {
   const why = 'Der Graph schneidet die y-Achse dort, wo <b>x = 0</b> ist. Setze also 0 in die Funktion ein: Alle Terme mit x fallen weg, es bleibt das konstante Glied.';
   const calc = '<div class="ln">f(0) = ' + substHTML(T.p, ZERO) + ' = <b>' + frHTML(T.yint) + '</b></div>';
-  const res = 'y-Achsenabschnitt <b>' + frHTML(T.yint) + '</b>, der Punkt ist <b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ').';
+  const res = 'y-Achsenabschnitt <b>' + frHTML(T.yint) + '</b>, der Punkt ist <b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ')' + frTag(T.yint) + '.';
   return { why, res, calc };
 }
 
@@ -1014,7 +1047,7 @@ function explainZeros(T) {
   T.zeros.lines.forEach(f => parts.push('<div class="ln">' + f() + '</div>'));
   let res;
   if (!rs.length) res = '<b>Keine Nullstellen</b>: Der Graph schneidet die x-Achse nie.';
-  else res = 'Nullstellen: ' + rs.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r)).join(', ') + '.';
+  else res = 'Nullstellen: ' + rs.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r) + (r.x ? frTag(r.x) : (r.form && !ROUND ? dcTag(r.v, false) : ''))).join(', ') + '.';
   let notes = '';
   const mult = rs.filter(r => r.mult > 1);
   if (mult.length) notes += '<p><b>Vielfachheit:</b> ' + mult.map(r => 'x = ' + xLabel(r) + mults(r)).join(', ') + '. ' +
@@ -1055,13 +1088,13 @@ function derAt(T, k, r) { // Wert der k-ten Ableitung an der Stelle r (HTML) und
 }
 const eqs = d => (d.html.charAt(0) === '\u2248' ? ' ' : ' = ') + d.html;
 function yCalc(T, r) {
-  if (r.x) return '<div class="ln">f(' + frHTML(r.x) + ') = ' + substHTML(T.p, r.x) + ' = <b>' + frHTML(r.y) + '</b></div>';
+  if (r.x) return '<div class="ln">f(' + frHTML(r.x) + ') = ' + substHTML(T.p, r.x) + ' = <b>' + frHTML(r.y) + '</b>' + frTag(r.y) + '</div>';
   return '<div class="ln">f(' + xLabel(r) + ') ≈ <b>' + dec(r.yv) + '</b> ' + cm('(Taschenrechner)') + '</div>';
 }
 
 /* Begründung je Punkt (auch für die Rückmeldung in der Oberfläche) */
 function statLine(T, r) {
-  let h = '<b>x = ' + xLabel(r) + ':</b> ';
+  let h = '<b>x = ' + xLabelD(r) + ':</b> ';
   const steps = [];
   for (let k = 2; k <= r.k && k <= T.n; k++) {
     const d = derAt(T, k, r);
@@ -1074,7 +1107,7 @@ function statLine(T, r) {
   return h;
 }
 function inflLine(T, r) {
-  let h = '<b>x = ' + xLabel(r) + ':</b> ';
+  let h = '<b>x = ' + xLabelD(r) + ':</b> ';
   const steps = [];
   for (let k = 3; k <= r.k && k <= T.n; k++) { const d = derAt(T, k, r); steps.push(dName(k) + '(' + xLabel(r) + ')' + eqs(d) + (d.sign === 0 ? ' ⇒ weiter ableiten' : '')); }
   h += steps.join(' &nbsp;→&nbsp; ');
@@ -1112,7 +1145,7 @@ function explainInfl(T) {
     const real = T.infl.filter(r => r.type !== 'N');
     if (real.length) {
       parts.push('<div class="sec">4. y-Koordinate und Steigung der Wendetangente</div>' + real.map(r => '<div class="ln">' + cm('x = ' + xLabel(r)) + '</div>' + yCalc(T, r) +
-        '<div class="ln">m = f′(' + xLabel(r) + ')' + (r.slope ? ' = <b>' + frHTML(r.slope) + '</b>' : ' ≈ <b>' + dec(r.slopeV) + '</b>') + (r.type === 'S' ? ' ⇒ waagrechte Wendetangente ⇒ <b>Sattelpunkt</b>' : '') + '</div>').join(''));
+        '<div class="ln">m = f′(' + xLabel(r) + ')' + (r.slope ? ' = <b>' + frHTML(r.slope) + '</b>' + frTag(r.slope) : ' ≈ <b>' + dec(r.slopeV) + '</b>') + (r.type === 'S' ? ' ⇒ waagrechte Wendetangente ⇒ <b>Sattelpunkt</b>' : '') + '</div>').join(''));
     }
   }
   const real = T.infl.filter(r => r.type !== 'N');
@@ -1128,8 +1161,8 @@ function steckbrief(T) {
   rows.push(['Funktion', 'f(x) = ' + polyHTML(T.p)]);
   rows.push(['Verhalten im Unendlichen', RAND_TXT[T.rand.key]]);
   rows.push(['Symmetrie', T.sym === 'y' ? 'achsensymmetrisch zur y-Achse' : T.sym === 'o' ? 'punktsymmetrisch zum Ursprung' : 'keine Symmetrie']);
-  rows.push(['y-Achsenabschnitt', '<b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ')']);
-  rows.push(['Nullstellen', T.zerosRoots.length ? T.zerosRoots.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r)).join(', ') : 'keine']);
+  rows.push(['y-Achsenabschnitt', '<b class="pt">S<sub>y</sub></b>(0 | ' + frHTML(T.yint) + ')' + frTag(T.yint)]);
+  rows.push(['Nullstellen', T.zerosRoots.length ? T.zerosRoots.map(r => '<b class="pt">' + r.name + '</b>(' + xLabel(r) + ' | 0)' + mults(r) + (r.x ? frTag(r.x) : (r.form && !ROUND ? dcTag(r.v, false) : ''))).join(', ') : 'keine']);
   rows.push(['Extrempunkte', T.stat.length ? T.stat.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type])).join('<br>') : 'keine']);
   const real = T.infl.filter(r => r.type !== 'N');
   rows.push(['Wendepunkte', real.length ? real.map(r => pointHTML(r.name, r) + ' ' + cm(TYPE_NAME[r.type])).join('<br>') : 'keine']);
@@ -1226,21 +1259,45 @@ function fromDeriv(c, stats, d) {
 }
 
 const LEVELS = {
-  leicht: { name: 'leicht', desc: 'Grad 3 oder 4, alle Zahlen schön' },
-  mittel: { name: 'mittel', desc: 'Grad 3 bis 4, Wurzeln, Polynomdivision' },
-  schwer: { name: 'schwer', desc: 'Grad 4 bis 5, Brüche, Sattelpunkte' },
+  leicht: { name: 'leicht', desc: 'Grad 2 bis 4, ohne Polynomdivision' },
+  mittel: { name: 'mittel', desc: 'Grad 3 bis 4, auch Wurzeln' },
+  schwer: { name: 'schwer', desc: 'Grad 4 bis 5, Polynomdivision' },
 };
 
 const LBL = { leicht: 'Leicht', mittel: 'Mittel', schwer: 'Schwierig' };
 function withZero(p, r) { const q = p.slice(); q[0] = q[0].sub(pEv(p, fr(r))); return pTrim(q); } // r wird Nullstelle
 function needsDiv(p) { if (p[0].isZero || pDeg(p) < 3) return false; if (p.every((c, k) => k % 2 === 0 || c.isZero)) return false; return !!ratRoot(p); }
+/* Regel: Gleichungen ab Grad 3 (f, f′, f″) sind von Hand lösbar.
+   'all': alle Lösungen ganzzahlig in [−3, 3] erratbar (oder Ausklammern / Substitution z = x²).
+   'down': genug erratbare ganzzahlige Lösungen, um mit Polynomdivision auf Grad 2 zu kommen. */
+/* ---- Regel für Gleichungen ab Grad 3 (Erraten zwischen −3 und 3, dann bis Grad 2 herunter) ---- */
+function intRootsIn(q) { // ganzzahlige Nullstellen in [-3,3] (ohne 0) mit Vielfachheit abspalten
+  let k = 0, cur = q;
+  for (;;) {
+    let hit = null;
+    if (pDeg(cur) >= 1) for (const r of [-1, 1, -2, 2, -3, 3]) if (pEv(cur, fr(r)).isZero) { hit = r; break; }
+    if (hit === null) break;
+    cur = pDivMod(cur, [fr(-hit), ONE]).q; k++;
+  }
+  return { k, rest: cur };
+}
+function eqRule(g, mode) { // mode 'all': alle Nullstellen ganzzahlig (-3..3); 'down': genug erratbar, um bis Grad 2 zu kommen
+  g = pTrim(g); while (pDeg(g) > 0 && g[0].isZero) g = g.slice(1);
+  const n = pDeg(g); if (n < 3) return true;
+  if (n % 2 === 0 && g.every((c, k) => k % 2 === 0 || c.isZero)) { const zp = []; for (let i = 0; i <= n; i += 2) zp.push(g[i]); return eqRule(zp, mode); }
+  const { rest } = intRootsIn(g);
+  return mode === 'all' ? pDeg(rest) === 0 : pDeg(rest) <= 2;
+}
+function polyRule(p, mode) { p = pTrim(p); let ok = true; for (let q = p; pDeg(q) >= 3 && ok; q = pDer(q)) ok = eqRule(q, mode); return ok; }
+
 function candidate(level) {
   const t = Math.random();
   if (level === 'leicht') {
+    if (t < 0.035) return fromRoots(fr(pickOne([1, -1, 1, -1, 2, -2])), [rndInt(-4, 4), rndInt(-4, 4)].map(v => fr(v)));
     if (t < 0.78) {
       const a = pickOne([1, 1, -1, -1, 2, -2]);
       let s1 = rndInt(-3, 3), s2 = rndInt(-3, 3); if (s1 === s2) s2 = s1 + pickOne([1, 2, 3]);
-      return fromDeriv(fr(3 * a), [s1, s2], rndInt(-12, 12));
+      return fromDeriv(fr(3 * a), [s1, s2], Math.random() < 0.75 ? 0 : rndInt(-12, 12));
     }
     if (t < 0.86) { const k = rndInt(1, 3), a = pickOne([1, -1, 1]); const q = [fr(-k * k), ZERO, ONE]; return pTrim(pMul([fr(a)], pMul(q, q))); }
     if (t < 0.94) { const b = rndInt(-4, 4) || 3; return fromRoots(fr(pickOne([1, -1, 2, -2])), [ZERO, ZERO, fr(b)]); }
@@ -1286,8 +1343,11 @@ function candidate(level) {
 function acceptable(level, p) {
   if (!p) return null;
   p = pTrim(p); const n = pDeg(p);
-  const lo = 3, hi = level === 'leicht' ? 4 : level === 'mittel' ? 4 : 5;
+  const lo = level === 'leicht' ? 2 : 3, hi = level === 'leicht' ? 4 : level === 'mittel' ? 4 : 5;
   if (n < lo || n > hi) return null;
+  if (level === 'schwer' && n < 4) return null;
+  if (level === 'leicht' && [p, pDer(p), pDer(pDer(p))].some(q => pDeg(q) >= 3 && needsDiv(q))) return null; // leicht: keine Polynomdivision
+  if (!polyRule(p, level === 'schwer' ? 'down' : 'all')) return null;
   if (level !== 'schwer' && !allInts(p)) return null;
   if (maxDen(p) > 4) return null;
   if (maxCoef(p) > (level === 'leicht' ? 24 : level === 'mittel' ? 40 : 60)) return null;
@@ -1315,37 +1375,49 @@ function acceptable(level, p) {
   return T;
 }
 
-function generate(level, avoidSrc) {
-  for (let i = 0; i < 4000; i++) {
-    const T = acceptable(level, candidate(level));
-    if (!T) continue;
-    const src = polySrc(T.p);
-    if (avoidSrc && src === avoidSrc) continue;
-    return { src, p: T.p, level };
-  }
-  return { src: 'x^3 - 3x^2 - 4x + 12', p: parseFunction('x^3 - 3x^2 - 4x + 12').p, level };
+function seedRNGfn(n) { let a = n >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const FALLBACK = { leicht: 'x^3 - 3x^2', mittel: 'x^4 - 5x^2 + 4', schwer: 'x^4 - 3x^3 - 5x^2 + 3x + 4' };
+function generate(level, avoidSrc, seed) { // mit seed: gleiche Zahl = gleiche Funktion
+  const orig = Math.random; if (seed !== undefined) Math.random = seedRNGfn(seed);
+  try {
+    for (let i = 0; i < 4000; i++) {
+      const T = acceptable(level, candidate(level));
+      if (!T) continue;
+      const src = polySrc(T.p);
+      if (avoidSrc && src === avoidSrc) continue;
+      return { src, p: T.p, level };
+    }
+  } finally { Math.random = orig; }
+  return { src: FALLBACK[level], p: parseFunction(FALLBACK[level]).p, level };
 }
+/* Aufgabennummer (wie in der LGS-Werkstatt): 6 Ziffern. 9000nn = Beispielaufgabe nn, sonst Stufe (1 bis 3), 0, vier Ziffern Zufall. Gleiche Nummer = gleiche Funktion. */
+const LCODE = ['leicht', 'mittel', 'schwer'];
+const fmtCode = c => c.slice(0, 3) + '-' + c.slice(3);
+function taskFromCode(c) {
+  if (!/^\d{6}$/.test(c)) return null;
+  if (c[0] === '9') { const i = +c.slice(1); return (c.slice(1, 4) === '000' && i < PRESETS.length) ? { code: c, src: PRESETS[i].src, preset: i, level: PRESETS[i].lvl } : null; }
+  const l = +c[0] - 1; if (l < 0 || l > 2 || c[1] !== '0') return null;
+  const g = generate(LCODE[l], null, parseInt(c, 10)); return { code: c, src: g.src, preset: -1, level: LCODE[l] };
+}
+const newCode = level => String(LCODE.indexOf(level) + 1) + '0' + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
 /* ---- Vorgaben ---- */
 const PRESETS = [
-  { src: 'x^3 - 3x^2 - 4x + 12', tag: 'Standard', note: '3 Nullstellen, Hoch- und Tiefpunkt' },
-  { src: 'x^3 - 6x^2 + 9x', tag: 'Standard', note: 'Doppelte Nullstelle' },
-  { src: '-x^3 + 3x', tag: 'Punktsymmetrie', note: 'Wurzeln mit Taschenrechner' },
-  { src: 'x^4 - 2x^2 + 1', tag: 'Achsensymmetrie', note: 'Doppelte Nullstellen' },
-  { src: 'x^4 - 5x^2 + 4', tag: 'Achsensymmetrie', note: 'Substitution z = x²' },
-  { src: 'x^3 - 3x^2', tag: 'Standard', note: 'Ausklammern' },
-  { src: 'x^4 - 4x^3', tag: 'Sattelpunkt', note: 'Dreifache Nullstelle' },
-  { src: '-x^3 + 3x^2 + x - 3', tag: 'Standard', note: 'Negativer Leitkoeffizient' },
-  { src: 'x^4 - 2x^3 - 12x^2', tag: 'Zwei Wendepunkte', note: '' },
-  { src: 'x^5 - 5x^3 + 4x', tag: 'Grad 5', note: 'Punktsymmetrisch' },
-  { src: '1/4*x^4 - 2x^2', tag: 'Brüche', note: 'Achsensymmetrisch' },
-  { src: 'x^3', tag: 'Spezialfall', note: 'Sattelpunkt im Ursprung' },
-  { src: 'x^3 - 2x^2 - 5x + 6', tag: 'Polynomdivision', note: 'Nullstelle erraten' },
-  { src: 'x^4 - 2x^3 - 13x^2 + 14x + 24', tag: 'Polynomdivision', note: 'Zweimal dividieren' },
-  { src: 'x^5 - 3x + 1', tag: 'Ausnahme', note: 'Nullstellen nicht von Hand' },
-  { src: 'x^5 + 5x^4 - x^3 + 2x', tag: 'Ausnahme', note: 'Extremstellen nicht von Hand' },
-  { src: 'x^5 - 4x^3 + x^2 + 2', tag: 'Ausnahme', note: 'Auch Wendestellen nicht von Hand' },
+  { lvl: 'leicht', src: 'x^2 - 2x - 3', tag: 'Quadratische Funktion', note: 'Nullstellen mit Mitternachtsformel, ein Extrempunkt, kein Wendepunkt' },
+  { lvl: 'leicht', src: 'x^3 - 3x^2', tag: 'Ausklammern', note: 'Kubisch, Nullstelle x = 0 doppelt' },
+  { lvl: 'leicht', src: 'x^3 - 3x', tag: 'Punktsymmetrie', note: 'Ausklammern, Wurzeln' },
+  { lvl: 'leicht', src: 'x^3 - 6x^2 + 9x', tag: 'Ausklammern', note: 'Doppelte Nullstelle' },
+  { lvl: 'mittel', src: 'x^3 - 2x^2 - 5x + 6', tag: 'Polynomdivision', note: 'Nullstelle erraten' },
+  { lvl: 'mittel', src: 'x^4 - 5x^2 + 4', tag: 'Substitution', note: 'Achsensymmetrisch, z = x²' },
+  { lvl: 'mittel', src: 'x^4 - 4x^3', tag: 'Sattelpunkt', note: 'Dreifache Nullstelle' },
+  { lvl: 'mittel', src: '1/4*x^4 - 2x^2', tag: 'Brüche', note: 'Achsensymmetrisch' },
+  { lvl: 'schwer', src: 'x^5 - 5x^3 + 4x', tag: 'Grad 5', note: 'Punktsymmetrisch, Substitution' },
+  { lvl: 'schwer', src: 'x^4 - 3x^3 - 5x^2 + 3x + 4', tag: 'Polynomdivision', note: 'Mehrfach dividieren' },
+  { lvl: 'schwer', src: '2x^5 - 5x^4', tag: 'Höhere Ableitungen', note: 'Art des Punkts bei x = 0 erst mit der 4. Ableitung entscheidbar' },
+  { lvl: 'schwer', src: 'x^4 + 4x^3 - x^2 - 6x + 18', tag: 'Irrationale Werte', note: 'Extremstellen mit Wurzeln' },
 ];
+
+
 
 /* ============================================================
    OBERFLÄCHE
@@ -1361,7 +1433,7 @@ const META = [
   { pill: 'Wendepunkte', title: 'Wendepunkte' },
   { pill: 'Zeichnen', title: 'Funktion zeichnen' },
 ];
-const UI = { step: 0, src: PRESETS[0].src, tip: {}, preset: 0, lastGen: null, raf: 0 };
+const UI = { step: 0, src: PRESETS[0].src, code: '900000', tip: {}, preset: 0, lastGen: null, raf: 0, solOpen: {} };
 let S = null;
 
 function freshState(src) {
@@ -1420,7 +1492,17 @@ function tipBlock(k, txt) {
   const o = UI.tip[k];
   return '<div><button class="btn small" data-a="tip" data-k="' + k + '" aria-expanded="' + !!o + '">' + (o ? 'Tipp verbergen' : 'Tipp anzeigen') + '</button></div>' + (o ? '<div class="tipbox">' + txt + '</div>' : '');
 }
-function detailsBlock(title, html, open) { return '<details class="inline"' + (open ? ' open' : '') + '><summary>' + title + '</summary><div class="in calc">' + html + '</div></details>'; }
+const SOL = []; // Musterlösungen des aktuellen Schritts, werden unter dem Graphen angezeigt
+function detailsBlock(title, html, open) { SOL.push({ key: UI.step + ':' + SOL.length + ':' + title, title, html, open }); return ''; }
+function renderSol() {
+  const el = $('#sol'); if (!SOL.length) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<h3>Musterlösung \u00B7 ' + (UI.step === 0 ? '' : META[UI.step].pill) + '</h3>' + SOL.map(s => {
+    const o = UI.solOpen[s.key] !== undefined ? UI.solOpen[s.key] : s.open;
+    return '<details class="inline" data-k="' + esc(s.key) + '"' + (o ? ' open' : '') + '><summary>' + s.title + '</summary><div class="in calc">' + s.html.replace(/=\s*(<b>)?\s*≈/g, '$1≈') + '</div></details>';
+  }).join('');
+  mathItalic(el);
+}
 function nav(i, canNext, nextLabel) {
   return '<div class="task-nav"><button class="btn" data-a="prev"' + (i === 0 ? ' disabled' : '') + '>← Zurück</button><div class="r">' +
     (i < 7 ? '<button class="btn primary" data-a="next"' + (canNext ? '' : ' disabled') + '>' + (nextLabel || 'Weiter →') + '</button>' : '') + '</div></div>';
@@ -1431,15 +1513,18 @@ const inputHelp = '<details class="inline"><summary>Eingabehilfe</summary><div c
 
 /* ---------- Schritt 0: Funktion ---------- */
 function rFn() {
-  let h = head(0) + '<p class="ask"><b>Welche Funktion möchtest du untersuchen?</b> Wähle ein Beispiel, erzeuge eine Übungsfunktion oder tippe selbst eine ein.</p>';
-  h += '<div><label style="margin-top:0">Beispiele</label><div class="presets">' + PRESETS.map((p, i) => {
-    const pp = parseFunction(p.src).p; return '<button class="pre" data-a="preset" data-i="' + i + '" aria-pressed="' + (UI.preset === i) + '"><b>' + polyHTML(pp).replace(/<[^>]+>/g, m => m) + '</b><small>' + p.tag + '</small></button>';
-  }).join('') + '</div></div>';
-  h += '<div><label>Übungsfunktion erzeugen <span class="cm">(zum \u00DCben zu Hause)</span></label><div class="gen">' +
-    ['leicht', 'mittel', 'schwer'].map(l => '<button data-a="gen" data-l="' + l + '">' + LBL[l] + '<small>' + LEVELS[l].desc + '</small></button>').join('') + '</div></div>';
-  h += '<div><label for="fsrc">Oder eigene Funktion eingeben</label><div class="fieldrow"><label for="fsrc">f(x) =</label><input type="text" id="fsrc" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(UI.src) + '" data-enter="start"></div>' +
+  let h = head(0) + '<p class="ask"><b>Welche Funktion möchtest du untersuchen?</b> Tippe eine Funktion ein oder wähle weiter unten eine Aufgabe.</p>';
+  h += '<div><label for="fsrc">Eigene Funktion eingeben</label><div class="fieldrow"><label for="fsrc">f(x) =</label><input type="text" id="fsrc" class="mono" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(UI.src) + '" data-enter="start"></div>' +
     '<div class="read" id="fread"></div><p class="msg info" id="fnote"></p></div>';
   h += '<div class="btnrow"><button class="btn primary big" id="startBtn" data-a="start">' + (S ? 'Neu starten' : 'Analyse starten') + ' →</button>' + (S ? '<button class="btn" data-a="back">Zurück zur laufenden Analyse</button>' : '') + '</div>';
+  h += '<p class="lvlh" style="margin:6px 0 -4px">Oder eine Aufgabe wählen</p>';
+  h += '<div><label style="margin-top:0">Beispielaufgaben</label>' + ['leicht', 'mittel', 'schwer'].map(l => '<div class="lvl"><span class="lvlh">' + LBL[l] + '</span><div class="presets">' + PRESETS.map((p, i) => {
+    if (p.lvl !== l) return ''; const pp = parseFunction(p.src).p;
+    return '<button class="pre" data-a="preset" data-i="' + i + '" aria-pressed="' + (UI.preset === i) + '" title="' + esc(p.note || p.tag) + '"><span class="no">Nr. ' + fmtCode('9000' + String(i).padStart(2, '0')) + '</span><b>f(x) = ' + polyHTML(pp) + '</b><small>' + p.tag + '</small></button>';
+  }).join('') + '</div></div>').join('') + '</div>';
+  h += '<div><label>Zufällige Aufgabe <span class="cm">(bekommt eine Nummer)</span></label><div class="gen">' +
+    ['leicht', 'mittel', 'schwer'].map(l => '<button data-a="gen" data-l="' + l + '">' + LBL[l] + '<small>' + LEVELS[l].desc + '</small></button>').join('') + '</div></div>';
+  h += '<div><label for="codein">Aufgabe aufrufen <span class="cm">(Nummer eingeben, alle rechnen dieselbe Funktion)</span></label><div class="codeform"><input type="text" id="codein" class="mono" inputmode="numeric" autocomplete="off" placeholder="z. B. 104-821" data-enter="codeBtn"><button class="btn" id="codeBtn" data-a="codego">Los</button></div><p class="msg bad" id="codeerr" role="alert"></p></div>';
   return h;
 }
 let fnTimer = 0;
@@ -1448,7 +1533,7 @@ function updateFnPreview() {
   if (r.empty) { rd.innerHTML = ''; nt.textContent = ''; sb.disabled = true; return; }
   if (r.err) { rd.innerHTML = '<span class="msg bad">' + esc(r.err) + '</span>'; nt.textContent = ''; sb.disabled = true; return; }
   if (pDeg(r.p) < 2) { rd.innerHTML = '<span class="msg bad">Eine Gerade hat keine Extrem- oder Wendepunkte. Wähle mindestens Grad 2.</span>'; nt.textContent = ''; sb.disabled = true; return; }
-  rd.innerHTML = 'f(x) = <b>' + polyHTML(r.p) + '</b> &nbsp;<span class="cm">Grad ' + pDeg(r.p) + '</span>'; sb.disabled = false; mathItalic(rd);
+  rd.innerHTML = 'f(x) = <b>' + polyHTML(r.p) + '</b> &nbsp;<span class="cm">Grad ' + pDeg(r.p) + '</span>' + (UI.code ? ' &nbsp;<span class="nrbadge">Aufgabe Nr. ' + fmtCode(UI.code) + '</span>' : ''); sb.disabled = false; mathItalic(rd);
   clearTimeout(fnTimer); nt.textContent = '';
   fnTimer = setTimeout(() => { try { const T = analyze(r.p); nt.textContent = T.hand ? '' : 'Hinweis: Bei dieser Funktion lassen sich nicht alle Gleichungen schön von Hand lösen. Du brauchst den Taschenrechner (Solver).'; } catch (e) { } }, 250);
 }
@@ -1564,14 +1649,14 @@ function derivBlock(kind) {
   const rows = C.ders(T).map(k => {
     const d = s.d[k] || { val: '', res: null }; const nm = dName(k);
     let msg = '';
-    if (d.res === 'ok') msg = '<span class="msg ok">✓ Richtig.</span>';
-    else if (d.res === 'bad') msg = '<span class="msg bad">✗ Nicht ganz. So geht es:</span>';
+    if (d.res === 'ok') msg = '<span class="msg ok">✓ Richtig. Rechenweg unter dem Graphen.</span>';
+    else if (d.res === 'bad') msg = '<span class="msg bad">✗ Nicht ganz. Den Rechenweg siehst du unter dem Graphen.</span>';
     else if (d.res === 'err') msg = '<span class="msg bad">' + esc(d.err) + '</span>';
-    const path = d.res === 'ok' || d.res === 'bad' ? '<div class="calc">' + explainDeriv(T, k) + '</div>' : '';
+    const path = ''; if (d.res === 'ok' || d.res === 'bad') detailsBlock('Ableitung ' + nm + '(x): Rechenweg', explainDeriv(T, k), false);
     return '<div><div class="fieldrow three"><label for="d' + k + kind + '">' + nm + '(x) =</label><input type="text" class="mono" id="d' + k + kind + '" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(d.val) + '" data-enter="chkD' + k + kind + '"><button class="btn small" id="chkD' + k + kind + '" data-a="chkD" data-k="' + k + '" data-kind="' + kind + '">Prüfen</button></div><div style="margin-top:4px">' + msg + '</div>' + path + '</div>';
   });
   const any = C.ders(T).some(k => s.d[k] && s.d[k].res);
-  return '<details class="inline"' + (any ? ' open' : '') + '><summary>Kontrolle: Ableitungen (freiwillig)</summary><div class="in">' + '<p class="cm">Rechne die Ableitungen auf Papier und kontrolliere sie hier. Du siehst danach den Rechenweg.</p>' + rows.join('') + '</div></details>';
+  return '<details class="inline"' + (any ? ' open' : '') + '><summary>Kontrolle: Ableitungen (freiwillig)</summary><div class="in">' + '<p class="cm">Rechne die Ableitungen auf Papier und kontrolliere sie hier. Den Rechenweg siehst du danach unter dem Graphen.</p>' + rows.join('') + '</div></details>';
 }
 function rPts(kind) {
   const C = PCFG[kind], T = S.T, s = S.st[kind], items = C.items(T), ex = C.ex(T); const solv = kind === 'stat' ? T.statSolve : T.inflSolve;
@@ -1634,17 +1719,18 @@ function rDraw() {
   h += '<p class="ask"><b>So sieht die ganze Funktion aus.</b> Das ist dein Steckbrief:</p><table class="sum">' + steckbrief(T).map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</table>';
   h += '<div class="score"><span class="stars" aria-hidden="true">' + stars + '</span><span><b>' + sc.n + ' von ' + sc.m + '</b> Teilaufgaben im ersten Versuch richtig.</span></div>';
   h += '<div class="btnrow"><button class="btn" data-a="draw">Nochmals zeichnen</button><button class="btn" data-a="copy" id="copyBtn">Steckbrief kopieren</button></div>';
+  if (S.code && S.code[0] === '9' && +S.code.slice(1) + 1 < PRESETS.length) h += '<div class="btnrow"><button class="btn primary" data-a="nexttask">Nächste Beispielaufgabe (Nr. ' + fmtCode('9000' + String(+S.code.slice(1) + 1).padStart(2, '0')) + ') \u2192</button></div>';
   h += '<div><label>Neue Funktion zum Üben</label><div class="gen">' + ['leicht', 'mittel', 'schwer'].map(l => '<button data-a="genstart" data-l="' + l + '">' + LBL[l] + '</button>').join('') + '</div></div>';
   h += '<div class="btnrow"><button class="btn link" data-a="newfn">Andere Funktion wählen</button></div>';
   return h + nav(7, false);
 }
 
 /* ---------- Rendering ---------- */
-const MI_SEL = '.fbar .f,.calc,.ph,.sum td:last-child,.read,.chip,.merke,.fb,.ask,.why,.prow,.msg';
+const MI_SEL = '.fbar .f,.calc,.ph,.sum td:last-child,.read,.chip,.merke,.fb,.ask,.why,.prow,.msg,.tipbox,.exc,.fieldrow>label,.pre b,.opt span,summary';
 function mathItalic(root) {
   root.querySelectorAll(MI_SEL).forEach(el => {
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const list = []; let n;
-    while ((n = w.nextNode())) { if (n.parentElement.closest('.cm,input,button,.mi,details>summary,code')) continue; if (/(^|[^A-Za-zÄÖÜäöüß])[A-Za-z](?![A-Za-zÄÖÜäöüß])/.test(n.nodeValue)) list.push(n); }
+    while ((n = w.nextNode())) { if (n.parentElement.closest('.cm,input,button:not(.pre):not(.opt),.mi,code')) continue; if (/(^|[^A-Za-zÄÖÜäöüß])[A-Za-z](?![A-Za-zÄÖÜäöüß])/.test(n.nodeValue)) list.push(n); }
     list.forEach(t => {
       const f = document.createDocumentFragment(); const re = /(^|[^A-Za-zÄÖÜäöüß])([A-Za-z])(?![A-Za-zÄÖÜäöüß])/g; let last = 0, m, txt = t.nodeValue;
       while ((m = re.exec(txt))) { const i = m.index + m[1].length; f.append(txt.slice(last, i)); const s = document.createElement('i'); s.className = 'mi'; s.textContent = m[2]; f.append(s); last = i + 1; }
@@ -1654,7 +1740,7 @@ function mathItalic(root) {
 }
 function renderFbar() {
   const fb = $('#fbar'); if (!S || UI.step < 1) { fb.hidden = true; return; }
-  fb.hidden = false; fb.innerHTML = '<span class="l">Deine Funktion</span><span class="f">f(x) = ' + polyHTML(S.T.p) + '</span><button class="btn small rbtn" data-a="round" aria-pressed="' + ROUND + '" title="Wurzelwerte exakt oder gerundet anzeigen">Wurzeln: ' + (ROUND ? 'gerundet \u2248' : 'exakt \u221A') + '</button>';
+  fb.hidden = false; fb.innerHTML = '<span class="l">' + (S.code ? '<span class="num">Aufgabe Nr. ' + fmtCode(S.code) + '</span> \u00B7 ' : '') + 'Deine Funktion</span><span class="f">f(x) = ' + polyHTML(S.T.p) + '</span><span class="tgl">' + (S.code ? '<button class="btn small" data-a="copylink" title="Link zu genau dieser Aufgabe kopieren">Link kopieren</button>' : '') + '<button class="btn small" data-a="round" aria-pressed="' + ROUND + '" title="Wurzelwerte exakt oder gerundet anzeigen">Wurzeln: ' + (ROUND ? 'gerundet \u2248' : 'exakt \u221A') + '</button><button class="btn small" data-a="dec" aria-pressed="' + DEC + '" title="Zus\u00E4tzlich die Dezimalzahl anzeigen">Dezimalzahlen: ' + (DEC ? 'an' : 'aus') + '</button></span>';
 }
 function renderSteps() {
   $('#steps').innerHTML = META.map((m, i) => {
@@ -1665,7 +1751,7 @@ function renderSteps() {
 function render(keepFocus) {
   const f = document.activeElement && document.activeElement.id;
   const r = [rFn, rRand, rSym, rY, rZero, () => rPts('stat'), () => rPts('infl'), rDraw][UI.step];
-  $('#card').innerHTML = r().replace(/=\s*(<b>)?\s*≈/g, '$1≈'); renderSteps(); renderFbar(); mathItalic($('#card')); mathItalic($('#fbar'));
+  SOL.length = 0; $('#card').innerHTML = r().replace(/=\s*(<b>)?\s*≈/g, '$1≈'); renderSol(); renderSteps(); renderFbar(); mathItalic($('#card')); mathItalic($('#fbar'));
   if (UI.step === 0) updateFnPreview();
   if (keepFocus && f) { const el = document.getElementById(f); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') { const l = el.value.length; try { el.setSelectionRange(l, l); } catch (e) { } } } }
   draw(); renderLegend();
@@ -1677,9 +1763,16 @@ function gotoStep(i) { UI.step = i; render(); const c = $('#card'); if (c.getBou
 function advance() { if (UI.step < 7) { S.maxStep = Math.max(S.maxStep, UI.step + 1); gotoStep(UI.step + 1); } }
 
 /* ---------- Aktionen ---------- */
+function setHash(c) { try { history.replaceState(null, '', c ? '#' + c : location.pathname + location.search); } catch (e) { } }
+function loadCode(c, start) { // Nummer laden; start = Analyse sofort beginnen
+  const t = taskFromCode(c); if (!t) return false;
+  UI.code = c; UI.src = t.src; UI.preset = t.preset;
+  if (start) startSession(t.src); else render();
+  return true;
+}
 function startSession(src) {
-  cancelAnimationFrame(UI.raf); UI.src = src; UI.tip = {};
-  S = freshState(src); UI.step = 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  cancelAnimationFrame(UI.raf); UI.src = src; UI.tip = {}; UI.solOpen = {};
+  S = freshState(src); S.code = UI.code || null; setHash(S.code); UI.step = 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function checkChoice(key) {
   const s = S.st[key], T = S.T, truth = key === 'rand' ? T.rand.key : T.sym;
@@ -1751,15 +1844,19 @@ document.addEventListener('click', e => {
   if (a === 'givenZ') { const s = S.st.zero; s.res = { items: [], found: S.T.zerosRoots.map(() => true), nFound: S.T.zerosRoots.length, allOk: true }; s.done = true; s.given = true; render(); return; }
   if (a === 'givenP') { const k = b.dataset.kind, s = S.st[k], n = PCFG[k].items(S.T).length; s.res = { items: [], found: new Array(n).fill(true), nFound: n, allOk: true }; s.given = true; s.phase = n ? 'type' : 'done'; render(); return; }
   if (a === 'round') { ROUND = !ROUND; render(true); return; }
+  if (a === 'dec') { DEC = !DEC; render(true); return; }
   if (a === 'goto') { gotoStep(+b.dataset.i); return; }
   if (a === 'prev') { gotoStep(UI.step - 1); return; }
   if (a === 'next') { advance(); return; }
   if (a === 'back') { gotoStep(S.maxStep); return; }
   if (a === 'tip') { UI.tip[b.dataset.k] = !UI.tip[b.dataset.k]; render(true); return; }
-  if (a === 'preset') { UI.preset = +b.dataset.i; UI.src = PRESETS[UI.preset].src; render(); return; }
-  if (a === 'gen') { const g = generate(b.dataset.l, UI.src); UI.src = g.src; UI.preset = -1; render(); return; }
+  if (a === 'preset') { loadCode('9000' + String(+b.dataset.i).padStart(2, '0'), false); return; }
+  if (a === 'gen') { loadCode(newCode(b.dataset.l), false); return; }
+  if (a === 'codego') { const c = ($('#codein').value || '').replace(/\D/g, ''); if (!loadCode(c, true)) $('#codeerr').textContent = 'Diese Nummer kenne ich nicht. Sie hat 6 Ziffern, zum Beispiel 104-821.'; return; }
+  if (a === 'copylink') { const u = location.href.split('#')[0] + '#' + S.code; const ok = () => { b.textContent = 'Link kopiert'; setTimeout(() => { b.textContent = 'Link kopieren'; }, 1800); }; try { navigator.clipboard.writeText(u).then(ok, () => window.prompt('Link kopieren:', u)); } catch (err) { window.prompt('Link kopieren:', u); } return; }
   if (a === 'start') { const r = parseFunction(UI.src); if (r.p && pDeg(r.p) >= 2) startSession(UI.src); return; }
-  if (a === 'genstart') { const g = generate(b.dataset.l, S && S.src); startSession(g.src); UI.preset = -1; return; }
+  if (a === 'genstart') { loadCode(newCode(b.dataset.l), true); return; }
+  if (a === 'nexttask') { const i = +S.code.slice(1) + 1; if (PRESETS[i]) loadCode('9000' + String(i).padStart(2, '0'), true); return; }
   if (a === 'newfn') { UI.step = 0; render(); return; }
   if (a === 'pick') { S.st[b.dataset.k].sel = b.dataset.v; render(); return; }
   if (a === 'check') { checkChoice(b.dataset.k); render(); return; }
@@ -1774,13 +1871,17 @@ document.addEventListener('click', e => {
   if (a === 'chkD') { checkDeriv(b.dataset.kind, +b.dataset.k); return; }
   if (a === 'draw') { playCurve(); return; }
   if (a === 'copy') {
-    const txt = steckbrief(S.T).map(r => plain(r[0]) + ': ' + plain(r[1])).join('\n');
+    const txt = (S.code ? 'Aufgabe Nr. ' + fmtCode(S.code) + '\n' : '') + steckbrief(S.T).map(r => plain(r[0]) + ': ' + plain(r[1])).join('\n');
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { b.textContent = 'Kopiert ✓'; }, () => { b.textContent = 'Kopieren nicht möglich'; });
   }
 });
+document.addEventListener('click', e => {
+  const sm = e.target.closest('#sol summary'); if (!sm) return; const d = sm.parentElement;
+  setTimeout(() => { UI.solOpen[d.dataset.k] = d.open; }, 0);
+});
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.id === 'fsrc') { UI.src = t.value; UI.preset = -1; document.querySelectorAll('.pre[aria-pressed="true"]').forEach(x => x.setAttribute('aria-pressed', 'false')); updateFnPreview(); }
+  if (t.id === 'fsrc') { UI.src = t.value; UI.preset = -1; UI.code = null; document.querySelectorAll('.pre[aria-pressed="true"]').forEach(x => x.setAttribute('aria-pressed', 'false')); updateFnPreview(); }
   else if (t.id === 'yin') S.st.y.val = t.value;
   else if (t.id === 'zin') S.st.zero.val = t.value;
   else if (t.id === 'pin') (UI.step === 5 ? S.st.stat : S.st.infl).val = t.value;
@@ -1898,7 +1999,9 @@ function draw() {
 window.addEventListener('resize', draw);
 new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener && matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
-render();
+function fromHash() { const h = location.hash.replace(/\D/g, ''); return !!h && loadCode(h, true); }
+window.addEventListener('hashchange', () => { const h = location.hash.replace(/\D/g, ''); if (h && (!S || S.code !== h)) fromHash(); });
+if (!fromHash()) render();
 
 
 
