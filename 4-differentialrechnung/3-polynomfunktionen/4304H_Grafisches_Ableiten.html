@@ -156,7 +156,7 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
   </header>
   <section class="task">
     <div class="task-head"><span class="badge" id="tBadge">Aufgabe 1</span><h2 id="tH">Skizziere f′ im unteren Feld</h2><button class="btn small" id="bNxt0" hidden></button></div>
-    <p>Frage dich: Wo hat f eine waagrechte Tangente? Wo steigt f (f′ positiv), wo fällt f (f′ negativ)? Wo ist f besonders steil? Zeichne die Linie in einem Zug, ohne den Stift abzusetzen. Die Nullstellen sollten genau unter den Extrempunkten von f liegen, und Stücke, die waagrecht sein müssen, zeichnest du waagrecht. Bei der Höhe darfst du etwas abweichen.</p>
+    <p>Frage dich: Wo hat f eine waagrechte Tangente? Wo steigt f (f′ positiv), wo fällt f (f′ negativ)? Wo ist f besonders steil? Zeichne die Linie in einem Zug, ohne den Stift abzusetzen. Die Nullstellen sollten genau unter den Extrempunkten von f liegen, und Stücke, die waagrecht sein müssen, zeichnest du waagrecht. Bei der Höhe und der Steilheit darfst du deutlich abweichen: Es zählen die Nullstellen, das Vorzeichen und der ungefähre Verlauf.</p>
   </section>
   <main class="layout" style="margin-top:12px">
     <div class="stage">
@@ -210,8 +210,9 @@ select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8
     </aside>
   </main>
   <details class="teacher"><summary>Für Lehrpersonen: Einsatz im Unterricht</summary><div class="inner">
-    <p>Die Lernenden skizzieren f′ mit Stift oder Maus. Geprüft werden die Nullstellen (waagrechte Tangenten von f, Toleranz ca. 3 % der Breite, bis 6 % als halber Punkt), das Vorzeichen (steigt oder fällt f) und die Form: eine durchgehende Linie ohne Lücken, Sprünge und Doppelstriche (ausser beim Knick von f), waagrechte Stücke waagrecht, passende Anzahl Hoch- und Tiefpunkte. Abweichungen bei der Höhe und der Steigung von f′ werden nur als Hinweis mit Begründung genannt und nicht bewertet, ausser wenn die Ausschläge insgesamt weniger als halb oder mehr als doppelt so gross sind.</p>
-    <ul><li>Die Hilfslinien zeigen die x-Werte der waagrechten Tangenten in beiden Feldern.</li>
+    <p>Die Lernenden skizzieren f′ mit Stift oder Maus. Geprüft werden die Nullstellen (waagrechte Tangenten von f, Toleranz ca. 3 % der Breite, bis 6 % als halber Punkt), das Vorzeichen (steigt oder fällt f) und die Form: eine durchgehende Linie ohne Lücken, Sprünge und Doppelstriche (ausser beim Knick von f), waagrechte Stücke waagrecht, passende Anzahl Hoch- und Tiefpunkte. Abweichungen bei der Höhe und der Steigung von f′ werden nur bei groben Fehlern genannt und nicht bewertet, ausser wenn die Ausschläge insgesamt weniger als einen Viertel oder mehr als das Vierfache betragen. Streng geprüft werden nur die Nullstellen.</p>
+    <ul><li>Die Ausschnitte sind pro Aufgabe so gewählt, dass die Steigungen im Fenster ähnlich gross bleiben: Die steilste Stelle von f′ ist höchstens etwa das Vierfache des kleinsten Hügels zwischen zwei Nullstellen, damit nicht eng um die x-Achse gezeichnet werden muss. Mit dem Zoom lässt sich trotzdem mehr vom Graphen ansehen.</li>
+    <li>Die Hilfslinien zeigen die x-Werte der waagrechten Tangenten in beiden Feldern.</li>
     <li>Die Lösung wird erst auf Wunsch blass eingeblendet. So können die Lernenden zuerst selbst nachbessern.</li>
     <li>Die Challenge zum Funktionstyp ist bewusst weich bewertet, denn man sieht nur einen Ausschnitt. Mehrere Typen oder Grade können passen.</li>
     <li>Der Ausschnitt lässt sich für beide Felder gemeinsam vergrössern, verkleinern (bis auf das Vierfache der Breite) und verschieben, die x-Achsen bleiben immer deckungsgleich. Bewertet wird nur der Standardausschnitt, der Rest ist grau hinterlegt und dient dazu, die Funktionsart besser abzuschätzen. Jede Aufgabe hat eine Nummer. Mit «Link kopieren» oder der Adresse mit <code>#12</code> am Ende öffnet die ganze Klasse dieselbe Aufgabe, zum Beispiel für die Besprechung an der Wandtafel.</li>
@@ -277,35 +278,38 @@ const MATH=(function(){
 })();
 
 const TAU=Math.PI*2;
+/* Ausschnitt a…b je Aufgabe: so gewählt, dass |f′| im Fenster nicht stark schwankt. Die grösste Steigung soll höchstens etwa das Vierfache des kleinsten Hügels
+   zwischen zwei Nullstellen von f′ betragen, sonst müsste man dort sehr eng um die x-Achse zeichnen. Alle Nullstellen von f′ liegen mit mindestens 6 % Randabstand
+   im Fenster. Bei monotonen Funktionen (e, ln, Brüche) bleibt das Verhältnis zwischen steilster und flachster Stelle in einem zeichenbaren Rahmen. */
 const POOL=[
  /* Stufe 1 */
  {lab:'f(x) = 2x − 1',f:x=>2*x-1,d:x=>2,a:-3,b:3,ok:[{t:'poly',d:[1]}],why:'Eine Gerade hat überall dieselbe Steigung, also ist f′ konstant. Das ist eine Polynomfunktion vom Grad 1.'},
  {lab:'f(x) = −0.5x + 1',f:x=>-.5*x+1,d:x=>-.5,a:-4,b:4,ok:[{t:'poly',d:[1]}],why:'Eine fallende Gerade: f′ ist konstant negativ. Polynomfunktion vom Grad 1.'},
  {lab:'f(x) = 0.5x² − 2',f:x=>.5*x*x-2,d:x=>x,a:-4,b:4,ok:[{t:'poly',d:[2,4]}],why:'Ein Tiefpunkt und Parabelform: Grad 2. Grad 4 wäre im Ausschnitt nicht auszuschliessen.'},
  {lab:'f(x) = −x² + 4',f:x=>-x*x+4,d:x=>-2*x,a:-3,b:3,ok:[{t:'poly',d:[2,4]}],why:'Ein Hochpunkt, nach unten offen: Grad 2 (oder 4).'},
- {lab:'f(x) = x³ − 3x',f:x=>x*x*x-3*x,d:x=>3*x*x-3,a:-2.5,b:2.5,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links fällt f ins Negative, rechts steigt es ins Positive: Grad 3. Grad 5 wäre auch möglich.'},
- {lab:'f(x) = −x³ + 3x',f:x=>-x*x*x+3*x,d:x=>-3*x*x+3,a:-2.5,b:2.5,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links steigt f ins Positive, rechts fällt es ins Negative: Grad 3 mit negativem Leitkoeffizienten (oder Grad 5).'},
+ {lab:'f(x) = x³ − 3x',f:x=>x*x*x-3*x,d:x=>3*x*x-3,a:-2,b:2,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links fällt f ins Negative, rechts steigt es ins Positive: Grad 3. Grad 5 wäre auch möglich.'},
+ {lab:'f(x) = −x³ + 3x',f:x=>-x*x*x+3*x,d:x=>-3*x*x+3,a:-2,b:2,ok:[{t:'poly',d:[3,5]}],why:'Zwei Extrempunkte, links steigt f ins Positive, rechts fällt es ins Negative: Grad 3 mit negativem Leitkoeffizienten (oder Grad 5).'},
  {lab:'f(x) = e^(x/2)',f:x=>Math.exp(x/2),d:x=>.5*Math.exp(x/2),a:-4,b:3,ok:[{t:'exp'}],why:'Immer steigend, immer steiler, links nähert sich der Graph der x-Achse: eine Exponentialfunktion.'},
- {lab:'f(x) = e^(−x)',f:x=>Math.exp(-x),d:x=>-Math.exp(-x),a:-2,b:4,ok:[{t:'exp'}],why:'Immer fallend, links sehr steil, rechts nähert sich der Graph der x-Achse: eine Exponentialfunktion (Abnahme).'},
- {lab:'f(x) = ln(x)',f:x=>Math.log(x),d:x=>1/x,a:.25,b:6,ok:[{t:'log'}],why:'Der Graph steigt, wird aber immer flacher und beginnt bei x = 0 steil: Logarithmus (oder Wurzelfunktion).'},
+ {lab:'f(x) = e^(−x)',f:x=>Math.exp(-x),d:x=>-Math.exp(-x),a:-1.5,b:2.5,ok:[{t:'exp'}],why:'Immer fallend, links sehr steil, rechts nähert sich der Graph der x-Achse: eine Exponentialfunktion (Abnahme).'},
+ {lab:'f(x) = ln(x)',f:x=>Math.log(x),d:x=>1/x,a:0.5,b:6,ok:[{t:'log'}],why:'Der Graph steigt, wird aber immer flacher und beginnt bei x = 0 steil: Logarithmus (oder Wurzelfunktion).'},
  {lab:'f(x) = sin(x)',f:x=>Math.sin(x),d:x=>Math.cos(x),a:-TAU,b:TAU,ok:[{t:'trig'}],why:'Regelmässig wiederkehrende Hoch- und Tiefpunkte gleicher Höhe: eine trigonometrische Funktion.'},
  /* Stufe 2 */
- {lab:'f(x) = x³ − 6x² + 9x + 1',f:x=>x*x*x-6*x*x+9*x+1,d:x=>3*x*x-12*x+9,a:-0.5,b:4.5,ok:[{t:'poly',d:[3,5]}],why:'Hoch- und Tiefpunkt, ein Wendepunkt dazwischen, Randverhalten wie bei x³: Grad 3 (oder 5).'},
- {lab:'f(x) = x⁴/4 − x²',f:x=>x**4/4-x*x,d:x=>x**3-2*x,a:-3,b:3,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach oben offen: Grad 4 (oder 6).'},
- {lab:'f(x) = −x⁴/4 + x²',f:x=>-(x**4)/4+x*x,d:x=>-(x**3)+2*x,a:-3,b:3,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach unten offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = x³ − 6x² + 9x + 1',f:x=>x*x*x-6*x*x+9*x+1,d:x=>3*x*x-12*x+9,a:0,b:4,ok:[{t:'poly',d:[3,5]}],why:'Hoch- und Tiefpunkt, ein Wendepunkt dazwischen, Randverhalten wie bei x³: Grad 3 (oder 5).'},
+ {lab:'f(x) = x⁴/4 − x²',f:x=>x**4/4-x*x,d:x=>x**3-2*x,a:-2,b:2,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach oben offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = −x⁴/4 + x²',f:x=>-(x**4)/4+x*x,d:x=>-(x**3)+2*x,a:-2,b:2,ok:[{t:'poly',d:[4,6]}],why:'Symmetrisch zur y-Achse, drei Extrempunkte, beidseitig nach unten offen: Grad 4 (oder 6).'},
  {lab:'f(x) = cos(x)',f:x=>Math.cos(x),d:x=>-Math.sin(x),a:-TAU,b:TAU,ok:[{t:'trig'}],why:'Wellenförmig und periodisch: trigonometrisch. Hier liegt ein Hochpunkt auf der y-Achse (Kosinus).'},
  {lab:'f(x) = sin(2x)',f:x=>Math.sin(2*x),d:x=>2*Math.cos(2*x),a:-Math.PI,b:Math.PI,ok:[{t:'trig'}],why:'Doppelt so schnell schwingend wie der Sinus: trigonometrisch. Die Steilheit von f′ ist doppelt so gross wie die von f.'},
  {lab:'f(x) = √x',f:x=>Math.sqrt(x),d:x=>.5/Math.sqrt(x),a:.25,b:6,ok:[{t:'log'}],why:'Steigt, wird immer flacher und beginnt bei x = 0 steil: Wurzelfunktion (oder Logarithmus).'},
- {lab:'f(x) = 1/x',f:x=>1/x,d:x=>-1/(x*x),a:.4,b:4,ok:[{t:'rat'}],why:'Immer fallend, steil nahe bei x = 0 (Polstelle), rechts fast waagrecht: gebrochen-rationale Funktion.'},
- {lab:'f(x) = x + 1/x',f:x=>x+1/x,d:x=>1-1/(x*x),a:.3,b:4,ok:[{t:'rat'}],why:'Steil abfallend nahe bei x = 0 (Polstelle), danach fast eine Gerade: gebrochen-rationale Funktion.'},
- {lab:'f(x) = x/(1 + x²)',f:x=>x/(1+x*x),d:x=>(1-x*x)/Math.pow(1+x*x,2),a:-4,b:4,ok:[{t:'rat'}],why:'Punktsymmetrisch, zwei Extrempunkte, beidseitig nähert sich der Graph der x-Achse: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = 1/x',f:x=>1/x,d:x=>-1/(x*x),a:0.7,b:4,ok:[{t:'rat'}],why:'Immer fallend, steil nahe bei x = 0 (Polstelle), rechts fast waagrecht: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = x + 1/x',f:x=>x+1/x,d:x=>1-1/(x*x),a:0.5,b:4,ok:[{t:'rat'}],why:'Steil abfallend nahe bei x = 0 (Polstelle), danach fast eine Gerade: gebrochen-rationale Funktion.'},
+ {lab:'f(x) = x/(1 + x²)',f:x=>x/(1+x*x),d:x=>(1-x*x)/Math.pow(1+x*x,2),a:-2.5,b:2.5,ok:[{t:'rat'}],why:'Punktsymmetrisch, zwei Extrempunkte, beidseitig nähert sich der Graph der x-Achse: gebrochen-rationale Funktion.'},
  {lab:'f(x) = |x| − 1',f:x=>Math.abs(x)-1,d:x=>x<0?-1:1,a:-3,b:3,sing:[0],ok:[{t:'mix'}],why:'Ein Knick bei x = 0 und sonst Geraden: abschnittsweise definiert. f′ springt von −1 auf 1.'},
  {lab:'f(x) = −|x − 1| + 2',f:x=>-Math.abs(x-1)+2,d:x=>x<1?1:-1,a:-2,b:4,sing:[1],ok:[{t:'mix'}],why:'Ein Knick bei x = 1 (Spitze nach oben) und sonst Geraden: abschnittsweise definiert. f′ springt von 1 auf −1.'},
  {lab:'f(x) = x² für x ≤ 1, 2x − 1 für x > 1',f:x=>x<=1?x*x:2*x-1,d:x=>x<=1?2*x:2,a:-2,b:3,ok:[{t:'mix'}],why:'Links eine Parabel, rechts eine Gerade, ohne Knick aneinandergesetzt: abschnittsweise definiert. f′ geht von der Geraden 2x in die Konstante 2 über.'},
  /* Stufe 3 */
- {lab:'f(x) = 0.05x⁵ − 0.4x³ + 0.4x',f:x=>.05*x**5-.4*x**3+.4*x,d:x=>.25*x**4-1.2*x*x+.4,a:-3,b:3,ok:[{t:'poly',d:[5,7]}],why:'Vier Extrempunkte erfordern mindestens Grad 5, und das Randverhalten ist punktsymmetrisch (ungerader Grad).'},
- {lab:'f(x) = 0.1x⁴ − 0.4x³ − 0.9x² + 2',f:x=>.1*x**4-.4*x**3-.9*x*x+2,d:x=>.4*x**3-1.2*x*x-1.8*x,a:-2.5,b:5,ok:[{t:'poly',d:[4,6]}],why:'Drei Extrempunkte (zwei Tiefpunkte, ein Hochpunkt), beidseitig nach oben offen: Grad 4 (oder 6).'},
- {lab:'f(x) = x·e^(−x)',f:x=>x*Math.exp(-x),d:x=>(1-x)*Math.exp(-x),a:-1,b:5,ok:[{t:'mix'}],why:'Links fällt f schnell ins Negative, rechts nähert es sich der x-Achse, dazwischen ein Hochpunkt: Produkt aus x und einer Exponentialfunktion, also zusammengesetzt.'},
+ {lab:'f(x) = 0.05x⁵ − 0.4x³ + 0.4x',f:x=>.05*x**5-.4*x**3+.4*x,d:x=>.25*x**4-1.2*x*x+.4,a:-2.4,b:2.4,ok:[{t:'poly',d:[5,7]}],why:'Vier Extrempunkte erfordern mindestens Grad 5, und das Randverhalten ist punktsymmetrisch (ungerader Grad).'},
+ {lab:'f(x) = 0.1x⁴ − 0.4x³ − 0.9x² + 2',f:x=>.1*x**4-.4*x**3-.9*x*x+2,d:x=>.4*x**3-1.2*x*x-1.8*x,a:-2,b:4.5,ok:[{t:'poly',d:[4,6]}],why:'Drei Extrempunkte (zwei Tiefpunkte, ein Hochpunkt), beidseitig nach oben offen: Grad 4 (oder 6).'},
+ {lab:'f(x) = x·e^(−x)',f:x=>x*Math.exp(-x),d:x=>(1-x)*Math.exp(-x),a:0.5,b:5,ok:[{t:'mix'}],why:'Zuerst steigt f noch, bei x = 1 liegt ein Hochpunkt, danach nähert sich der Graph der x-Achse: Produkt aus x und einer Exponentialfunktion, also zusammengesetzt.'},
  {lab:'f(x) = x·e^(−x²/2)',f:x=>x*Math.exp(-x*x/2),d:x=>(1-x*x)*Math.exp(-x*x/2),a:-3,b:3,ok:[{t:'mix'}],why:'Punktsymmetrisch, zwei Extrempunkte und beidseitig nähert sich der Graph der x-Achse: ein Produkt aus x und einer Exponentialfunktion, also zusammengesetzt.'},
  {lab:'f(x) = e^(−x²/2)',f:x=>Math.exp(-x*x/2),d:x=>-x*Math.exp(-x*x/2),a:-3,b:3,ok:[{t:'exp'},{t:'mix'}],why:'Glockenform: Hochpunkt bei x = 0, beidseitig nähert sich der Graph der x-Achse. Es ist eine Exponentialfunktion mit quadratischem Exponenten (Normalverteilung).'},
  {lab:'f(x) = sin(x) + 0.5x',f:x=>Math.sin(x)+.5*x,d:x=>Math.cos(x)+.5,a:-TAU,b:TAU,ok:[{t:'mix'}],why:'Eine Welle, die auf einer ansteigenden Geraden schwingt: Summe aus trigonometrischer und linearer Funktion, also zusammengesetzt.'},
@@ -432,7 +436,7 @@ function analyse(){const p=S.p,N=200,W=p.b-p.a,span=S.dr[1]-S.dr[0],sing=p.sing|
   const extra=zs.filter((q,j)=>!used.has(j));
   /* Vorzeichen */
   let tot=0,agree=0;const runs=[];let run=null;
-  for(let i=f0;i<=l0;i++){const x=cx(i),tv=T[i];if(nearS(x,.05)||Math.abs(tv)<.06*span||S.Z.some(z=>Math.abs(x-z)<.035*W))continue;tot++;
+  for(let i=f0;i<=l0;i++){const x=cx(i),tv=T[i];if(nearS(x,.05)||Math.abs(tv)<.08*span||S.Z.some(z=>Math.abs(x-z)<.035*W))continue;tot++;
     if(Math.sign(tv)===Math.sign(g3[i])){if(run){runs.push(run);run=null;}}else{if(!run)run={a:x,b:x};run.b=x;}}
   if(run)runs.push(run);const badRuns=runs.filter(r=>r.b-r.a>=.03*W);const sgnFrac=tot?(tot-runs.reduce((s,r)=>s+Math.max(1,Math.round((r.b-r.a)/W*N)),0))/tot:1;
   /* Form: Korrelation und Höhenverhältnis */
@@ -459,18 +463,14 @@ function analyse(){const p=S.p,N=200,W=p.b-p.a,span=S.dr[1]-S.dr[0],sing=p.sing|
   for(let i0=0;i0+w<=N;i0+=step){if(i0<f0||i0+w-1>l0||cuts.some(c=>c>i0&&c<i0+w)||nearS(cx(i0),.05)||nearS(cx(i0+w-1),.05))continue;
     const md=slope(g5,i0)*N/span,mt=slope(T,i0)*N/span,am=Math.abs(md),at=Math.abs(mt);let k=null;
     if(md*mt<0&&Math.min(am,at)>=.6)k='um';
-    else if(at>=.6&&md*mt>0&&am>1.9*at)k='steil';
-    else if(at<.6&&am>1.1)k='steil';
-    else if(at>=.8&&am<.45*at&&!(md*mt<0&&am>=.6))k='flach';
+    else if(at>=.6&&md*mt>0&&am>2.6*at)k='steil';
+    else if(at<.6&&am>1.6)k='steil';
+    else if(at>=.8&&am<.3*at&&!(md*mt<0&&am>=.6))k='flach';
     if(k)cls.push({k,i0,s:Math.sign(mt)||1});}
   const mergeC=kk=>{const out=[];cls.filter(c=>c.k===kk).forEach(c=>{const l=out[out.length-1];if(l&&c.i0-l.i1<=step&&l.s===c.s){l.i1=c.i0;}else out.push({i0:c.i0,i1:c.i0,s:c.s});});
     return out.filter(o=>o.i1-o.i0>=step).map(o=>({a:cx(o.i0),b:cx(o.i1+w-1),s:o.s}));};
   const slopeUm=mergeC('um'),slopeSteil=mergeC('steil'),slopeFlach=mergeC('flach');
-  const lev=[];if(ratio>=.75&&ratio<=1.33){let rn=null;for(let i=f0;i<=l0;i++){const dv=g3[i]-T[i],ok=!nearS(cx(i),.05)&&Math.abs(dv)>.12*span;
-      if(ok&&rn&&Math.sign(dv)===rn.s&&i-rn.e<=2)rn.e=i;else{if(rn&&rn.e-rn.b>=19)lev.push(rn);rn=ok?{b:i,e:i,s:Math.sign(dv),t:T[i]}:null;}}
-    if(rn&&rn.e-rn.b>=19)lev.push(rn);}
-  const levR=lev.map(o=>({a:cx(o.b),b:cx(o.e),s:o.s,t:o.t}));
-  return {zs,hits,miss,extra,sgnFrac,badRuns,r,ratio,edges,gaps,jumps,dbls,tMiss,tExtra,tOff,flats,slopeUm,slopeSteil,slopeFlach,levR};}
+  return {zs,hits,miss,extra,sgnFrac,badRuns,r,ratio,edges,gaps,jumps,dbls,tMiss,tExtra,tOff,flats,slopeUm,slopeSteil,slopeFlach};}
 function check(){const p=S.p,A=analyse(),out=$('#fbOut');$('#fbBox').hidden=false;
   if(A.err){out.innerHTML='<p class="verdict">Noch nicht auswertbar</p><p>'+A.err+'</p>';MATH.apply(out);return;}
   const st=(p.b-p.a)<5?.25:.5,xr=v=>fmt(Math.round(v/st)*st),at=x=>'x ≈ '+xr(x),rg=(a,b)=>'x ≈ '+xr(a)+' bis '+xr(b),lst=(a,f)=>a.slice(0,2).map(f).join(' und ');
@@ -503,15 +503,14 @@ function check(){const p=S.p,A=analyse(),out=$('#fbOut');$('#fbBox').hidden=fals
     if(A.tExtra.length)t.push('Bei '+lst(A.tExtra,u=>at(u.x))+' hat deine Linie '+(A.tExtra.length>1?'einen Zacken oder eine Welle':'einen Zacken oder eine Welle')+', die f′ nicht hat. Hat f dort einen Wendepunkt? Wenn nicht, muss die Linie glatt weiterlaufen');
     I.push({s:1.5,m:'Verlauf: '+t.join('. ')+'.'});}
   if(A.slopeUm.length)I.push({s:1,m:'Verlauf: Bei '+lst(A.slopeUm,o=>rg(o.a,o.b))+' läuft deine Linie in die falsche Richtung (sie '+(A.slopeUm[0].s>0?'fällt, müsste aber steigen':'steigt, müsste aber fallen')+'). Die Steigung von f′ ist f″, also die Krümmung von f: Linkskurve von f heisst f′ steigt, Rechtskurve heisst f′ fällt.'});
-  if(A.r<.82&&!A.tMiss.length&&!A.tExtra.length&&!A.slopeUm.length)I.push({s:A.r<.6?2:1.5,m:'Verlauf: Der Verlauf weicht noch deutlich von f′ ab. Wo ist f steil, wo flach? Das bestimmt den Betrag von f′.'});
-  if(A.ratio<.5||A.ratio>2)I.push({s:1,m:'Höhe: Deine Ausschläge sind insgesamt '+(A.ratio>2?'viel zu gross':'viel zu klein')+'. Lies die Skala am linken Rand ab: Der Betrag von f′ ist gross, wo f steil ist.'});
+  if(A.r<.7&&!A.tMiss.length&&!A.tExtra.length&&!A.slopeUm.length)I.push({s:A.r<.45?2:1.5,m:'Verlauf: Der Verlauf weicht noch deutlich von f′ ab. Wo ist f steil, wo flach? Das bestimmt den Betrag von f′.'});
+  if(A.ratio<.25||A.ratio>4)I.push({s:1,m:'Höhe: Deine Ausschläge sind insgesamt '+(A.ratio>4?'viel zu gross':'viel zu klein')+'. Lies die Skala am linken Rand ab: Der Betrag von f′ ist gross, wo f steil ist.'});
   const sum=I.reduce((s,i)=>s+i.s,0);
   if(!I.length){L.push(['ok','Form: Die Linie ist durchgehend und ruhig, die waagrechten Stücke sind waagrecht und die Hoch- und Tiefpunkte passen.']);score++;}
   else{if(sum<2)score+=.5;I.forEach(i=>L.push([i.s>=1.5?'bad':'part',i.m]));}
   /* Hinweise (nicht bewertet): Höhe und Steigung */
-  if(A.ratio>1.33&&A.ratio<=2)H.push('Höhe: Deine Ausschläge sind insgesamt etwas zu gross (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Ist f weniger steil, bleibt f′ näher bei der x-Achse.');
-  if(A.ratio<.75&&A.ratio>=.5)H.push('Höhe: Deine Ausschläge sind insgesamt etwas zu klein (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Wo f steil ist, muss f′ weiter von der x-Achse weg.');
-  A.levR.slice(0,2).forEach(o=>H.push('Höhe: Bei '+rg(o.a,o.b)+' liegt deine Linie etwas zu '+(o.s>0?'hoch':'tief')+'. Der Betrag von f′ ist die Steilheit von f: '+((o.s>0)===(o.t>=0)?'f ist dort weniger steil, als deine Linie zeigt.':'f ist dort steiler, als deine Linie zeigt.')));
+  if(A.ratio>2.5&&A.ratio<=4)H.push('Höhe: Deine Ausschläge sind insgesamt eher zu gross (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Ist f weniger steil, bleibt f′ näher bei der x-Achse.');
+  if(A.ratio<.4&&A.ratio>=.25)H.push('Höhe: Deine Ausschläge sind insgesamt eher zu klein (etwa Faktor '+fmt(A.ratio)+'). Der Betrag von f′ entspricht der Steilheit von f: Wo f steil ist, muss f′ weiter von der x-Achse weg.');
   A.slopeSteil.slice(0,2).forEach(o=>H.push('Steigung: Bei '+rg(o.a,o.b)+' verläuft deine Linie zu steil. Die Steigung von f′ ist die Krümmung von f: Ist f dort nur schwach gekrümmt, darf f′ nur langsam '+(o.s>0?'steigen':o.s<0?'fallen':'ansteigen oder abfallen')+'.'));
   A.slopeFlach.slice(0,2).forEach(o=>H.push('Steigung: Bei '+rg(o.a,o.b)+' verläuft deine Linie zu flach. Dort ist f stärker gekrümmt ('+(o.s>0?'Linkskurve':'Rechtskurve')+'), deshalb muss f′ schneller '+(o.s>0?'steigen':'fallen')+'.'));
   A.tOff.slice(0,1).forEach(o=>H.push('Lage: Der '+(o.t==='max'?'Hochpunkt':'Tiefpunkt')+' von f′ bei '+at(o.x)+' liegt etwas zu weit '+(o.dx>0?'rechts':'links')+'. Er gehört unter die steilste Stelle von f (Wendepunkt).'));
